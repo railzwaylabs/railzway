@@ -282,6 +282,9 @@ definitions:
         type: boolean
       lookup_key:
         type: string
+      metadata:
+        additionalProperties: {}
+        type: object
       name:
         type: string
       organization_id:

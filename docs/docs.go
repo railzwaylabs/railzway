@@ -2072,6 +2072,10 @@ const docTemplate = `{
                 "lookup_key": {
                     "type": "string"
                 },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
                 "name": {
                     "type": "string"
                 },
