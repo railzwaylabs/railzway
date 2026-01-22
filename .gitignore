@@ -1,0 +1,48 @@
+# Node modules
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+build/
+out/
+public/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Cypress artifacts
+cypress/videos/
+cypress/screenshots/
+cypress/results/   # kalau ada folder hasil report lain
+
+# Coverage
+coverage/
+*.lcov
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Misc
+*.tmp
+
+# Go
+.gocache
+AGENTS.md
+main
+.instance_id

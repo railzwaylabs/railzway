@@ -1,0 +1,41 @@
+@import "../design-tokens.css";
+@config "../tailwind.config.ts";
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  *,
+  ::before,
+  ::after {
+    @apply border-border-subtle;
+  }
+
+  body {
+    @apply m-0 min-h-screen bg-bg-primary text-text-primary antialiased;
+    font-family: var(--font-sans);
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@layer utilities {
+  .animate-skeleton-shimmer {
+    /* 1.4s keeps the shimmer calm and non-distracting. */
+    animation: skeleton-shimmer 1.4s linear infinite;
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "cookies": [
+    {
+      "name": "_sid",
+      "value": "5Jn2rjl_npcPehei4xzDmfIBdJApG7RfZUN5PxsWcCE",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1767980760.047,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:8080",
+      "localStorage": [
+        {
+          "name": "valora-auth",
+          "value": "{\"state\":{\"user\":{\"id\":\"2007115165073412096\",\"username\":\"Valora Admin\",\"email\":\"admin@valora.cloud\"},\"isAuthenticated\":true},\"version\":0}"
+        }
+      ]
+    }
+  ]
+}

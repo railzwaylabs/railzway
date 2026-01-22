@@ -1,0 +1,2700 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "Railzway Billing \u0026 Operations API",
+        "title": "Railzway API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "email": "support@railzway.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api",
+    "paths": {
+        "/countries": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List available countries",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reference"
+                ],
+                "summary": "List Countries",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_reference_domain.Country"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/currencies": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List available currencies",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reference"
+                ],
+                "summary": "List Currencies",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_reference_domain.Currency"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/customers": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List available customers",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customers"
+                ],
+                "summary": "List Customers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email",
+                        "name": "email",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Currency",
+                        "name": "currency",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Created From",
+                        "name": "created_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Created To",
+                        "name": "created_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page Token",
+                        "name": "page_token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page Size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new customer",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customers"
+                ],
+                "summary": "Create Customer",
+                "parameters": [
+                    {
+                        "description": "Create Customer Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_server.createCustomerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer"
+                        }
+                    }
+                }
+            }
+        },
+        "/customers/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get customer by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customers"
+                ],
+                "summary": "Get Customer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer"
+                        }
+                    }
+                }
+            }
+        },
+        "/invoices": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List available invoices",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invoices"
+                ],
+                "summary": "List Invoices",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Invoice Number",
+                        "name": "invoice_number",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "customer_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Created From",
+                        "name": "created_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Created To",
+                        "name": "created_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Due From",
+                        "name": "due_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Due To",
+                        "name": "due_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Finalized From",
+                        "name": "finalized_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Finalized To",
+                        "name": "finalized_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Total Min",
+                        "name": "total_min",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Total Max",
+                        "name": "total_max",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page Token",
+                        "name": "page_token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page Size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.Invoice"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/invoices/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get invoice by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invoices"
+                ],
+                "summary": "Get Invoice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Invoice ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.Invoice"
+                        }
+                    }
+                }
+            }
+        },
+        "/invoices/{id}/render": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Render invoice PDF/HTML",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invoices"
+                ],
+                "summary": "Render Invoice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Invoice ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.RenderInvoiceResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/meters": {
+            "get": {
+                "description": "List meters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "meters"
+                ],
+                "summary": "List Meters",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Code",
+                        "name": "code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Active",
+                        "name": "active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort By",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order By",
+                        "name": "order_by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new meter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "meters"
+                ],
+                "summary": "Create Meter",
+                "parameters": [
+                    {
+                        "description": "Create Meter Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_server.createMeterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter"
+                        }
+                    }
+                }
+            }
+        },
+        "/meters/{id}": {
+            "get": {
+                "description": "Get meter by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "meters"
+                ],
+                "summary": "Get Meter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meter ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete meter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "meters"
+                ],
+                "summary": "Delete Meter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meter ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "patch": {
+                "description": "Update meter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "meters"
+                ],
+                "summary": "Update Meter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meter ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Meter Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_server.updateMeterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter"
+                        }
+                    }
+                }
+            }
+        },
+        "/price_amounts": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List available price amounts",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "price_amounts"
+                ],
+                "summary": "List Price Amounts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Price ID",
+                        "name": "price_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new price amount",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "price_amounts"
+                ],
+                "summary": "Create Price Amount",
+                "parameters": [
+                    {
+                        "description": "Create Price Amount Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.CreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount"
+                        }
+                    }
+                }
+            }
+        },
+        "/price_amounts/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get price amount by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "price_amounts"
+                ],
+                "summary": "Get Price Amount",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Price Amount ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount"
+                        }
+                    }
+                }
+            }
+        },
+        "/price_tiers": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List available price tiers",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "price_tiers"
+                ],
+                "summary": "List Price Tiers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new price tier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "price_tiers"
+                ],
+                "summary": "Create Price Tier",
+                "parameters": [
+                    {
+                        "description": "Create Price Tier Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.CreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier"
+                        }
+                    }
+                }
+            }
+        },
+        "/price_tiers/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get price tier by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "price_tiers"
+                ],
+                "summary": "Get Price Tier",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Price Tier ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier"
+                        }
+                    }
+                }
+            }
+        },
+        "/prices": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List available prices",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "prices"
+                ],
+                "summary": "List Prices",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new price",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "prices"
+                ],
+                "summary": "Create Price",
+                "parameters": [
+                    {
+                        "description": "Create Price Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_server.createPriceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price"
+                        }
+                    }
+                }
+            }
+        },
+        "/prices/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get price by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "prices"
+                ],
+                "summary": "Get Price",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Price ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price"
+                        }
+                    }
+                }
+            }
+        },
+        "/pricings": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List available pricings",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pricings"
+                ],
+                "summary": "List Pricings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new pricing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pricings"
+                ],
+                "summary": "Create Pricing",
+                "parameters": [
+                    {
+                        "description": "Create Pricing Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.CreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/pricings/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get pricing by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pricings"
+                ],
+                "summary": "Get Pricing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pricing ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/products": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List available products",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "List Products",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Active",
+                        "name": "active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort By",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order By",
+                        "name": "order_by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new product",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Create Product",
+                "parameters": [
+                    {
+                        "description": "Create Product Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_server.createProductRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get product by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get Product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update product details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Update Product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Product Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_server.updateProductRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{id}/archive": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Archive a product",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Archive Product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List available subscriptions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "List Subscriptions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "customer_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Created From",
+                        "name": "created_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Created To",
+                        "name": "created_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page Token",
+                        "name": "page_token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page Size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new subscription",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Create Subscription",
+                "parameters": [
+                    {
+                        "description": "Create Subscription Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get subscription by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Get Subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/{id}/activate": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Activate a subscription",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Activate Subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/subscriptions/{id}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Cancel a subscription",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Cancel Subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/subscriptions/{id}/items": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Replace items in a subscription",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Replace Subscription Items",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Replace Subscription Items Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_server.replaceSubscriptionItemsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/{id}/pause": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Pause a subscription",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Pause Subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/subscriptions/{id}/resume": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Resume a subscription",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Resume Subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/timezones": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List timezones for a country",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reference"
+                ],
+                "summary": "List Timezones",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Country Code",
+                        "name": "country",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/usage": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Ingest usage event",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "usage"
+                ],
+                "summary": "Ingest Usage",
+                "parameters": [
+                    {
+                        "description": "Ingest Usage Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_usage_domain.CreateIngestRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_usage_domain.UsageEvent"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "datatypes.JSONMap": {
+            "type": "object",
+            "additionalProperties": true
+        },
+        "github_com_smallbiznis_railzway_internal_customer_domain.Customer": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/datatypes.JSONMap"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_invoice_domain.Invoice": {
+            "type": "object",
+            "properties": {
+                "billingCycleID": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "customerID": {
+                    "type": "integer"
+                },
+                "dueAt": {
+                    "type": "string"
+                },
+                "finalizedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "invoiceNumber": {
+                    "type": "string"
+                },
+                "invoiceSeq": {
+                    "type": "integer"
+                },
+                "invoiceTemplateID": {
+                    "type": "integer"
+                },
+                "issuedAt": {
+                    "type": "string"
+                },
+                "items": {
+                    "description": "Items is populated for API responses, not persisted",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItem"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/datatypes.JSONMap"
+                },
+                "orgID": {
+                    "type": "integer"
+                },
+                "paidAt": {
+                    "type": "string"
+                },
+                "periodEnd": {
+                    "type": "string"
+                },
+                "periodStart": {
+                    "type": "string"
+                },
+                "renderedHTML": {
+                    "type": "string"
+                },
+                "renderedPDFURL": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceStatus"
+                },
+                "subscriptionID": {
+                    "type": "integer"
+                },
+                "subtotalAmount": {
+                    "type": "integer"
+                },
+                "taxAmount": {
+                    "type": "integer"
+                },
+                "taxCode": {
+                    "type": "string"
+                },
+                "taxRate": {
+                    "type": "number"
+                },
+                "totalAmount": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "voidedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItem": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "invoiceID": {
+                    "type": "integer"
+                },
+                "lineType": {
+                    "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItemLineType"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/datatypes.JSONMap"
+                },
+                "orgID": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "ratingResultID": {
+                    "type": "integer"
+                },
+                "unitPrice": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItemLineType": {
+            "type": "string",
+            "enum": [
+                "subscription",
+                "usage",
+                "credit",
+                "one_off",
+                "tax"
+            ],
+            "x-enum-varnames": [
+                "InvoiceItemLineTypeSubscription",
+                "InvoiceItemLineTypeUsage",
+                "InvoiceItemLineTypeCredit",
+                "InvoiceItemLineTypeOneOff",
+                "InvoiceItemLineTypeTax"
+            ]
+        },
+        "github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceStatus": {
+            "type": "string",
+            "enum": [
+                "DRAFT",
+                "FINALIZED",
+                "VOID"
+            ],
+            "x-enum-varnames": [
+                "InvoiceStatusDraft",
+                "InvoiceStatusFinalized",
+                "InvoiceStatusVoid"
+            ]
+        },
+        "github_com_smallbiznis_railzway_internal_invoice_domain.RenderInvoiceResponse": {
+            "type": "object",
+            "properties": {
+                "invoice_template_id": {
+                    "type": "string"
+                },
+                "is_snapshot": {
+                    "type": "boolean"
+                },
+                "rendered_html": {
+                    "type": "string"
+                },
+                "rendered_pdf_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_meter_domain.Meter": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "aggregation": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_price_domain.CreateRequest": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "aggregate_usage": {
+                    "type": "string"
+                },
+                "billing_interval": {
+                    "type": "string"
+                },
+                "billing_interval_count": {
+                    "type": "integer"
+                },
+                "billing_mode": {
+                    "type": "string"
+                },
+                "billing_threshold": {
+                    "type": "number"
+                },
+                "billing_unit": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "lookup_key": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pricing_model": {
+                    "type": "string"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "retired_at": {
+                    "type": "string"
+                },
+                "tax_behavior": {
+                    "type": "string"
+                },
+                "tax_code": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_price_domain.Price": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "aggregate_usage": {
+                    "type": "string"
+                },
+                "billing_interval": {
+                    "type": "string"
+                },
+                "billing_interval_count": {
+                    "type": "integer"
+                },
+                "billing_mode": {
+                    "type": "string"
+                },
+                "billing_threshold": {
+                    "type": "number"
+                },
+                "billing_unit": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/datatypes.JSONMap"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "pricing_model": {
+                    "type": "string"
+                },
+                "product_id": {
+                    "type": "integer"
+                },
+                "retired_at": {
+                    "type": "string"
+                },
+                "tax_behavior": {
+                    "type": "string"
+                },
+                "tax_code": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_price_domain.Response": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "aggregate_usage": {
+                    "type": "string"
+                },
+                "billing_interval": {
+                    "type": "string"
+                },
+                "billing_interval_count": {
+                    "type": "integer"
+                },
+                "billing_mode": {
+                    "type": "string"
+                },
+                "billing_threshold": {
+                    "type": "number"
+                },
+                "billing_unit": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "lookup_key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "pricing_model": {
+                    "type": "string"
+                },
+                "product_id": {
+                    "type": "integer"
+                },
+                "retired_at": {
+                    "type": "string"
+                },
+                "tax_behavior": {
+                    "type": "string"
+                },
+                "tax_code": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_priceamount_domain.CreateRequest": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "effective_from": {
+                    "type": "string"
+                },
+                "effective_to": {
+                    "type": "string"
+                },
+                "maximum_amount_cents": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "meter_id": {
+                    "type": "string"
+                },
+                "minimum_amount_cents": {
+                    "type": "integer"
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "unit_amount_cents": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "effective_from": {
+                    "type": "string"
+                },
+                "effective_to": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "maximum_amount_cents": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/datatypes.JSONMap"
+                },
+                "meterID": {
+                    "type": "integer"
+                },
+                "minimum_amount_cents": {
+                    "type": "integer"
+                },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "price_id": {
+                    "type": "integer"
+                },
+                "revokedAt": {
+                    "type": "string"
+                },
+                "revokedReason": {
+                    "type": "string"
+                },
+                "unit_amount_cents": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_pricetier_domain.CreateRequest": {
+            "type": "object",
+            "properties": {
+                "end_quantity": {
+                    "type": "number"
+                },
+                "flat_amount_cents": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "start_quantity": {
+                    "type": "number"
+                },
+                "tier_mode": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "unit_amount_cents": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "end_quantity": {
+                    "type": "number"
+                },
+                "flat_amount_cents": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/datatypes.JSONMap"
+                },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "price_id": {
+                    "type": "integer"
+                },
+                "start_quantity": {
+                    "type": "number"
+                },
+                "tier_mode": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "unit_amount_cents": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_product_domain.Product": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/datatypes.JSONMap"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_reference_domain.Country": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_reference_domain.Currency": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "minor_unit": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "symbol": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest": {
+            "type": "object",
+            "properties": {
+                "meter_id": {
+                    "type": "string"
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionRequest": {
+            "type": "object",
+            "properties": {
+                "billing_cycle_type": {
+                    "type": "string"
+                },
+                "collection_mode": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest"
+                    }
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "trial_days": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_subscription_domain.Subscription": {
+            "type": "object",
+            "properties": {
+                "activatedAt": {
+                    "type": "string"
+                },
+                "billingAnchorDay": {
+                    "type": "integer"
+                },
+                "billingCycleType": {
+                    "type": "string"
+                },
+                "cancelAt": {
+                    "type": "string"
+                },
+                "cancelAtPeriodEnd": {
+                    "type": "boolean"
+                },
+                "canceledAt": {
+                    "type": "string"
+                },
+                "collectionMode": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "customerID": {
+                    "type": "integer"
+                },
+                "defaultCurrency": {
+                    "type": "string"
+                },
+                "defaultPaymentTermDays": {
+                    "type": "integer"
+                },
+                "defaultTaxBehavior": {
+                    "type": "string"
+                },
+                "endAt": {
+                    "type": "string"
+                },
+                "endedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/datatypes.JSONMap"
+                },
+                "orgID": {
+                    "type": "integer"
+                },
+                "pausedAt": {
+                    "type": "string"
+                },
+                "planChangedAt": {
+                    "type": "string"
+                },
+                "resumedAt": {
+                    "type": "string"
+                },
+                "startAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.SubscriptionStatus"
+                },
+                "trialEndsAt": {
+                    "type": "string"
+                },
+                "trialStartsAt": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_subscription_domain.SubscriptionStatus": {
+            "type": "string",
+            "enum": [
+                "DRAFT",
+                "ACTIVE",
+                "PAUSED",
+                "CANCELED",
+                "ENDED"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionStatusDraft",
+                "SubscriptionStatusActive",
+                "SubscriptionStatusPaused",
+                "SubscriptionStatusCanceled",
+                "SubscriptionStatusEnded"
+            ]
+        },
+        "github_com_smallbiznis_railzway_internal_usage_domain.CreateIngestRequest": {
+            "type": "object",
+            "required": [
+                "customer_id",
+                "idempotency_key",
+                "meter_code",
+                "recorded_at",
+                "value"
+            ],
+            "properties": {
+                "customer_id": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "idempotency_key": {
+                    "description": "Required; must be non-empty. Uniqueness enforced at DB level.",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "meter_code": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "recorded_at": {
+                    "type": "string"
+                },
+                "value": {
+                    "description": "Usage can be zero or fractional; semantics resolved in rating.",
+                    "type": "number"
+                }
+            }
+        },
+        "github_com_smallbiznis_railzway_internal_usage_domain.UsageEvent": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "idempotency_key": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/datatypes.JSONMap"
+                },
+                "meter_code": {
+                    "type": "string"
+                },
+                "org_id": {
+                    "type": "integer"
+                },
+                "recorded_at": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        },
+        "internal_server.createCustomerRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_server.createMeterRequest": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "aggregation_type": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_server.createPriceRequest": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "aggregate_usage": {
+                    "type": "string"
+                },
+                "billing_interval": {
+                    "type": "string"
+                },
+                "billing_interval_count": {
+                    "type": "integer"
+                },
+                "billing_mode": {
+                    "type": "string"
+                },
+                "billing_threshold": {
+                    "type": "number"
+                },
+                "billing_unit": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "lookup_key": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pricing_model": {
+                    "type": "string"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "retired_at": {
+                    "type": "string"
+                },
+                "tax_behavior": {
+                    "type": "string"
+                },
+                "tax_code": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_server.createProductRequest": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_server.replaceSubscriptionItemsRequest": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest"
+                    }
+                }
+            }
+        },
+        "internal_server.updateMeterRequest": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "aggregation_type": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_server.updateProductRequest": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

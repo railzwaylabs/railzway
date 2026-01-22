@@ -1,0 +1,493 @@
+package authorization
+
+import (
+	"context"
+	_ "embed"
+	"fmt"
+	"strings"
+
+	"github.com/bwmarrin/snowflake"
+	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v2/model"
+	gormadapter "github.com/casbin/gorm-adapter/v3"
+	auditdomain "github.com/smallbiznis/railzway/internal/audit/domain"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+)
+
+//go:embed model.conf
+var modelText string
+
+const (
+	ObjectProduct           = "product"
+	ObjectPrice             = "price"
+	ObjectPriceAmount       = "price_amount"
+	ObjectPriceTier         = "price_tier"
+	ObjectMeter             = "meter"
+	ObjectCustomer          = "customer"
+	ObjectSubscription      = "subscription"
+	ObjectBillingCycle      = "billing_cycle"
+	ObjectInvoice           = "invoice"
+	ObjectBillingDashboard  = "billing_dashboard"
+	ObjectBillingOperations = "billing_operations"
+	ObjectBillingOverview   = "billing_overview"
+	ObjectAPIKey            = "api_key"
+	ObjectAuditLog          = "audit_log"
+	ObjectPaymentProvider   = "payment_provider"
+	ObjectUsage             = "usage"
+)
+
+const (
+	ActionSubscriptionActivate = "subscription.activate"
+	ActionSubscriptionPause    = "subscription.pause"
+	ActionSubscriptionResume   = "subscription.resume"
+	ActionSubscriptionCancel   = "subscription.cancel"
+	ActionSubscriptionEnd      = "subscription.end"
+
+	ActionBillingCycleOpen         = "billing_cycle.open"
+	ActionBillingCycleStartClosing = "billing_cycle.start_closing"
+	ActionBillingCycleClose        = "billing_cycle.close"
+	ActionBillingCycleRate         = "billing_cycle.rate"
+
+	ActionInvoiceGenerate = "invoice.generate"
+	ActionInvoiceFinalize = "invoice.finalize"
+	ActionInvoiceVoid     = "invoice.void"
+
+	ActionBillingDashboardView  = "billing_dashboard.view"
+	ActionBillingOperationsView = "billing_operations.view"
+	ActionBillingOperationsAct  = "billing_operations.act"
+	ActionBillingOverviewView   = "billing_overview.view"
+
+	ActionAPIKeyView   = "api_key.view"
+	ActionAPIKeyCreate = "api_key.create"
+	ActionAPIKeyRotate = "api_key.rotate"
+	ActionAPIKeyRevoke = "api_key.revoke"
+
+	ActionAuditLogView       = "audit_log.view"
+	ActionAuditLogExport     = "audit_log.export"
+
+	ActionBillingChangeRequestView    = "billing_change_request.view"
+	ActionBillingChangeRequestCreate  = "billing_change_request.create"
+	ActionBillingChangeRequestApprove = "billing_change_request.approve"
+	ActionBillingChangeRequestReject  = "billing_change_request.reject"
+
+	ActionPaymentProviderManage = "payment_provider.manage"
+
+	ActionProductView   = "product.view"
+	ActionProductCreate = "product.create"
+	ActionProductUpdate = "product.update"
+	ActionProductDelete = "product.delete"
+
+	ActionPriceView   = "price.view"
+	ActionPriceCreate = "price.create"
+	ActionPriceUpdate = "price.update"
+	ActionPriceDelete = "price.delete"
+
+	ActionPriceAmountView   = "price_amount.view"
+	ActionPriceAmountCreate = "price_amount.create"
+	ActionPriceAmountUpdate = "price_amount.update"
+	ActionPriceAmountDelete = "price_amount.delete"
+
+	ActionPriceTierView   = "price_tier.view"
+	ActionPriceTierCreate = "price_tier.create"
+	ActionPriceTierUpdate = "price_tier.update"
+	ActionPriceTierDelete = "price_tier.delete"
+
+	ActionMeterView   = "meter.view"
+	ActionMeterCreate = "meter.create"
+	ActionMeterUpdate = "meter.update"
+	ActionMeterDelete = "meter.delete"
+
+	ActionCustomerView   = "customer.view"
+	ActionCustomerCreate = "customer.create"
+	ActionCustomerUpdate = "customer.update"
+	ActionCustomerDelete = "customer.delete"
+
+	ActionSubscriptionView   = "subscription.view"
+	ActionSubscriptionCreate = "subscription.create"
+	ActionSubscriptionUpdate = "subscription.update"
+	ActionSubscriptionDelete = "subscription.delete"
+
+	ActionBillingCycleView   = "billing_cycle.view"
+	ActionBillingCycleCreate = "billing_cycle.create"
+	ActionBillingCycleUpdate = "billing_cycle.update"
+	ActionBillingCycleDelete = "billing_cycle.delete"
+
+	ActionInvoiceView   = "invoice.view"
+	ActionInvoiceCreate = "invoice.create"
+	ActionInvoiceUpdate = "invoice.update"
+	ActionInvoiceDelete = "invoice.delete"
+
+	ActionUsageIngest = "usage.ingest"
+)
+
+type Params struct {
+	fx.In
+
+	DB       *gorm.DB
+	Log      *zap.Logger
+	Enforcer *casbin.SyncedEnforcer
+	AuditSvc auditdomain.Service `optional:"true"`
+}
+
+type ServiceImpl struct {
+	db       *gorm.DB
+	log      *zap.Logger
+	enforcer *casbin.SyncedEnforcer
+	auditSvc auditdomain.Service
+}
+
+func NewEnforcer(db *gorm.DB) (*casbin.SyncedEnforcer, error) {
+	adapter, err := gormadapter.NewAdapterByDB(db)
+	if err != nil {
+		return nil, err
+	}
+	m, err := model.NewModelFromString(modelText)
+	if err != nil {
+		return nil, err
+	}
+	enforcer, err := casbin.NewSyncedEnforcer(m, adapter)
+	if err != nil {
+		return nil, err
+	}
+	enforcer.EnableAutoSave(true)
+	enforcer.EnableAutoBuildRoleLinks(true)
+	if err := enforcer.LoadPolicy(); err != nil {
+		return nil, err
+	}
+	if err := seedPolicies(enforcer); err != nil {
+		return nil, err
+	}
+	enforcer.BuildRoleLinks()
+	return enforcer, nil
+}
+
+func NewService(p Params) Service {
+	return &ServiceImpl{
+		db:       p.DB,
+		log:      p.Log.Named("authorization.service"),
+		enforcer: p.Enforcer,
+		auditSvc: p.AuditSvc,
+	}
+}
+
+func (s *ServiceImpl) Authorize(ctx context.Context, actor string, orgID string, object string, action string) error {
+	actor = strings.TrimSpace(actor)
+	if actor == "" {
+		return ErrInvalidActor
+	}
+	orgID = strings.TrimSpace(orgID)
+	if orgID == "" {
+		return ErrInvalidOrganization
+	}
+	object = strings.TrimSpace(object)
+	if object == "" {
+		return ErrInvalidObject
+	}
+	action = strings.TrimSpace(action)
+	if action == "" {
+		return ErrInvalidAction
+	}
+
+	subject, roleName, actorType, actorID, err := s.resolveActor(ctx, actor, orgID)
+	if err != nil {
+		s.auditDenied(ctx, actorType, actorID, orgID, object, action)
+		return err
+	}
+
+	domain := fmt.Sprintf("org:%s", orgID)
+	if err := s.ensureGrouping(subject, roleName, domain); err != nil {
+		return err
+	}
+
+	allowed, err := s.enforcer.Enforce(subject, domain, object, action)
+	if err != nil {
+		return err
+	}
+	if !allowed {
+		s.auditDenied(ctx, actorType, actorID, orgID, object, action)
+		return ErrForbidden
+	}
+
+	if shouldAuditGrant(action) {
+		s.auditGranted(ctx, actorType, actorID, orgID, object, action)
+	}
+	return nil
+}
+func (s *ServiceImpl) resolveActor(ctx context.Context, actor string, orgID string) (string, string, string, *string, error) {
+	if actor == "system" {
+		roleName := "role:system"
+		return actor, roleName, "system", nil, nil
+	}
+	if strings.HasPrefix(actor, "api_key:") {
+		// API keys use system role for full CRUD permissions
+		apiKeyIDRaw := strings.TrimPrefix(actor, "api_key:")
+		apiKeyID, err := snowflake.ParseString(apiKeyIDRaw)
+		if err != nil || apiKeyID == 0 {
+			return "", "", "", nil, ErrInvalidActor
+		}
+		apiKeyIDStr := apiKeyID.String()
+		roleName := "role:system"
+		return actor, roleName, "api_key", &apiKeyIDStr, nil
+	}
+	if strings.HasPrefix(actor, "user:") {
+		userIDRaw := strings.TrimPrefix(actor, "user:")
+		userID, err := snowflake.ParseString(userIDRaw)
+		if err != nil || userID == 0 {
+			return "", "", "", nil, ErrInvalidActor
+		}
+		parsedOrgID, err := snowflake.ParseString(orgID)
+		userIDStr := userID.String()
+		if err != nil || parsedOrgID == 0 {
+			return actor, "", "user", &userIDStr, ErrInvalidOrganization
+		}
+		role, err := s.roleForUser(ctx, parsedOrgID, userID)
+		if err != nil {
+			return actor, "", "user", &userIDStr, err
+		}
+		roleName := fmt.Sprintf("role:%s", strings.ToLower(role))
+		return actor, roleName, "user", &userIDStr, nil
+	}
+	return "", "", "", nil, ErrInvalidActor
+}
+
+func (s *ServiceImpl) roleForUser(ctx context.Context, orgID snowflake.ID, userID snowflake.ID) (string, error) {
+	var row struct {
+		Role string `gorm:"column:role"`
+	}
+	if err := s.db.WithContext(ctx).Raw(
+		`SELECT role
+		 FROM organization_members
+		 WHERE org_id = ? AND user_id = ?
+		 LIMIT 1`,
+		orgID,
+		userID,
+	).Scan(&row).Error; err != nil {
+		return "", err
+	}
+
+	role := strings.TrimSpace(row.Role)
+	if role == "" {
+		return "", ErrForbidden
+	}
+	return role, nil
+}
+
+func (s *ServiceImpl) ensureGrouping(subject string, roleName string, domain string) error {
+	existing, err := s.enforcer.GetFilteredGroupingPolicy(0, subject, "", domain)
+	if err != nil {
+		return err
+	}
+	for _, rule := range existing {
+		if len(rule) < 2 {
+			continue
+		}
+		if rule[1] != roleName {
+			params := make([]interface{}, 0, len(rule))
+			for _, value := range rule {
+				params = append(params, value)
+			}
+			_, _ = s.enforcer.RemoveGroupingPolicy(params...)
+		}
+	}
+
+	has, err := s.enforcer.HasGroupingPolicy(subject, roleName, domain)
+	if err != nil {
+		return err
+	}
+	if has {
+		return nil
+	}
+	_, err = s.enforcer.AddGroupingPolicy(subject, roleName, domain)
+	return err
+}
+
+func (s *ServiceImpl) auditDenied(ctx context.Context, actorType string, actorID *string, orgID string, object string, action string) {
+	if s.auditSvc == nil {
+		return
+	}
+	parsedOrgID, err := snowflake.ParseString(orgID)
+	if err != nil || parsedOrgID == 0 {
+		return
+	}
+	targetID := "capability"
+	_ = s.auditSvc.AuditLog(ctx, &parsedOrgID, actorType, actorID, "authorization.denied", "authorization", &targetID, map[string]any{
+		"object":  object,
+		"action":  action,
+		"actor":   actorType,
+		"org_id":  orgID,
+		"subject": actorSubject(actorType, actorID),
+	})
+}
+
+func (s *ServiceImpl) auditGranted(ctx context.Context, actorType string, actorID *string, orgID string, object string, action string) {
+	if s.auditSvc == nil {
+		return
+	}
+	parsedOrgID, err := snowflake.ParseString(orgID)
+	if err != nil || parsedOrgID == 0 {
+		return
+	}
+	targetID := "capability"
+	_ = s.auditSvc.AuditLog(ctx, &parsedOrgID, actorType, actorID, "authorization.granted", "authorization", &targetID, map[string]any{
+		"object":  object,
+		"action":  action,
+		"actor":   actorType,
+		"org_id":  orgID,
+		"subject": actorSubject(actorType, actorID),
+	})
+}
+
+func actorSubject(actorType string, actorID *string) string {
+	switch actorType {
+	case "system":
+		return "system"
+	case "user":
+		if actorID != nil && strings.TrimSpace(*actorID) != "" {
+			return fmt.Sprintf("user:%s", strings.TrimSpace(*actorID))
+		}
+	}
+	return ""
+}
+
+func shouldAuditGrant(action string) bool {
+	switch action {
+	case ActionAPIKeyRotate, ActionAPIKeyRevoke, ActionInvoiceVoid:
+		return true
+	default:
+		return false
+	}
+}
+
+func seedPolicies(enforcer *casbin.SyncedEnforcer) error {
+	policies := [][]string{
+		// Member permissions (read-only)
+		{"role:member", ObjectSubscription, "view"},
+		{"role:member", ObjectInvoice, "view"},
+
+		// Admin permissions
+		{"role:admin", ObjectSubscription, ActionSubscriptionActivate},
+		{"role:admin", ObjectSubscription, ActionSubscriptionPause},
+		{"role:admin", ObjectSubscription, ActionSubscriptionResume},
+		{"role:admin", ObjectInvoice, ActionInvoiceFinalize},
+		{"role:admin", ObjectBillingDashboard, ActionBillingDashboardView},
+		{"role:admin", ObjectBillingOperations, ActionBillingOperationsView},
+		{"role:admin", ObjectBillingOperations, ActionBillingOperationsAct},
+		{"role:admin", ObjectBillingOverview, ActionBillingOverviewView},
+		{"role:admin", ObjectAPIKey, ActionAPIKeyCreate},
+		{"role:admin", ObjectAPIKey, ActionAPIKeyRotate},
+		{"role:admin", ObjectAPIKey, ActionAPIKeyView},
+		{"role:admin", ObjectAuditLog, ActionAuditLogView},
+		{"role:admin", ObjectPaymentProvider, ActionPaymentProviderManage},
+
+		// Owner permissions
+		{"role:owner", ObjectSubscription, ActionSubscriptionActivate},
+		{"role:owner", ObjectSubscription, ActionSubscriptionPause},
+		{"role:owner", ObjectSubscription, ActionSubscriptionResume},
+		{"role:owner", ObjectSubscription, ActionSubscriptionCancel},
+		{"role:owner", ObjectInvoice, ActionInvoiceFinalize},
+		{"role:owner", ObjectInvoice, ActionInvoiceVoid},
+		{"role:owner", ObjectBillingDashboard, ActionBillingDashboardView},
+		{"role:owner", ObjectBillingOperations, ActionBillingOperationsView},
+		{"role:owner", ObjectBillingOperations, ActionBillingOperationsAct},
+		{"role:owner", ObjectBillingOverview, ActionBillingOverviewView},
+		{"role:owner", ObjectAPIKey, ActionAPIKeyView},
+		{"role:owner", ObjectAPIKey, ActionAPIKeyCreate},
+		{"role:owner", ObjectAPIKey, ActionAPIKeyRotate},
+		{"role:owner", ObjectAPIKey, ActionAPIKeyRevoke},
+		{"role:owner", ObjectAuditLog, ActionAuditLogView},
+		{"role:owner", ObjectPaymentProvider, ActionPaymentProviderManage},
+
+		// FinOps permissions
+		{"role:finops", ObjectBillingOperations, ActionBillingOperationsView},
+		{"role:finops", ObjectBillingOperations, ActionBillingOperationsAct},
+		{"role:finops", ObjectBillingDashboard, ActionBillingDashboardView},
+		{"role:finops", ObjectBillingOverview, ActionBillingOverviewView},
+		{"role:finops", ObjectInvoice, "view"},
+
+		// Billing Operator permissions (can request changes, cannot approve)
+		{"role:billing_operator", ObjectBillingCycle, ActionBillingChangeRequestView},
+		{"role:billing_operator", ObjectBillingCycle, ActionBillingChangeRequestCreate},
+		{"role:billing_operator", ObjectBillingDashboard, ActionBillingDashboardView},
+		{"role:billing_operator", ObjectBillingOperations, ActionBillingOperationsView},
+
+		// Billing Approver permissions (can approve/reject, cannot request)
+		{"role:billing_approver", ObjectBillingCycle, ActionBillingChangeRequestView},
+		{"role:billing_approver", ObjectBillingCycle, ActionBillingChangeRequestApprove},
+		{"role:billing_approver", ObjectBillingCycle, ActionBillingChangeRequestReject},
+		{"role:billing_approver", ObjectBillingDashboard, ActionBillingDashboardView},
+		{"role:billing_approver", ObjectBillingOperations, ActionBillingOperationsView},
+
+		// System permissions (for automated processes and API keys)
+		{"role:system", ObjectSubscription, ActionSubscriptionEnd},
+		{"role:system", ObjectBillingCycle, ActionBillingCycleOpen},
+		{"role:system", ObjectBillingCycle, ActionBillingCycleStartClosing},
+		{"role:system", ObjectBillingCycle, ActionBillingCycleRate},
+		{"role:system", ObjectBillingCycle, ActionBillingCycleClose},
+		{"role:system", ObjectInvoice, ActionInvoiceGenerate},
+		{"role:system", ObjectInvoice, ActionInvoiceFinalize},
+
+		// System CRUD permissions for API operations
+		{"role:system", ObjectCustomer, ActionCustomerView},
+		{"role:system", ObjectCustomer, ActionCustomerCreate},
+		{"role:system", ObjectCustomer, ActionCustomerUpdate},
+		{"role:system", ObjectCustomer, ActionCustomerDelete},
+
+		{"role:system", ObjectProduct, ActionProductView},
+		{"role:system", ObjectProduct, ActionProductCreate},
+		{"role:system", ObjectProduct, ActionProductUpdate},
+		{"role:system", ObjectProduct, ActionProductDelete},
+
+		{"role:system", ObjectPrice, ActionPriceView},
+		{"role:system", ObjectPrice, ActionPriceCreate},
+		{"role:system", ObjectPrice, ActionPriceUpdate},
+		{"role:system", ObjectPrice, ActionPriceDelete},
+
+		{"role:system", ObjectPriceAmount, ActionPriceAmountView},
+		{"role:system", ObjectPriceAmount, ActionPriceAmountCreate},
+		{"role:system", ObjectPriceAmount, ActionPriceAmountUpdate},
+		{"role:system", ObjectPriceAmount, ActionPriceAmountDelete},
+
+		{"role:system", ObjectPriceTier, ActionPriceTierView},
+		{"role:system", ObjectPriceTier, ActionPriceTierCreate},
+		{"role:system", ObjectPriceTier, ActionPriceTierUpdate},
+		{"role:system", ObjectPriceTier, ActionPriceTierDelete},
+
+		{"role:system", ObjectMeter, ActionMeterView},
+		{"role:system", ObjectMeter, ActionMeterCreate},
+		{"role:system", ObjectMeter, ActionMeterUpdate},
+		{"role:system", ObjectMeter, ActionMeterDelete},
+
+		{"role:system", ObjectSubscription, ActionSubscriptionView},
+		{"role:system", ObjectSubscription, ActionSubscriptionCreate},
+		{"role:system", ObjectSubscription, ActionSubscriptionUpdate},
+		{"role:system", ObjectSubscription, ActionSubscriptionDelete},
+
+		{"role:system", ObjectBillingCycle, ActionBillingCycleView},
+		{"role:system", ObjectBillingCycle, ActionBillingCycleCreate},
+		{"role:system", ObjectBillingCycle, ActionBillingCycleUpdate},
+		{"role:system", ObjectBillingCycle, ActionBillingCycleDelete},
+
+		{"role:system", ObjectInvoice, ActionInvoiceView},
+		{"role:system", ObjectInvoice, ActionInvoiceCreate},
+		{"role:system", ObjectInvoice, ActionInvoiceUpdate},
+		{"role:system", ObjectInvoice, ActionInvoiceDelete},
+
+		{"role:system", ObjectUsage, ActionUsageIngest},
+	}
+
+	for _, policy := range policies {
+		if len(policy) < 3 {
+			continue
+		}
+		args := make([]interface{}, len(policy))
+		for i, v := range policy {
+			args[i] = v
+		}
+		if _, err := enforcer.AddPolicy(args...); err != nil {
+			return err
+		}
+	}
+	return nil
+}

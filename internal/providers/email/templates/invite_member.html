@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You're invited to join {{.org_name}}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      background-color: #f7f9fa;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .card {
+      background-color: #ffffff;
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .org-name {
+      font-weight: 700;
+      font-size: 24px;
+      color: #1a1f36;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #697386;
+      font-size: 16px;
+      margin: 0;
+    }
+
+    .message {
+      text-align: center;
+      margin: 30px 0;
+    }
+
+    .message p {
+      color: #1a1f36;
+      font-size: 16px;
+      line-height: 1.8;
+      margin: 10px 0;
+    }
+
+    .role-badge {
+      display: inline-block;
+      background-color: #e3f2fd;
+      color: #1976d2;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      margin: 10px 0;
+    }
+
+    .btn-primary {
+      display: block;
+      width: 100%;
+      background-color: #006aff;
+      color: #ffffff;
+      text-decoration: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-align: center;
+      margin: 30px 0;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+
+    .btn-primary:hover {
+      background-color: #0056cc;
+    }
+
+    .details {
+      margin-top: 30px;
+      border-top: 1px solid #e3e8ee;
+      padding-top: 20px;
+    }
+
+    .info-box {
+      background-color: #f7f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .info-box p {
+      margin: 8px 0;
+      font-size: 14px;
+      color: #697386;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 12px;
+      color: #8792a2;
+    }
+
+    .footer a {
+      color: #8792a2;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div class="org-name">{{.org_name}}</div>
+        <p class="subtitle">Team Invitation</p>
+      </div>
+
+      <div class="message">
+        <p>You've been invited to join <strong>{{.org_name}}</strong> as a team member.</p>
+        <div class="role-badge">{{.role}}</div>
+        <p style="color: #697386; font-size: 14px; margin-top: 20px;">
+          Click the button below to accept your invitation and get started.
+        </p>
+      </div>
+
+      <a href="{{.invite_link}}" class="btn-primary">Accept Invitation</a>
+
+      <div class="info-box">
+        <p><strong>What happens next?</strong></p>
+        <p>After accepting, you'll be able to access the organization dashboard and collaborate with your team.</p>
+      </div>
+
+      <p style="text-align: center; color: #697386; font-size: 13px; margin-top: 30px;">
+        If you weren't expecting this invitation, you can safely ignore this email.
+      </p>
+    </div>
+
+    <div class="footer">
+      Powered by <strong>Railzway</strong>
+    </div>
+  </div>
+</body>
+
+</html>

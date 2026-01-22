@@ -1,0 +1,360 @@
+package config
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/joho/godotenv"
+)
+
+// Config holds application configuration.
+var (
+	DefaultAppVersion            = "1.0.0"
+	DefaultCloudMetricsEndpoint  = ""
+	DefaultCloudMetricsAuthToken = ""
+)
+
+type Config struct {
+	AppName                     string
+	AppVersion                  string
+	Mode                        string
+	Environment                 string
+	Port                        string
+	AuthCookieSecure            bool
+	DefaultOrgID                int64
+	AuthJWTSecret               string
+	PaymentProviderConfigSecret string
+
+	OAuth2ClientID     string
+	OAuth2ClientSecret string
+	OAuth2CallbackURL  string
+
+	OTLPEndpoint string
+	StaticDir    string
+	InstanceID   string
+
+	Cloud     CloudConfig
+	Bootstrap BootstrapConfig
+
+	DBType            string
+	DBHost            string
+	DBPort            string
+	DBName            string
+	DBUser            string
+	DBPassword        string
+	DBSSLMode         string
+	DBMaxIdleConn     int
+	DBMaxOpenConn     int
+	DBConnMaxLifetime int
+	DBConnMaxIdleTime int
+
+	RateLimit RateLimitConfig
+	Email     EmailConfig
+	Logger    LoggerConfig
+	Privacy   PrivacyConfig
+}
+
+type EmailConfig struct {
+	SMTPHost     string
+	SMTPPort     int
+	SMTPUsername string
+	SMTPPassword string
+	SMTPFrom     string
+}
+
+type LoggerConfig struct {
+	Level string
+}
+
+type CloudConfig struct {
+	OrganizationID   string
+	OrganizationName string
+	Metrics          CloudMetricsConfig
+}
+
+type CloudMetricsConfig struct {
+	Enabled   bool
+	Exporter  string
+	Endpoint  string
+	AuthToken string
+}
+
+type BootstrapConfig struct {
+	EnsureDefaultOrgAndUser bool
+	AllowSignUp             bool
+	AllowAssignOrg          bool
+	AllowAssignUserRole     string
+	AutoAssignOrgID         string
+	AutoAssignOrgRole       string
+}
+
+type RateLimitConfig struct {
+	Enabled bool
+
+	RedisAddr     string
+	RedisPassword string
+	RedisDB       int
+
+	UsageIngestOrgRate               float64
+	UsageIngestOrgBurst              int
+	UsageIngestEndpointRate          float64
+	UsageIngestEndpointBurst         int
+	UsageIngestConcurrencyTTLSeconds int
+}
+
+type PrivacyConfig struct {
+	WebhookRetentionDays int
+}
+
+type BillingConfig struct {
+	AgingBuckets []AgingBucket `mapstructure:"agingBuckets"`
+	RiskLevels   []RiskLevel   `mapstructure:"riskLevels"`
+}
+
+type AgingBucket struct {
+	Label   string `mapstructure:"label"`
+	MinDays int    `mapstructure:"minDays"`
+	MaxDays *int   `mapstructure:"maxDays"` // pointer = nullable
+}
+
+type RiskLevel struct {
+	Level          string `mapstructure:"level"`
+	MinOutstanding int64  `mapstructure:"minOutstanding"`
+	MinDays        int    `mapstructure:"minDays"`
+}
+
+// Load loads configuration from environment variables and .env file.
+func Load() Config {
+	_ = godotenv.Load()
+
+	// Prioritize RAILZWAY_MODE (new standard) over APP_MODE (legacy)
+	modeEnv := getenv("RAILZWAY_MODE", "")
+	if modeEnv == "" {
+		modeEnv = getenv("APP_MODE", ModeOSS)
+	}
+	mode := normalizeMode(modeEnv)
+
+	environment := getenv("ENVIRONMENT", "development")
+	authCookieSecure := environment == "production"
+	if !authCookieSecure {
+		authCookieSecure = getenvBool("AUTH_COOKIE_SECURE", false)
+	}
+
+	defaultOrgID := getenvInt64("DEFAULT_ORG", 0)
+
+	// Invariant: In Cloud mode, we MUST be single-tenant.
+	// We determine tenancy at deployment time via DEFAULT_ORG.
+	if mode == ModeCloud && defaultOrgID == 0 {
+		log.Fatal("CRITICAL: RAILZWAY_MODE=cloud requires DEFAULT_ORG to be set. This instance is single-tenant.")
+	}
+
+	cfg := Config{
+		AppName:                     getenv("APP_SERVICE", "railzway"),
+		AppVersion:                  getenv("APP_VERSION", DefaultAppVersion),
+		Mode:                        mode,
+		Environment:                 environment,
+		Port:                        getenv("PORT", "8080"),
+		AuthCookieSecure:            authCookieSecure,
+		DefaultOrgID:                defaultOrgID,
+		AuthJWTSecret:               strings.TrimSpace(getenv("AUTH_JWT_SECRET", "")),
+		PaymentProviderConfigSecret: strings.TrimSpace(getenv("PAYMENT_PROVIDER_CONFIG_SECRET", "")),
+		OTLPEndpoint:                getenv("OTLP_ENDPOINT", "localhost:4317"),
+		StaticDir:                   getenv("STATIC_DIR", "apps/admin/dist"),
+		Cloud: CloudConfig{
+			OrganizationID:   strings.TrimSpace(getenv("CLOUD_ORGANIZATION_ID", "")),
+			OrganizationName: getenv("CLOUD_ORGANIZATION_NAME", ""),
+			Metrics: CloudMetricsConfig{
+				Enabled:   getenvBool("CLOUD_METRICS_ENABLED", true),
+				Exporter:  strings.ToLower(getenv("CLOUD_METRICS_EXPORTER", "prometheus_remote_write")),
+				Endpoint:  strings.TrimSpace(getenv("CLOUD_METRICS_ENDPOINT", DefaultCloudMetricsEndpoint)),
+				AuthToken: strings.TrimSpace(getenv("CLOUD_METRICS_AUTH_TOKEN", DefaultCloudMetricsAuthToken)),
+			},
+		},
+		Bootstrap: BootstrapConfig{
+			EnsureDefaultOrgAndUser: getenvBool("ENSURE_DEFAULT_ORG_AND_USER", true),
+			AllowSignUp:             getenvBool("ALLOW_SIGNUP", false),
+			AllowAssignOrg:          getenvBool("ALLOW_ASSIGN_ORG", false),
+			AllowAssignUserRole:     strings.TrimSpace(getenv("ALLOW_ASSIGN_USER_ROLE", "")),
+			AutoAssignOrgID:         strings.TrimSpace(getenv("AUTO_ASSIGN_ORG_ID", "")),
+			AutoAssignOrgRole:       strings.TrimSpace(getenv("AUTO_ASSIGN_ORG_ROLE", "")),
+		},
+		DBType:     getenv("DB_TYPE", "postgres"),
+		DBHost:     getenv("DB_HOST", "localhost"),
+		DBPort:     getenv("DB_PORT", "5433"),
+		DBName:     getenv("DB_NAME", "postgres"),
+		DBUser:     getenv("DB_USER", "postgres"),
+		DBPassword: getenv("DB_PASSWORD", "35411231"),
+		DBSSLMode:  getenv("DB_SSL_MODE", "disable"),
+
+		// Database connection pool settings
+		DBMaxIdleConn:     getenvInt("DB_MAX_IDLE_CONN", 10),
+		DBMaxOpenConn:     getenvInt("DB_MAX_OPEN_CONN", 50),
+		DBConnMaxLifetime: getenvInt("DB_CONN_MAX_LIFETIME", 300),
+		DBConnMaxIdleTime: getenvInt("DB_CONN_MAX_IDLE_TIME", 60),
+
+		// OAuth2 settings
+		OAuth2ClientID:     strings.TrimSpace(getenv("OAUTH2_CLIENT_ID", "")),
+		OAuth2ClientSecret: strings.TrimSpace(getenv("OAUTH2_CLIENT_SECRET", "")),
+
+		// Ratelimit settings
+		RateLimit: RateLimitConfig{
+			Enabled:                          getenvBool("USAGE_INGEST_RATE_LIMIT_ENABLED", true),
+			RedisAddr:                        strings.TrimSpace(getenv("RATE_LIMIT_REDIS_ADDR", "")),
+			RedisPassword:                    strings.TrimSpace(getenv("RATE_LIMIT_REDIS_PASSWORD", "")),
+			RedisDB:                          getenvInt("RATE_LIMIT_REDIS_DB", 0),
+			UsageIngestOrgRate:               getenvFloat("USAGE_INGEST_ORG_RATE", 25),
+			UsageIngestOrgBurst:              getenvInt("USAGE_INGEST_ORG_BURST", 50),
+			UsageIngestEndpointRate:          getenvFloat("USAGE_INGEST_ENDPOINT_RATE", 15),
+			UsageIngestEndpointBurst:         getenvInt("USAGE_INGEST_ENDPOINT_BURST", 30),
+			UsageIngestConcurrencyTTLSeconds: clampInt(getenvInt("USAGE_INGEST_CONCURRENCY_TTL_SECONDS", 3), 2, 5),
+		},
+
+		Email: EmailConfig{
+			SMTPHost:     getenv("SMTP_HOST", "localhost"),
+			SMTPPort:     getenvInt("SMTP_PORT", 1025),
+			SMTPUsername: getenv("SMTP_USERNAME", ""),
+			SMTPPassword: getenv("SMTP_PASSWORD", ""),
+			SMTPFrom:     getenv("SMTP_FROM", "no-reply@railzway.test"),
+		},
+
+		Logger: LoggerConfig{
+			Level: getenv("LOG_LEVEL", "info"),
+		},
+
+		Privacy: PrivacyConfig{
+			WebhookRetentionDays: getenvInt("WEBHOOK_RETENTION_DAYS", 30),
+		},
+
+		InstanceID: loadOrCreateInstanceID(),
+	}
+
+	return cfg
+}
+
+const (
+	ModeOSS        = "oss"
+	ModeCloud      = "cloud"
+	ModeStandalone = "standalone"
+)
+
+func (c Config) IsCloud() bool {
+	return c.Mode == ModeCloud
+}
+
+func normalizeMode(raw string) string {
+	value := strings.ToLower(strings.TrimSpace(raw))
+	switch value {
+	case ModeCloud:
+		return ModeCloud
+	case ModeStandalone, ModeOSS:
+		return ModeOSS
+	default:
+		return ModeOSS
+	}
+}
+
+func getenv(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
+}
+
+func getenvBool(key string, def bool) bool {
+	value := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
+	if value == "" {
+		return def
+	}
+	switch value {
+	case "1", "true", "yes", "y", "on":
+		return true
+	case "0", "false", "no", "n", "off":
+		return false
+	default:
+		return def
+	}
+}
+
+func getenvInt64(key string, def int64) int64 {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return def
+	}
+	parsed, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return def
+	}
+	return parsed
+}
+
+func getenvInt(key string, def int) int {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return def
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return def
+	}
+	return parsed
+}
+
+func getenvFloat(key string, def float64) float64 {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return def
+	}
+	parsed, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return def
+	}
+	return parsed
+}
+
+func clampInt(value, min, max int) int {
+	if value < min {
+		return min
+	}
+	if value > max {
+		return max
+	}
+	return value
+}
+
+func loadOrCreateInstanceID() string {
+	// Priority 1: Explicit env var (user-controlled)
+	id := strings.TrimSpace(os.Getenv("RAILZWAY_INSTANCE_ID"))
+	if id != "" {
+		return id
+	}
+
+	// Priority 2: Read from persistent storage
+	filename := "/var/lib/railzway/.instance_id"
+	data, err := os.ReadFile(filename)
+	if err == nil {
+		return strings.TrimSpace(string(data))
+	}
+
+	// Priority 3: Generate anonymous ID from hostname hash (privacy-safe)
+	hostname := os.Getenv("HOSTNAME")
+	var newID string
+	if hostname != "" {
+		// Hash hostname to ensure privacy (cannot be reversed)
+		hash := sha256.Sum256([]byte(hostname))
+		newID = "inst_" + hex.EncodeToString(hash[:8]) // First 16 hex chars (8 bytes)
+	} else {
+		// Fallback: Generate random anonymous ID
+		newID = "inst_anon_" + strconv.FormatInt(time.Now().UnixNano(), 36)
+	}
+
+	// Try to persist for future restarts
+	_ = os.MkdirAll("/var/lib/railzway", 0755)
+	_ = os.WriteFile(filename, []byte(newID), 0644)
+
+	return newID
+}

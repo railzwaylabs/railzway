@@ -1,0 +1,82 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+:root,
+.light {
+  color-scheme: light;
+
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", "Menlo",
+    monospace;
+
+  /* Primary Light Backgrounds */
+  --bg-primary: 0 0% 100%;
+  /* Pure White */
+  --bg-surface: 210 40% 98%;
+  /* Very light slate */
+  --bg-surface-strong: 210 40% 96.1%;
+  /* Slate-50 */
+  --bg-subtle: 210 40% 93%;
+  /* Slate-100 */
+
+  /* Borders: Delicate and crisp for dashboard feel */
+  --border-subtle: 214 32% 91%;
+  /* Slate-200 */
+  --border-strong: 214 32% 85%;
+  /* Slate-300 */
+
+  /* Text: High Contrast Slate */
+  --text-primary: 222 47% 11%;
+  /* Slate-900 */
+  --text-secondary: 215 25% 27%;
+  /* Slate-700 */
+  --text-muted: 215 16% 47%;
+  /* Slate-500 */
+  --text-inverse: 0 0% 100%;
+  /* White */
+
+  /* Accent: Indigo/Royal Blue */
+  --accent-primary: 243 75% 59%;
+  /* Indigo-600 */
+  --accent-glow: 243 100% 75%;
+  /* Indigo-300 */
+
+  /* Status Colors */
+  --status-success: 151 55% 45%;
+  /* Emerald-600 */
+  --status-warning: 38 92% 50%;
+  /* Amber-500 */
+  --status-error: 0 84% 60%;
+  /* Red-500 */
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-pill: 999px;
+
+  /* Clean, crisp shadows */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-glow: 0 0 20px hsl(243 75% 59% / 0.15);
+  /* Soft indigo glow */
+
+  --blur-xs: 4px;
+  --blur-sm: 8px;
+  --blur-md: 12px;
+  --blur-lg: 16px;
+
+  --z-base: 0;
+  --z-header: 10;
+  --z-overlay: 20;
+  --z-modal: 40;
+  --z-toast: 50;
+
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-slow: 300ms;
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}

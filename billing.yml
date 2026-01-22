@@ -1,0 +1,22 @@
+billing:
+  agingBuckets:
+    - label: "0-30"
+      minDays: 0
+      maxDays: 30
+    - label: "31-60"
+      minDays: 31
+      maxDays: 60
+    - label: "60+"
+      minDays: 61
+      maxDays: null
+
+  riskLevels:
+    - level: high
+      minOutstanding: 1000000
+      minDays: 60
+    - level: medium
+      minOutstanding: 250000
+      minDays: 31
+    - level: low
+      minOutstanding: 0
+      minDays: 0

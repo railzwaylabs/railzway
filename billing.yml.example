@@ -1,0 +1,26 @@
+billing:
+  # Aging buckets for invoice age classification
+  # Used in FinOps dashboard to categorize outstanding invoices
+  agingBuckets:
+    - label: "0-30"
+      minDays: 0
+      maxDays: 30
+    - label: "31-60"
+      minDays: 31
+      maxDays: 60
+    - label: "60+"
+      minDays: 61
+      maxDays: null  # null = no upper limit
+
+  # Risk levels for customer financial health scoring
+  # Based on outstanding amount and days overdue
+  riskLevels:
+    - level: "high"
+      minOutstanding: 1000000  # $10,000 (in cents)
+      minDays: 60
+    - level: "medium"
+      minOutstanding: 250000   # $2,500 (in cents)
+      minDays: 31
+    - level: "low"
+      minOutstanding: 0
+      minDays: 0
