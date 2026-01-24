@@ -1,7 +1,7 @@
 package billingcycle
 
 import (
-	"github.com/smallbiznis/railzway/internal/billingcycle/service"
+	"github.com/railzwaylabs/railzway/internal/billingcycle/service"
 	"go.uber.org/fx"
 )
 

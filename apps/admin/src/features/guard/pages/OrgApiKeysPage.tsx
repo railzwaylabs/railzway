@@ -214,13 +214,13 @@ function ScopeSelector({ availableScopes, value, onChange }: ScopeSelectorProps)
           <IconPlus className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[600px] p-0" align="start" side="bottom" collisionPadding={10}>
+      <PopoverContent className="w-[600px] p-0" align="start" side="right" sideOffset={20} collisionPadding={10}>
         <div className="flex h-[350px]">
           {/* Left Pane: Categories */}
-          <div className="w-[200px] border-r flex flex-col">
-            <Command className="h-full">
+          <div className="w-[200px] border-r flex flex-col h-full">
+            <Command className="h-full flex flex-col">
               <CommandInput placeholder="Search roles..." />
-              <CommandList className="max-h-full overflow-y-auto">
+              <CommandList className="h-[300px] max-h-[300px] overflow-y-auto">
                 <CommandEmpty>No roles found.</CommandEmpty>
                 <CommandGroup heading="Fixed roles">
                   {categories.map((category) => {
@@ -271,7 +271,7 @@ function ScopeSelector({ availableScopes, value, onChange }: ScopeSelectorProps)
                 <div className="p-3 border-b bg-muted/20">
                   <h4 className="font-semibold capitalize text-sm">{activeCategory.replace(/_/g, ' ')} Permissions</h4>
                 </div>
-                <ScrollArea className="flex-1 p-3">
+                <ScrollArea className="h-[300px] p-3">
                   <div className="space-y-3">
                     {/* Wildcard Option */}
                     <div className="flex items-start gap-2 p-2 hover:bg-muted/50 rounded-md">

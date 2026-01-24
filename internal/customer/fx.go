@@ -1,8 +1,8 @@
 package customer
 
 import (
-	"github.com/smallbiznis/railzway/internal/customer/repository"
-	"github.com/smallbiznis/railzway/internal/customer/service"
+	"github.com/railzwaylabs/railzway/internal/customer/repository"
+	"github.com/railzwaylabs/railzway/internal/customer/service"
 	"go.uber.org/fx"
 )
 

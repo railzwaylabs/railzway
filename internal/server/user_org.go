@@ -6,7 +6,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
-	authdomain "github.com/smallbiznis/railzway/internal/auth/domain"
+	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
 )
 
 func (s *Server) ListUserOrgs(c *gin.Context) {

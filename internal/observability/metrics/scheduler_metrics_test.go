@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
-	"github.com/smallbiznis/railzway/internal/authorization"
+	"github.com/railzwaylabs/railzway/internal/authorization"
 	"gorm.io/gorm"
 )
 

@@ -109,14 +109,14 @@ const providerFields: Record<string, ProviderField[]> = {
   ],
   xendit: [
     {
-      key: "secret_key",
-      label: "Secret key",
+      key: "api_key",
+      label: "API key",
       placeholder: "xnd_...",
       type: "password",
     },
     {
-      key: "callback_token",
-      label: "Callback token",
+      key: "webhook_secret",
+      label: "Webhook secret",
       placeholder: "Webhook callback token",
       type: "password",
     },

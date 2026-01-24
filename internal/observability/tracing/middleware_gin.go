@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	obscontext "github.com/smallbiznis/railzway/internal/observability/context"
+	obscontext "github.com/railzwaylabs/railzway/internal/observability/context"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"

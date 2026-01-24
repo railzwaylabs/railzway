@@ -1,8 +1,9 @@
-module github.com/smallbiznis/railzway
+module github.com/railzwaylabs/railzway
 
 go 1.25.3
 
 require (
+	github.com/alicebob/miniredis/v2 v2.36.0
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/casbin/casbin/v2 v2.123.0
 	github.com/casbin/gorm-adapter/v3 v3.39.0
@@ -52,7 +53,6 @@ require (
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/alicebob/miniredis/v2 v2.36.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
 	github.com/boombuler/barcode v1.0.1 // indirect

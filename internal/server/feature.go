@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	featuredomain "github.com/smallbiznis/railzway/internal/feature/domain"
+	featuredomain "github.com/railzwaylabs/railzway/internal/feature/domain"
 )
 
 type createFeatureRequest struct {

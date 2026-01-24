@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	auditdomain "github.com/smallbiznis/railzway/internal/audit/domain"
-	"github.com/smallbiznis/railzway/pkg/db/pagination"
+	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 type listAuditLogsQuery struct {

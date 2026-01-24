@@ -9,10 +9,10 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
-	auditdomain "github.com/smallbiznis/railzway/internal/audit/domain"
-	authconfig "github.com/smallbiznis/railzway/internal/auth/config"
-	authdomain "github.com/smallbiznis/railzway/internal/auth/domain"
-	authfeatures "github.com/smallbiznis/railzway/internal/auth/features"
+	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
+	authconfig "github.com/railzwaylabs/railzway/internal/auth/config"
+	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
+	authfeatures "github.com/railzwaylabs/railzway/internal/auth/features"
 	"gorm.io/gorm"
 )
 

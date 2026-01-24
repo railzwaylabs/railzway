@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/smallbiznis/railzway/pkg/telemetry/correlation"
+	"github.com/railzwaylabs/railzway/pkg/telemetry/correlation"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )

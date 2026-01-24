@@ -1,8 +1,8 @@
 package payment
 
 import (
-	"github.com/smallbiznis/railzway/internal/providers/payment/repository"
-	"github.com/smallbiznis/railzway/internal/providers/payment/service"
+	"github.com/railzwaylabs/railzway/internal/providers/payment/repository"
+	"github.com/railzwaylabs/railzway/internal/providers/payment/service"
 	"go.uber.org/fx"
 )
 

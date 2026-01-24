@@ -7,8 +7,8 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
-	subscriptiondomain "github.com/smallbiznis/railzway/internal/subscription/domain"
-	"github.com/smallbiznis/railzway/pkg/db/pagination"
+	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 // @Summary      Create Subscription

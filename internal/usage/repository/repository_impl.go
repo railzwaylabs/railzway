@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	usagedomain "github.com/smallbiznis/railzway/internal/usage/domain"
+	usagedomain "github.com/railzwaylabs/railzway/internal/usage/domain"
 	"gorm.io/gorm"
 )
 

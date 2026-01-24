@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	auditdomain "github.com/smallbiznis/railzway/internal/audit/domain"
-	billingopsdomain "github.com/smallbiznis/railzway/internal/billingoperations/domain"
+	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
+	billingopsdomain "github.com/railzwaylabs/railzway/internal/billingoperations/domain"
 	"gorm.io/gorm"
 )
 

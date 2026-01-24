@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/internal/billingoperations/domain"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
+	"github.com/railzwaylabs/railzway/internal/billingoperations/domain"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
 )
 
 func (s *Service) ListOverdueInvoices(ctx context.Context, limit int) (domain.OverdueInvoicesResponse, error) {

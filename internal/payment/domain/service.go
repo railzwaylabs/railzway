@@ -22,4 +22,7 @@ var (
 	ErrInvalidCurrency       = errors.New("invalid_currency")
 	ErrInvalidConfig         = errors.New("invalid_config")
 	ErrEventAlreadyProcessed = errors.New("event_already_processed")
+	ErrPaymentMethodNotFound = errors.New("payment_method_not_found")
+	ErrInvalidPaymentMethod  = errors.New("invalid_payment_method")
 )
+

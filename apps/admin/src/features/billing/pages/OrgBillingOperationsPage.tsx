@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { useOrgStore } from "@/stores/orgStore"
 import { canManageBilling } from "@/lib/roles"
+import { RestrictedFeature } from "@/components/RestrictedFeature"
+import { FeatureLockedState } from "@/components/FeatureLockedState"
 
 import { InboxTab } from "../components/InboxTab"
 import { MyWorkTab } from "../components/MyWorkTab"
@@ -108,12 +110,24 @@ export default function OrgBillingOperationsPage() {
         </TabsContent>
         {isManager && (
           <TabsContent value="team" className="mt-0">
-            <TeamViewTab />
+            <RestrictedFeature
+              feature="sso"
+              description="Team workload visibility is available in Railzway Plus."
+              fallback={<FeatureLockedState title="Team View is Locked" description="Gain visibility into your team's workload, assignment distribution, and performance metrics with Railzway Plus." />}
+            >
+              <TeamViewTab />
+            </RestrictedFeature>
           </TabsContent>
         )}
         {isManager && (
           <TabsContent value="exposure" className="mt-0">
-            <ExposureAnalysisTab />
+            <RestrictedFeature
+              feature="sso"
+              description="Financial exposure analysis is available in Railzway Plus."
+              fallback={<FeatureLockedState title="Exposure Analysis is Locked" description="Unlock predictive financial risk modeling and aggregated exposure insights with Railzway Plus." />}
+            >
+              <ExposureAnalysisTab />
+            </RestrictedFeature>
           </TabsContent>
         )}
       </Tabs>

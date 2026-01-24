@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	authdomain "github.com/smallbiznis/railzway/internal/auth/domain"
+	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
 )
 
 type Service interface {

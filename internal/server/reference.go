@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	referencedomain "github.com/smallbiznis/railzway/internal/reference/domain"
+	referencedomain "github.com/railzwaylabs/railzway/internal/reference/domain"
 )
 
 // Prevent unused import removal

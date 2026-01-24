@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/smallbiznis/railzway/internal/config"
-	obslogger "github.com/smallbiznis/railzway/internal/observability/logger"
+	"github.com/railzwaylabs/railzway/internal/config"
+	obslogger "github.com/railzwaylabs/railzway/internal/observability/logger"
 	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 	"go.uber.org/fx"
 	"go.uber.org/zap"

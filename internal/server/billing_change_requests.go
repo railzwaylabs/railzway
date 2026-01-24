@@ -6,7 +6,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
-	approvalservice "github.com/smallbiznis/railzway/internal/billingoperations/service"
+	approvalservice "github.com/railzwaylabs/railzway/internal/billingoperations/service"
 )
 
 // RequestBillingCycleReRating handles POST /admin/billing/cycles/:id/request-rerating

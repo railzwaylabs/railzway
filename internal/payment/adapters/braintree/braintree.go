@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	paymentdomain "github.com/smallbiznis/railzway/internal/payment/domain"
+	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
 )
 
 type Factory struct{}
@@ -190,6 +190,26 @@ func extractXMLTag(xml, tag string) string {
 		return ""
 	}
 	return strings.TrimSpace(xml[start : start+end])
+}
+
+// AttachPaymentMethod (stub - not implemented for Braintree yet)
+func (a *Adapter) AttachPaymentMethod(ctx context.Context, customerProviderID, token string) (*paymentdomain.PaymentMethodDetails, error) {
+	return nil, paymentdomain.ErrInvalidProvider
+}
+
+// DetachPaymentMethod (stub - not implemented for Braintree yet)
+func (a *Adapter) DetachPaymentMethod(ctx context.Context, paymentMethodID string) error {
+	return paymentdomain.ErrInvalidProvider
+}
+
+// GetPaymentMethod (stub - not implemented for Braintree yet)
+func (a *Adapter) GetPaymentMethod(ctx context.Context, paymentMethodID string) (*paymentdomain.PaymentMethodDetails, error) {
+	return nil, paymentdomain.ErrInvalidProvider
+}
+
+// ListPaymentMethods (stub - not implemented for Braintree yet)
+func (a *Adapter) ListPaymentMethods(ctx context.Context, customerProviderID string) ([]*paymentdomain.PaymentMethodDetails, error) {
+	return nil, paymentdomain.ErrInvalidProvider
 }
 
 func readString(config map[string]any, key string) (string, bool) {

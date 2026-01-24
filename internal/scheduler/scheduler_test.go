@@ -8,8 +8,8 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
-	"github.com/smallbiznis/railzway/internal/clock"
-	obsmetrics "github.com/smallbiznis/railzway/internal/observability/metrics"
+	"github.com/railzwaylabs/railzway/internal/clock"
+	obsmetrics "github.com/railzwaylabs/railzway/internal/observability/metrics"
 	"go.uber.org/zap"
 )
 

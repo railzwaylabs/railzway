@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { LoginForm } from "@/components/login-form"
 import { useAuthStore } from "@/stores/authStore"
+import logo from "@/assets/primary.svg"
 
 type AuthProvider = {
   name: string
@@ -51,8 +52,8 @@ function CloudLogin({ providers, redirectTo }: { providers: AuthProvider[]; redi
     <div className="flex min-h-screen items-center justify-center bg-bg-subtle/40 px-4 py-12">
       <Card className="w-full max-w-lg">
         <CardHeader className="items-center text-center">
-          <img src="/primary.svg" className="mb-4 size-14" alt="Railzway logo" />
-          <CardTitle className="text-2xl">Welcome to Railzway Cloud</CardTitle>
+          <img src={logo} className="mb-4 size-14" alt="Railzway logo" />
+          <CardTitle className="text-2xl">Welcome to Railzway</CardTitle>
           <CardDescription>Sign in using your Railzway account.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

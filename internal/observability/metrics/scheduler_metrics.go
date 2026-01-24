@@ -9,8 +9,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/smallbiznis/railzway/internal/authorization"
-	billingcycledomain "github.com/smallbiznis/railzway/internal/billingcycle/domain"
+	"github.com/railzwaylabs/railzway/internal/authorization"
+	billingcycledomain "github.com/railzwaylabs/railzway/internal/billingcycle/domain"
 	"gorm.io/gorm"
 )
 

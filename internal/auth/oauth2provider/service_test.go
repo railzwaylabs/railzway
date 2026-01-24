@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	authdomain "github.com/smallbiznis/railzway/internal/auth/domain"
-	"github.com/smallbiznis/railzway/pkg/db"
+	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
+	"github.com/railzwaylabs/railzway/pkg/db"
 )
 
 type staticClock struct {

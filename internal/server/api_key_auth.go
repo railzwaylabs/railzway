@@ -9,11 +9,11 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
-	apikeydomain "github.com/smallbiznis/railzway/internal/apikey/domain"
-	auditdomain "github.com/smallbiznis/railzway/internal/audit/domain"
-	auditcontext "github.com/smallbiznis/railzway/internal/auditcontext"
-	obscontext "github.com/smallbiznis/railzway/internal/observability/context"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
+	apikeydomain "github.com/railzwaylabs/railzway/internal/apikey/domain"
+	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
+	auditcontext "github.com/railzwaylabs/railzway/internal/auditcontext"
+	obscontext "github.com/railzwaylabs/railzway/internal/observability/context"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
 )
 
 const (
@@ -27,10 +27,8 @@ const (
 // Organization identity is derived solely from the api_keys table.
 func (s *Server) APIKeyRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if requestHasOrgID(c) {
-			AbortWithError(c, ErrUnauthorized)
-			return
-		}
+		// We allow explicit Org ID but it MUST match the API key's org.
+		// Validation happens after key lookup.
 
 		header := strings.TrimSpace(c.GetHeader("Authorization"))
 		if header == "" {
@@ -43,7 +41,6 @@ func (s *Server) APIKeyRequired() gin.HandlerFunc {
 			AbortWithError(c, ErrUnauthorized)
 			return
 		}
-
 
 		if !s.apiKeyLimiter.Allow(parts[1]) {
 			AbortWithError(c, ErrRateLimited)
@@ -77,6 +74,20 @@ func (s *Server) APIKeyRequired() gin.HandlerFunc {
 		if record.ID == 0 || subtle.ConstantTimeCompare([]byte(record.KeyHash), []byte(hash)) != 1 {
 			AbortWithError(c, ErrUnauthorized)
 			return
+		}
+
+		// Strictly enforce that if X-Org-Id (or params) is provided, it matches the API Key's org.
+		if requestHasOrgID(c) {
+			requestedOrgID, err := s.orgIDFromRequest(c)
+			if err != nil {
+				AbortWithError(c, err)
+				return
+			}
+			if requestedOrgID != record.OrgID {
+				// Mismatch between Token Identity and Requested Scope
+				AbortWithError(c, ErrUnauthorized) 
+				return
+			}
 		}
 
 		ctx := c.Request.Context()

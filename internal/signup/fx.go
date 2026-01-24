@@ -2,8 +2,8 @@ package signup
 
 import (
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/internal/config"
-	"github.com/smallbiznis/railzway/internal/signup/domain"
+	"github.com/railzwaylabs/railzway/internal/config"
+	"github.com/railzwaylabs/railzway/internal/signup/domain"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 )

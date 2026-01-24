@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	disputedomain "github.com/smallbiznis/railzway/internal/payment/dispute/domain"
-	paymentdomain "github.com/smallbiznis/railzway/internal/payment/domain"
+	disputedomain "github.com/railzwaylabs/railzway/internal/payment/dispute/domain"
+	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
 )
 
 type Factory struct{}
@@ -38,15 +38,23 @@ func (f *Factory) NewAdapter(cfg paymentdomain.AdapterConfig) (paymentdomain.Pay
 		return nil, paymentdomain.ErrInvalidConfig
 	}
 
+	// Extract API key for payment method operations
+	apiKey, ok := readString(cfg.Config, "api_key")
+	if !ok {
+		apiKey = "" // API key is optional for webhook-only usage
+	}
+
 	return &Adapter{
 		orgID:         cfg.OrgID,
 		webhookSecret: secret,
+		apiKey:        strings.TrimSpace(apiKey),
 	}, nil
 }
 
 type Adapter struct {
 	orgID         snowflake.ID
 	webhookSecret string
+	apiKey        string
 }
 
 func (a *Adapter) Verify(ctx context.Context, payload []byte, headers http.Header) error {
@@ -363,6 +371,180 @@ func readMetadataValue(metadata map[string]any, key string) string {
 		return strconv.Itoa(cast)
 	}
 	return ""
+}
+
+// AttachPaymentMethod attaches a payment method to a customer
+func (a *Adapter) AttachPaymentMethod(ctx context.Context, customerProviderID, token string) (*paymentdomain.PaymentMethodDetails, error) {
+	if a.apiKey == "" {
+		return nil, errors.New("stripe api key not configured")
+	}
+
+	// Call Stripe API: POST /v1/payment_methods/{token}/attach
+	url := fmt.Sprintf("https://api.stripe.com/v1/payment_methods/%s/attach", token)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, strings.NewReader(fmt.Sprintf("customer=%s", customerProviderID)))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+a.apiKey)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("stripe api error: %d", resp.StatusCode)
+	}
+
+	var pm stripePaymentMethod
+	if err := json.NewDecoder(resp.Body).Decode(&pm); err != nil {
+		return nil, err
+	}
+
+	return &paymentdomain.PaymentMethodDetails{
+		ID:       pm.ID,
+		Type:     pm.Type,
+		Last4:    pm.Card.Last4,
+		Brand:    pm.Card.Brand,
+		ExpMonth: pm.Card.ExpMonth,
+		ExpYear:  pm.Card.ExpYear,
+	}, nil
+}
+
+// DetachPaymentMethod detaches a payment method
+func (a *Adapter) DetachPaymentMethod(ctx context.Context, paymentMethodID string) error {
+	if a.apiKey == "" {
+		return errors.New("stripe api key not configured")
+	}
+
+	// Call Stripe API: POST /v1/payment_methods/{id}/detach
+	url := fmt.Sprintf("https://api.stripe.com/v1/payment_methods/%s/detach", paymentMethodID)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+a.apiKey)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("stripe api error: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+// GetPaymentMethod retrieves payment method details
+func (a *Adapter) GetPaymentMethod(ctx context.Context, paymentMethodID string) (*paymentdomain.PaymentMethodDetails, error) {
+	if a.apiKey == "" {
+		return nil, errors.New("stripe api key not configured")
+	}
+
+	// Call Stripe API: GET /v1/payment_methods/{id}
+	url := fmt.Sprintf("https://api.stripe.com/v1/payment_methods/%s", paymentMethodID)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+a.apiKey)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("stripe api error: %d", resp.StatusCode)
+	}
+
+	var pm stripePaymentMethod
+	if err := json.NewDecoder(resp.Body).Decode(&pm); err != nil {
+		return nil, err
+	}
+
+	return &paymentdomain.PaymentMethodDetails{
+		ID:       pm.ID,
+		Type:     pm.Type,
+		Last4:    pm.Card.Last4,
+		Brand:    pm.Card.Brand,
+		ExpMonth: pm.Card.ExpMonth,
+		ExpYear:  pm.Card.ExpYear,
+	}, nil
+}
+
+// ListPaymentMethods lists customer payment methods
+func (a *Adapter) ListPaymentMethods(ctx context.Context, customerProviderID string) ([]*paymentdomain.PaymentMethodDetails, error) {
+	if a.apiKey == "" {
+		return nil, errors.New("stripe api key not configured")
+	}
+
+	// Call Stripe API: GET /v1/payment_methods?customer={id}&type=card
+	url := fmt.Sprintf("https://api.stripe.com/v1/payment_methods?customer=%s&type=card", customerProviderID)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+a.apiKey)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("stripe api error: %d", resp.StatusCode)
+	}
+
+	var listResp stripePaymentMethodList
+	if err := json.NewDecoder(resp.Body).Decode(&listResp); err != nil {
+		return nil, err
+	}
+
+	result := make([]*paymentdomain.PaymentMethodDetails, len(listResp.Data))
+	for i, pm := range listResp.Data {
+		result[i] = &paymentdomain.PaymentMethodDetails{
+			ID:       pm.ID,
+			Type:     pm.Type,
+			Last4:    pm.Card.Last4,
+			Brand:    pm.Card.Brand,
+			ExpMonth: pm.Card.ExpMonth,
+			ExpYear:  pm.Card.ExpYear,
+		}
+	}
+
+	return result, nil
+}
+
+// Stripe API response structures
+type stripePaymentMethod struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+	Card struct {
+		Last4    string `json:"last4"`
+		Brand    string `json:"brand"`
+		ExpMonth int    `json:"exp_month"`
+		ExpYear  int    `json:"exp_year"`
+	} `json:"card"`
+}
+
+type stripePaymentMethodList struct {
+	Data []stripePaymentMethod `json:"data"`
 }
 
 func readString(config map[string]any, key string) (string, bool) {

@@ -2,22 +2,24 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	billingcycledomain "github.com/smallbiznis/railzway/internal/billingcycle/domain"
-	"github.com/smallbiznis/railzway/internal/clock"
-	invoicedomain "github.com/smallbiznis/railzway/internal/invoice/domain"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
-	pricedomain "github.com/smallbiznis/railzway/internal/price/domain"
-	priceamount "github.com/smallbiznis/railzway/internal/priceamount/domain"
-	productfeaturedomain "github.com/smallbiznis/railzway/internal/productfeature/domain"
-	quotadomain "github.com/smallbiznis/railzway/internal/quota/domain"
-	subscriptiondomain "github.com/smallbiznis/railzway/internal/subscription/domain"
-	"github.com/smallbiznis/railzway/pkg/db/option"
-	"github.com/smallbiznis/railzway/pkg/db/pagination"
-	"github.com/smallbiznis/railzway/pkg/repository"
+	billingcycledomain "github.com/railzwaylabs/railzway/internal/billingcycle/domain"
+	"github.com/railzwaylabs/railzway/internal/clock"
+	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
+	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
+	priceamount "github.com/railzwaylabs/railzway/internal/priceamount/domain"
+	productfeaturedomain "github.com/railzwaylabs/railzway/internal/productfeature/domain"
+	quotadomain "github.com/railzwaylabs/railzway/internal/quota/domain"
+	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/option"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
+	"github.com/railzwaylabs/railzway/pkg/repository"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
@@ -38,6 +40,7 @@ type Service struct {
 	priceamountsvc     priceamount.Service
 	productFeatureRepo productfeaturedomain.Repository
 	quotaSvc           quotadomain.Service
+	paymentMethodSvc   paymentdomain.PaymentMethodService
 }
 
 type ServiceParam struct {
@@ -53,6 +56,7 @@ type ServiceParam struct {
 	PriceAmountsvc     priceamount.Service
 	ProductFeatureRepo productfeaturedomain.Repository
 	QuotaSvc           quotadomain.Service
+	PaymentMethodSvc   paymentdomain.PaymentMethodService
 }
 
 func NewService(p ServiceParam) subscriptiondomain.Service {
@@ -70,6 +74,7 @@ func NewService(p ServiceParam) subscriptiondomain.Service {
 		priceamountsvc:     p.PriceAmountsvc,
 		productFeatureRepo: p.ProductFeatureRepo,
 		quotaSvc:           p.QuotaSvc,
+		paymentMethodSvc:   p.PaymentMethodSvc,
 	}
 }
 
@@ -265,6 +270,19 @@ func (s *Service) Create(ctx context.Context, req subscriptiondomain.CreateSubsc
 	collectionMode, err := parseCollectionMode(string(req.CollectionMode))
 	if err != nil {
 		return subscriptiondomain.CreateSubscriptionResponse{}, err
+	}
+
+	// Validate payment method if charging automatically
+	if collectionMode == subscriptiondomain.ChargeAutomatically {
+		// Check for default payment method
+		_, err := s.paymentMethodSvc.GetDefaultPaymentMethod(ctx, customerID)
+		if err != nil {
+			// Determine if it is a not found error
+			if errors.Is(err, paymentdomain.ErrPaymentMethodNotFound) {
+				return subscriptiondomain.CreateSubscriptionResponse{}, subscriptiondomain.ErrMissingPaymentMethod
+			}
+			return subscriptiondomain.CreateSubscriptionResponse{}, err
+		}
 	}
 
 	now := s.clock.Now()

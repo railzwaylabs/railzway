@@ -7,7 +7,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
-	schedulertesting "github.com/smallbiznis/railzway/internal/scheduler/testing"
+	schedulertesting "github.com/railzwaylabs/railzway/internal/scheduler/testing"
 )
 
 // RegisterDevBillingRoutes adds development-only billing endpoints

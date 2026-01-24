@@ -1,9 +1,9 @@
 package providers
 
 import (
-	"github.com/smallbiznis/railzway/internal/payment"
-	"github.com/smallbiznis/railzway/internal/providers/email"
-	"github.com/smallbiznis/railzway/internal/providers/pdf"
+	"github.com/railzwaylabs/railzway/internal/payment"
+	"github.com/railzwaylabs/railzway/internal/providers/email"
+	"github.com/railzwaylabs/railzway/internal/providers/pdf"
 	"go.uber.org/fx"
 )
 

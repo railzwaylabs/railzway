@@ -3,7 +3,7 @@ package oauth2provider
 import (
 	"time"
 
-	"github.com/smallbiznis/railzway/internal/config"
+	"github.com/railzwaylabs/railzway/internal/config"
 )
 
 // Config holds OAuth2 provider configuration.

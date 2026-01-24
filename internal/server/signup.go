@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-	authdomain "github.com/smallbiznis/railzway/internal/auth/domain"
+	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
 )
 
 type SignupRequest struct {

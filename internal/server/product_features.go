@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	productfeaturedomain "github.com/smallbiznis/railzway/internal/productfeature/domain"
+	productfeaturedomain "github.com/railzwaylabs/railzway/internal/productfeature/domain"
 )
 
 type replaceProductFeaturesRequest struct {

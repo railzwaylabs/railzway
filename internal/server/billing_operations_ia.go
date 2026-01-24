@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	auditcontext "github.com/smallbiznis/railzway/internal/auditcontext"
-	billingoperationsdomain "github.com/smallbiznis/railzway/internal/billingoperations/domain"
+	auditcontext "github.com/railzwaylabs/railzway/internal/auditcontext"
+	billingoperationsdomain "github.com/railzwaylabs/railzway/internal/billingoperations/domain"
 )
 
 // IA Endpoints (Task-Centric Views)

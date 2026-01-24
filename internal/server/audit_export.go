@@ -8,7 +8,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
-	auditdomain "github.com/smallbiznis/railzway/internal/audit/domain"
+	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
 )
 
 // ExportAuditLogs handles GET /api/v1/audit/export

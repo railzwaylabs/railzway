@@ -7,7 +7,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
-	organizationdomain "github.com/smallbiznis/railzway/internal/organization/domain"
+	organizationdomain "github.com/railzwaylabs/railzway/internal/organization/domain"
 )
 
 type createOrganizationRequest struct {

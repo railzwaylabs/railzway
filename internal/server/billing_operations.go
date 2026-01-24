@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/smallbiznis/railzway/internal/auditcontext"
-	billingoperationsdomain "github.com/smallbiznis/railzway/internal/billingoperations/domain"
+	"github.com/railzwaylabs/railzway/internal/auditcontext"
+	billingoperationsdomain "github.com/railzwaylabs/railzway/internal/billingoperations/domain"
 )
 
 type billingOperationsActionRequest struct {

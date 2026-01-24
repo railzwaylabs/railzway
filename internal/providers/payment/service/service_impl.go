@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	auditdomain "github.com/smallbiznis/railzway/internal/audit/domain"
-	auditmasking "github.com/smallbiznis/railzway/internal/audit/masking"
-	"github.com/smallbiznis/railzway/internal/config"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
-	"github.com/smallbiznis/railzway/internal/providers/payment/domain"
+	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
+	auditmasking "github.com/railzwaylabs/railzway/internal/audit/masking"
+	"github.com/railzwaylabs/railzway/internal/config"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	"github.com/railzwaylabs/railzway/internal/providers/payment/domain"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
@@ -276,6 +276,82 @@ func (s *Service) encryptConfig(config map[string]any) (datatypes.JSON, error) {
 	}
 
 	return datatypes.JSON(out), nil
+}
+
+func (s *Service) GetActiveProviderConfig(ctx context.Context, orgID snowflake.ID, provider string) (*domain.ProviderConfig, error) {
+	provider = strings.ToLower(strings.TrimSpace(provider))
+	if provider == "" {
+		return nil, domain.ErrInvalidProvider
+	}
+
+	cfg, err := s.repo.FindConfig(ctx, s.db, int64(orgID), provider)
+	if err != nil {
+		return nil, err
+	}
+	if cfg == nil {
+		return nil, domain.ErrNotFound
+	}
+	if !cfg.IsActive {
+		return nil, domain.ErrNotFound // Not active technically means not available
+	}
+
+	decrypted, err := s.decryptConfig(cfg.Config)
+	if err != nil {
+		return nil, err
+	}
+	cfg.Config = decrypted
+
+	return cfg, nil
+}
+
+func (s *Service) decryptConfig(raw datatypes.JSON) (datatypes.JSON, error) {
+	if len(s.encKey) == 0 {
+		return nil, domain.ErrEncryptionKeyMissing
+	}
+
+	var encoded encryptedPayload
+	if err := json.Unmarshal(raw, &encoded); err != nil {
+		// Fallback: maybe it's not encrypted? (Should not happen in prod but good for migration)
+		return raw, nil
+	}
+
+	if encoded.Version != 1 {
+		return nil, domain.ErrInvalidConfig
+	}
+
+	nonce, err := base64.RawStdEncoding.DecodeString(encoded.Nonce)
+	if err != nil {
+		return nil, domain.ErrInvalidConfig
+	}
+	ciphertext, err := base64.RawStdEncoding.DecodeString(encoded.Ciphertext)
+	if err != nil {
+		return nil, domain.ErrInvalidConfig
+	}
+
+	block, err := aes.NewCipher(s.encKey)
+	if err != nil {
+		return nil, err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return nil, domain.ErrInvalidConfig // Failed to decrypt
+	}
+
+	// Re-marshal to datatypes.JSON? Or actually usually we want map[string]any
+	// The ProviderConfig struct expects datatypes.JSON which is []byte. 
+	// So we can just return the plaintext if it is JSON.
+	// But let's verify it is valid JSON map.
+	var verify map[string]any
+	if err := json.Unmarshal(plaintext, &verify); err != nil {
+		return nil, err
+	}
+
+	return datatypes.JSON(plaintext), nil
 }
 
 func normalizeConfig(config map[string]any) map[string]any {

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	pricetierdomain "github.com/smallbiznis/railzway/internal/pricetier/domain"
+	pricetierdomain "github.com/railzwaylabs/railzway/internal/pricetier/domain"
 )
 
 // @Summary      List Price Tiers

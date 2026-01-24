@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	featuredomain "github.com/smallbiznis/railzway/internal/feature/domain"
+	featuredomain "github.com/railzwaylabs/railzway/internal/feature/domain"
 )
 
 type FeatureAssignment struct {

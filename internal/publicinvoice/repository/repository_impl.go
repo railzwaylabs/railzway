@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	ledgerdomain "github.com/smallbiznis/railzway/internal/ledger/domain"
-	publicinvoicedomain "github.com/smallbiznis/railzway/internal/publicinvoice/domain"
+	ledgerdomain "github.com/railzwaylabs/railzway/internal/ledger/domain"
+	publicinvoicedomain "github.com/railzwaylabs/railzway/internal/publicinvoice/domain"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )

@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/snowflake"
-	billingopsdomain "github.com/smallbiznis/railzway/internal/billingoperations/domain"
-	ledgerdomain "github.com/smallbiznis/railzway/internal/ledger/domain"
-	paymentdomain "github.com/smallbiznis/railzway/internal/payment/domain"
+	billingopsdomain "github.com/railzwaylabs/railzway/internal/billingoperations/domain"
+	ledgerdomain "github.com/railzwaylabs/railzway/internal/ledger/domain"
+	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )

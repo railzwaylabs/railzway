@@ -7,8 +7,8 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
-	authscope "github.com/smallbiznis/railzway/internal/auth/scope"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
+	authscope "github.com/railzwaylabs/railzway/internal/auth/scope"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
 )
 
 type ActorType string

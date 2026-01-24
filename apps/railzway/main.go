@@ -2,13 +2,13 @@ package main
 
 import (
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/internal/clock"
-	"github.com/smallbiznis/railzway/internal/migration"
-	"github.com/smallbiznis/railzway/internal/observability"
-	"github.com/smallbiznis/railzway/internal/redis"
-	"github.com/smallbiznis/railzway/internal/scheduler"
-	"github.com/smallbiznis/railzway/internal/server"
-	"github.com/smallbiznis/railzway/pkg/db"
+	"github.com/railzwaylabs/railzway/internal/clock"
+	"github.com/railzwaylabs/railzway/internal/migration"
+	"github.com/railzwaylabs/railzway/internal/observability"
+	"github.com/railzwaylabs/railzway/internal/redis"
+	"github.com/railzwaylabs/railzway/internal/scheduler"
+	"github.com/railzwaylabs/railzway/internal/server"
+	"github.com/railzwaylabs/railzway/pkg/db"
 	"go.uber.org/fx"
 )
 

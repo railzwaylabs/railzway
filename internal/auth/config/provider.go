@@ -12,4 +12,7 @@ type AuthProviderConfig struct {
 	APIURL       string
 	Scopes       []string
 	AllowSignUp  bool
+	
+	// RequiresLicense indicates if this provider requires a valid license (e.g. 'sso' capability).
+	RequiresLicense bool
 }

@@ -10,77 +10,78 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/smallbiznis/railzway/internal/apikey"
-	apikeydomain "github.com/smallbiznis/railzway/internal/apikey/domain"
-	"github.com/smallbiznis/railzway/internal/audit"
-	auditdomain "github.com/smallbiznis/railzway/internal/audit/domain"
-	"github.com/smallbiznis/railzway/internal/auth"
-	authdomain "github.com/smallbiznis/railzway/internal/auth/domain"
-	authlocal "github.com/smallbiznis/railzway/internal/auth/local"
-	authoauth "github.com/smallbiznis/railzway/internal/auth/oauth"
-	authoauth2provider "github.com/smallbiznis/railzway/internal/auth/oauth2provider"
-	"github.com/smallbiznis/railzway/internal/auth/session"
-	"github.com/smallbiznis/railzway/internal/authorization"
-	"github.com/smallbiznis/railzway/internal/billingdashboard"
-	billingdashboarddomain "github.com/smallbiznis/railzway/internal/billingdashboard/domain"
-	billingrollup "github.com/smallbiznis/railzway/internal/billingdashboard/rollup"
-	"github.com/smallbiznis/railzway/internal/billingoperations"
-	billingoperationsdomain "github.com/smallbiznis/railzway/internal/billingoperations/domain"
-	"github.com/smallbiznis/railzway/internal/billingoverview"
-	billingoverviewdomain "github.com/smallbiznis/railzway/internal/billingoverview/domain"
-	"github.com/smallbiznis/railzway/internal/cloudmetrics"
-	"github.com/smallbiznis/railzway/internal/config"
-	"github.com/smallbiznis/railzway/internal/customer"
-	customerdomain "github.com/smallbiznis/railzway/internal/customer/domain"
-	"github.com/smallbiznis/railzway/internal/events"
-	"github.com/smallbiznis/railzway/internal/feature"
-	featuredomain "github.com/smallbiznis/railzway/internal/feature/domain"
-	"github.com/smallbiznis/railzway/internal/invoice"
-	invoicedomain "github.com/smallbiznis/railzway/internal/invoice/domain"
-	"github.com/smallbiznis/railzway/internal/invoicetemplate"
-	invoicetemplatedomain "github.com/smallbiznis/railzway/internal/invoicetemplate/domain"
-	"github.com/smallbiznis/railzway/internal/ledger"
-	"github.com/smallbiznis/railzway/internal/meter"
-	meterdomain "github.com/smallbiznis/railzway/internal/meter/domain"
-	"github.com/smallbiznis/railzway/internal/observability"
-	obsmiddleware "github.com/smallbiznis/railzway/internal/observability/logger"
-	obsmetrics "github.com/smallbiznis/railzway/internal/observability/metrics"
-	obstracing "github.com/smallbiznis/railzway/internal/observability/tracing"
-	"github.com/smallbiznis/railzway/internal/organization"
-	organizationdomain "github.com/smallbiznis/railzway/internal/organization/domain"
-	"github.com/smallbiznis/railzway/internal/payment"
-	paymentdomain "github.com/smallbiznis/railzway/internal/payment/domain"
-	"github.com/smallbiznis/railzway/internal/price"
-	pricedomain "github.com/smallbiznis/railzway/internal/price/domain"
-	"github.com/smallbiznis/railzway/internal/priceamount"
-	priceamountdomain "github.com/smallbiznis/railzway/internal/priceamount/domain"
-	"github.com/smallbiznis/railzway/internal/pricetier"
-	pricetierdomain "github.com/smallbiznis/railzway/internal/pricetier/domain"
-	"github.com/smallbiznis/railzway/internal/product"
-	productdomain "github.com/smallbiznis/railzway/internal/product/domain"
-	"github.com/smallbiznis/railzway/internal/productfeature"
-	productfeaturedomain "github.com/smallbiznis/railzway/internal/productfeature/domain"
+	"github.com/railzwaylabs/railzway/internal/apikey"
+	apikeydomain "github.com/railzwaylabs/railzway/internal/apikey/domain"
+	"github.com/railzwaylabs/railzway/internal/audit"
+	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
+	"github.com/railzwaylabs/railzway/internal/auth"
+	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
+	authlocal "github.com/railzwaylabs/railzway/internal/auth/local"
+	authoauth "github.com/railzwaylabs/railzway/internal/auth/oauth"
+	authoauth2provider "github.com/railzwaylabs/railzway/internal/auth/oauth2provider"
+	"github.com/railzwaylabs/railzway/internal/auth/session"
+	"github.com/railzwaylabs/railzway/internal/authorization"
+	"github.com/railzwaylabs/railzway/internal/billingdashboard"
+	billingdashboarddomain "github.com/railzwaylabs/railzway/internal/billingdashboard/domain"
+	billingrollup "github.com/railzwaylabs/railzway/internal/billingdashboard/rollup"
+	"github.com/railzwaylabs/railzway/internal/billingoperations"
+	billingoperationsdomain "github.com/railzwaylabs/railzway/internal/billingoperations/domain"
+	"github.com/railzwaylabs/railzway/internal/billingoverview"
+	billingoverviewdomain "github.com/railzwaylabs/railzway/internal/billingoverview/domain"
+	"github.com/railzwaylabs/railzway/internal/cloudmetrics"
+	"github.com/railzwaylabs/railzway/internal/config"
+	"github.com/railzwaylabs/railzway/internal/customer"
+	customerdomain "github.com/railzwaylabs/railzway/internal/customer/domain"
+	"github.com/railzwaylabs/railzway/internal/events"
+	"github.com/railzwaylabs/railzway/internal/feature"
+	featuredomain "github.com/railzwaylabs/railzway/internal/feature/domain"
+	"github.com/railzwaylabs/railzway/internal/invoice"
+	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
+	"github.com/railzwaylabs/railzway/internal/invoicetemplate"
+	invoicetemplatedomain "github.com/railzwaylabs/railzway/internal/invoicetemplate/domain"
+	"github.com/railzwaylabs/railzway/internal/ledger"
+	"github.com/railzwaylabs/railzway/internal/license"
+	"github.com/railzwaylabs/railzway/internal/meter"
+	meterdomain "github.com/railzwaylabs/railzway/internal/meter/domain"
+	"github.com/railzwaylabs/railzway/internal/observability"
+	obsmiddleware "github.com/railzwaylabs/railzway/internal/observability/logger"
+	obsmetrics "github.com/railzwaylabs/railzway/internal/observability/metrics"
+	obstracing "github.com/railzwaylabs/railzway/internal/observability/tracing"
+	"github.com/railzwaylabs/railzway/internal/organization"
+	organizationdomain "github.com/railzwaylabs/railzway/internal/organization/domain"
+	"github.com/railzwaylabs/railzway/internal/payment"
+	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
+	"github.com/railzwaylabs/railzway/internal/price"
+	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
+	"github.com/railzwaylabs/railzway/internal/priceamount"
+	priceamountdomain "github.com/railzwaylabs/railzway/internal/priceamount/domain"
+	"github.com/railzwaylabs/railzway/internal/pricetier"
+	pricetierdomain "github.com/railzwaylabs/railzway/internal/pricetier/domain"
+	"github.com/railzwaylabs/railzway/internal/product"
+	productdomain "github.com/railzwaylabs/railzway/internal/product/domain"
+	"github.com/railzwaylabs/railzway/internal/productfeature"
+	productfeaturedomain "github.com/railzwaylabs/railzway/internal/productfeature/domain"
 
-	"github.com/smallbiznis/railzway/internal/providers/email"
-	paymentprovider "github.com/smallbiznis/railzway/internal/providers/payment"
-	paymentproviderdomain "github.com/smallbiznis/railzway/internal/providers/payment/domain"
-	"github.com/smallbiznis/railzway/internal/providers/pdf"
-	"github.com/smallbiznis/railzway/internal/publicinvoice"
-	publicinvoicedomain "github.com/smallbiznis/railzway/internal/publicinvoice/domain"
-	"github.com/smallbiznis/railzway/internal/quota"
-	"github.com/smallbiznis/railzway/internal/ratelimit"
-	"github.com/smallbiznis/railzway/internal/rating"
-	ratingdomain "github.com/smallbiznis/railzway/internal/rating/domain"
-	"github.com/smallbiznis/railzway/internal/reference"
-	referencedomain "github.com/smallbiznis/railzway/internal/reference/domain"
-	"github.com/smallbiznis/railzway/internal/scheduler"
-	signupdomain "github.com/smallbiznis/railzway/internal/signup/domain"
-	"github.com/smallbiznis/railzway/internal/subscription"
-	subscriptiondomain "github.com/smallbiznis/railzway/internal/subscription/domain"
-	taxdomain "github.com/smallbiznis/railzway/internal/tax/domain"
-	"github.com/smallbiznis/railzway/internal/usage"
-	usagedomain "github.com/smallbiznis/railzway/internal/usage/domain"
-	"github.com/smallbiznis/railzway/internal/usage/liveevents"
+	"github.com/railzwaylabs/railzway/internal/providers/email"
+	paymentprovider "github.com/railzwaylabs/railzway/internal/providers/payment"
+	paymentproviderdomain "github.com/railzwaylabs/railzway/internal/providers/payment/domain"
+	"github.com/railzwaylabs/railzway/internal/providers/pdf"
+	"github.com/railzwaylabs/railzway/internal/publicinvoice"
+	publicinvoicedomain "github.com/railzwaylabs/railzway/internal/publicinvoice/domain"
+	"github.com/railzwaylabs/railzway/internal/quota"
+	"github.com/railzwaylabs/railzway/internal/ratelimit"
+	"github.com/railzwaylabs/railzway/internal/rating"
+	ratingdomain "github.com/railzwaylabs/railzway/internal/rating/domain"
+	"github.com/railzwaylabs/railzway/internal/reference"
+	referencedomain "github.com/railzwaylabs/railzway/internal/reference/domain"
+	"github.com/railzwaylabs/railzway/internal/scheduler"
+	signupdomain "github.com/railzwaylabs/railzway/internal/signup/domain"
+	"github.com/railzwaylabs/railzway/internal/subscription"
+	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
+	taxdomain "github.com/railzwaylabs/railzway/internal/tax/domain"
+	"github.com/railzwaylabs/railzway/internal/usage"
+	usagedomain "github.com/railzwaylabs/railzway/internal/usage/domain"
+	"github.com/railzwaylabs/railzway/internal/usage/liveevents"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 )
@@ -114,6 +115,7 @@ var Module = fx.Module("http.server",
 	product.Module,
 	productfeature.Module,
 	feature.Module,
+	license.Module,
 	payment.Module,
 	paymentprovider.Module,
 	publicinvoice.Module,
@@ -230,8 +232,11 @@ type Server struct {
 	publicPaymentIntentLimiter  *rateLimiter
 	publicPaymentMethodsLimiter *rateLimiter
 	publicPaymentMethodsCache   *paymentMethodsCache
+	paymentMethodSvc            paymentdomain.PaymentMethodService
+	paymentMethodConfigSvc      paymentdomain.PaymentMethodConfigService
 
-	scheduler *scheduler.Scheduler `optional:"true"`
+	licenseSvc *license.Service
+	scheduler  *scheduler.Scheduler `optional:"true"`
 }
 
 type ServerParams struct {
@@ -274,8 +279,11 @@ type ServerParams struct {
 	PublicInvoiceSvc     publicinvoicedomain.Service     `optional:"true"`
 	ObsMetrics           *obsmetrics.Metrics             `optional:"true"`
 	UsageLimiter         *ratelimit.UsageIngestLimiter   `optional:"true"`
+	PaymentMethodSvc     paymentdomain.PaymentMethodService
+	PaymentMethodConfigSvc paymentdomain.PaymentMethodConfigService
 
-	Scheduler *scheduler.Scheduler `optional:"true"`
+	LicenseSvc *license.Service
+	Scheduler  *scheduler.Scheduler `optional:"true"`
 }
 
 func NewServer(p ServerParams) *Server {
@@ -288,7 +296,7 @@ func NewServer(p ServerParams) *Server {
 		sessions:                    p.Sessions,
 		genID:                       p.GenID,
 		apiKeySvc:                   p.APIKeySvc,
-		apiKeyLimiter:               newRateLimiter(5, 10*time.Minute),
+		apiKeyLimiter:               newRateLimiter(100, 10*time.Minute),
 		authzSvc:                    p.AuthzSvc,
 		auditSvc:                    p.AuditSvc,
 		auditExportSvc:              p.AuditExportSvc,
@@ -322,6 +330,9 @@ func NewServer(p ServerParams) *Server {
 		publicPaymentIntentLimiter:  newRateLimiter(5, time.Minute),
 		publicPaymentMethodsLimiter: newRateLimiter(30, time.Minute),
 		publicPaymentMethodsCache:   newPaymentMethodsCache(2 * time.Minute),
+		paymentMethodSvc:            p.PaymentMethodSvc,
+		paymentMethodConfigSvc:      p.PaymentMethodConfigSvc,
+		licenseSvc:                  p.LicenseSvc,
 		scheduler:                   p.Scheduler,
 	}
 
@@ -341,6 +352,13 @@ func (s *Server) RegisterAuthRoutes() {
 	auth.POST("/change-password", s.WebAuthRequired(), s.ChangePassword)
 	auth.POST("/forgot", s.Forgot)
 	auth.GET("/me", s.Me)
+
+	// SSO Configuration (Requires 'sso' capability)
+	sso := auth.Group("/sso", s.WebAuthRequired(), s.RequireCapability("sso"))
+	{
+		sso.GET("/config", s.GetSSOConfig)
+		sso.POST("/config", s.UpdateSSOConfig)
+	}
 
 	user := auth.Group("/user", s.WebAuthRequired())
 	{
@@ -433,11 +451,26 @@ func (s *Server) RegisterAPIRoutes() {
 	// -------- Payment Webhooks --------
 	api.POST("/payments/webhooks/:provider", s.HandlePaymentWebhook)
 
+	// -------- Payment Methods (Customer) --------
+	api.GET("/payment-methods/available", s.APIKeyRequired(), s.ListAvailablePaymentMethods) // Public lookup
+	api.GET("/customers/:id/payment-methods", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectCustomer, authorization.ActionCustomerView), s.ListCustomerPaymentMethods)
+	api.POST("/customers/:id/payment-methods", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectCustomer, authorization.ActionCustomerUpdate), s.AttachPaymentMethod)
+	api.DELETE("/customers/:id/payment-methods/:pm_id", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectCustomer, authorization.ActionCustomerUpdate), s.DetachPaymentMethod)
+	api.POST("/customers/:id/payment-methods/:pm_id/default", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectCustomer, authorization.ActionCustomerUpdate), s.SetDefaultPaymentMethod)
+
 	api.POST("/usage", s.APIKeyRequired(), s.UsageIngestRateLimit(), s.authorizeOrgAction(authorization.ObjectUsage, authorization.ActionUsageIngest), s.IngestUsage)
 
 	if s.cfg.Environment != "production" {
 		api.POST("/test/cleanup", s.TestCleanup)
+		// Test endpoint for license enforcement (requires 'sso' capability)
+		api.GET("/test/license-check", s.LicenseContext(), s.RequireCapability("sso"), func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "You have SSO capability"})
+		})
 	}
+
+	// -------- System (License / Capabilities) --------
+	// Accessed via API Key or Auth Header
+	api.GET("/system/capabilities", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectOrganization, authorization.ActionOrganizationView), s.GetSystemCapabilities)
 }
 
 func (s *Server) RegisterAdminRoutes() {
@@ -545,13 +578,13 @@ func (s *Server) RegisterAdminRoutes() {
 	// -------- FinOps Performance --------
 	admin.GET("/finops/performance/me", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleMember, organizationdomain.RoleFinOps), s.GetBillingOperationsPerformanceMe)
 	admin.GET("/finops/performance/team", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.GetBillingOperationsPerformanceTeam)
-	admin.GET("/finops/exposure-analysis", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.GetExposureAnalysis)
+	admin.GET("/finops/exposure-analysis", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.RequireCapability("sso"), s.GetExposureAnalysis)
 
 	// -------- Billing Operations IA (Task-Centric Views) --------
 	admin.GET("/billing-operations/inbox", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleMember, organizationdomain.RoleFinOps), s.GetBillingOperationsInbox)
 	admin.GET("/billing-operations/my-work", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleMember, organizationdomain.RoleFinOps), s.GetBillingOperationsMyWork)
 	admin.GET("/billing-operations/recently-resolved", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleMember, organizationdomain.RoleFinOps), s.GetBillingOperationsRecentlyResolved)
-	admin.GET("/billing-operations/team", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.GetBillingOperationsTeamView)
+	admin.GET("/billing-operations/team", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.RequireCapability("sso"), s.GetBillingOperationsTeamView)
 	admin.GET("/billing-operations/invoices/:id/payments", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.GetBillingOperationsInvoicePayments)
 
 	admin.GET("/organizations/:id/members", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleMember, organizationdomain.RoleFinOps), s.ListOrganizationMembers)
@@ -577,6 +610,12 @@ func (s *Server) RegisterAdminRoutes() {
 	admin.POST("/payment-providers", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.UpsertPaymentProviderConfig)
 	admin.PATCH("/payment-providers/:provider", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.UpdatePaymentProviderStatus)
 
+	// -------- Payment Methods (Config) --------
+	admin.GET("/payment-method-configs", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.ListPaymentMethodConfigs)
+	admin.POST("/payment-method-configs", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.UpsertPaymentMethodConfig)
+	admin.DELETE("/payment-method-configs/:id", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.DeletePaymentMethodConfig)
+	admin.POST("/payment-method-configs/:id/toggle", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.TogglePaymentMethodConfig)
+
 	// -------- Customers --------
 	admin.GET("/customers", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.ListCustomers)
 	admin.POST("/customers", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.CreateCustomer)
@@ -589,6 +628,34 @@ func (s *Server) RegisterAdminRoutes() {
 	admin.POST("/api-keys", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectAPIKey, authorization.ActionAPIKeyCreate), s.CreateAPIKey)
 	admin.POST("/api-keys/:key_id/reveal", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectAPIKey, authorization.ActionAPIKeyRotate), s.RevealAPIKey)
 	admin.POST("/api-keys/:key_id/revoke", s.RequireRole(organizationdomain.RoleOwner), s.authorizeOrgAction(authorization.ObjectAPIKey, authorization.ActionAPIKeyRevoke), s.RevokeAPIKey)
+
+	admin.GET("/system/capabilities", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.GetSystemCapabilities)
+}
+
+func (s *Server) GetSSOConfig(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status": "enabled", 
+		"provider": "saml",
+		"message": "You are seeing this because your license includes 'sso'.",
+	})
+}
+
+func (s *Server) UpdateSSOConfig(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status": "updated",
+		"message": "SSO configuration updated (stub).",
+	})
+}
+
+func (s *Server) GetSystemCapabilities(c *gin.Context) {
+	caps := s.licenseSvc.Capabilities()
+	meta := s.licenseSvc.Metadata()
+
+	c.JSON(http.StatusOK, gin.H{
+		"plan":       meta.Plan,
+		"expires_at": meta.ExpiresAt,
+		"features":   caps,
+	})
 }
 
 func (s *Server) RegisterUIRoutes() {
@@ -662,6 +729,7 @@ func (s *Server) RegisterUIRoutes() {
 			settings := org.Group("/settings", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin))
 			{
 				settings.GET("/", s.serveIndex)
+				settings.GET("/license", s.serveIndex)
 			}
 		}
 	}

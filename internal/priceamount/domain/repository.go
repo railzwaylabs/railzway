@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/pkg/db/option"
+	"github.com/railzwaylabs/railzway/pkg/db/option"
 	"gorm.io/gorm"
 )
 

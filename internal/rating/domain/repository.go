@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	subscriptiondomain "github.com/smallbiznis/railzway/internal/subscription/domain"
+	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
 )
 
 type Repository interface {

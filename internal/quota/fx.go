@@ -1,8 +1,8 @@
 package quota
 
 import (
-	"github.com/smallbiznis/railzway/internal/quota/domain"
-	"github.com/smallbiznis/railzway/internal/quota/service"
+	"github.com/railzwaylabs/railzway/internal/quota/domain"
+	"github.com/railzwaylabs/railzway/internal/quota/service"
 	"go.uber.org/fx"
 )
 

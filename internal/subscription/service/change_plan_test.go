@@ -7,11 +7,12 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/glebarez/sqlite"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
-	pricedomain "github.com/smallbiznis/railzway/internal/price/domain"
-	priceamountdomain "github.com/smallbiznis/railzway/internal/priceamount/domain"
-	productfeaturedomain "github.com/smallbiznis/railzway/internal/productfeature/domain"
-	subscriptiondomain "github.com/smallbiznis/railzway/internal/subscription/domain"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
+	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
+	priceamountdomain "github.com/railzwaylabs/railzway/internal/priceamount/domain"
+	productfeaturedomain "github.com/railzwaylabs/railzway/internal/productfeature/domain"
+	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -203,6 +204,7 @@ func TestChangePlan(t *testing.T) {
 		ProductFeatureRepo: pfRepo,
 		// PriceAmountsvc needed for loadPriceAmount if pricing model not flat
 		PriceAmountsvc: &mockPriceAmountService{},
+        PaymentMethodSvc: &mockPaymentMethodService{},
 	})
 
 	// Create active subscription
@@ -300,4 +302,22 @@ func (m *mockPriceAmountService) List(ctx context.Context, req priceamountdomain
 }
 func (m *mockPriceAmountService) Get(ctx context.Context, req priceamountdomain.GetPriceAmountByID) (*priceamountdomain.Response, error) {
 	return nil, nil
+}
+
+type mockPaymentMethodService struct{}
+
+func (m *mockPaymentMethodService) AttachPaymentMethod(ctx context.Context, customerID snowflake.ID, provider, token string) (*paymentdomain.PaymentMethod, error) {
+	return nil, nil
+}
+func (m *mockPaymentMethodService) DetachPaymentMethod(ctx context.Context, customerID, paymentMethodID snowflake.ID) error {
+	return nil
+}
+func (m *mockPaymentMethodService) ListPaymentMethods(ctx context.Context, customerID snowflake.ID) ([]*paymentdomain.PaymentMethod, error) {
+	return nil, nil
+}
+func (m *mockPaymentMethodService) SetDefaultPaymentMethod(ctx context.Context, customerID, paymentMethodID snowflake.ID) error {
+	return nil
+}
+func (m *mockPaymentMethodService) GetDefaultPaymentMethod(ctx context.Context, customerID snowflake.ID) (*paymentdomain.PaymentMethod, error) {
+	return &paymentdomain.PaymentMethod{ID: 1}, nil
 }
