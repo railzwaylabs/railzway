@@ -33,6 +33,9 @@ const OrgSettings = lazy(() => import("@/features/billing/pages/OrgSettings"))
 const OrgPaymentProvidersPage = lazy(
   () => import("@/features/billing/pages/OrgPaymentProvidersPage")
 )
+const OrgPaymentMethodConfigsPage = lazy(
+  () => import("@/features/payment/pages/OrgPaymentMethodConfigsPage")
+)
 
 const OrgApiKeysPage = lazy(() => import("@/features/guard/pages/OrgApiKeysPage"))
 const OrgAuditLogsPage = lazy(() => import("@/features/guard/pages/OrgAuditLogsPage"))
@@ -276,6 +279,10 @@ export const router = createBrowserRouter([
           {
             path: "payment-providers",
             element: withFeatureBoundary(<OrgPaymentProvidersPage />),
+          },
+          {
+            path: "payment-method-configs",
+            element: withFeatureBoundary(<OrgPaymentMethodConfigsPage />),
           },
           {
             path: "customers",

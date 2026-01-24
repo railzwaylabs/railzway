@@ -127,4 +127,5 @@ var (
 	ErrSubscriptionItemNotFound  = errors.New("subscription_item_not_found")
 	ErrFeatureNotEntitled        = errors.New("feature_not_entitled")
 	ErrInvalidSubscriptionStatus = errors.New("invalid_subscription_status")
+	ErrMissingPaymentMethod      = errors.New("missing_payment_method")
 )

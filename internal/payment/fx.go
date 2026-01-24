@@ -5,6 +5,7 @@ import (
 	"github.com/smallbiznis/railzway/internal/payment/adapters/adyen"
 	"github.com/smallbiznis/railzway/internal/payment/adapters/braintree"
 	"github.com/smallbiznis/railzway/internal/payment/adapters/stripe"
+	"github.com/smallbiznis/railzway/internal/payment/adapters/xendit"
 	disputerepo "github.com/smallbiznis/railzway/internal/payment/dispute/repository"
 	disputeservice "github.com/smallbiznis/railzway/internal/payment/dispute/service"
 	"github.com/smallbiznis/railzway/internal/payment/repository"
@@ -21,9 +22,12 @@ var Module = fx.Module("payment.service",
 			stripe.NewFactory(),
 			adyen.NewFactory(),
 			braintree.NewFactory(),
+			xendit.NewFactory(),
 		)
 	}),
 	fx.Provide(paymentservice.NewService),
 	fx.Provide(disputeservice.NewService),
 	fx.Provide(webhook.NewService),
+	fx.Provide(paymentservice.NewPaymentMethodService),
+	fx.Provide(paymentservice.NewPaymentMethodConfigService),
 )

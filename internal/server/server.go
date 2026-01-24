@@ -230,6 +230,8 @@ type Server struct {
 	publicPaymentIntentLimiter  *rateLimiter
 	publicPaymentMethodsLimiter *rateLimiter
 	publicPaymentMethodsCache   *paymentMethodsCache
+	paymentMethodSvc            paymentdomain.PaymentMethodService
+	paymentMethodConfigSvc      paymentdomain.PaymentMethodConfigService
 
 	scheduler *scheduler.Scheduler `optional:"true"`
 }
@@ -274,6 +276,8 @@ type ServerParams struct {
 	PublicInvoiceSvc     publicinvoicedomain.Service     `optional:"true"`
 	ObsMetrics           *obsmetrics.Metrics             `optional:"true"`
 	UsageLimiter         *ratelimit.UsageIngestLimiter   `optional:"true"`
+	PaymentMethodSvc     paymentdomain.PaymentMethodService
+	PaymentMethodConfigSvc paymentdomain.PaymentMethodConfigService
 
 	Scheduler *scheduler.Scheduler `optional:"true"`
 }
@@ -288,7 +292,7 @@ func NewServer(p ServerParams) *Server {
 		sessions:                    p.Sessions,
 		genID:                       p.GenID,
 		apiKeySvc:                   p.APIKeySvc,
-		apiKeyLimiter:               newRateLimiter(5, 10*time.Minute),
+		apiKeyLimiter:               newRateLimiter(100, 10*time.Minute),
 		authzSvc:                    p.AuthzSvc,
 		auditSvc:                    p.AuditSvc,
 		auditExportSvc:              p.AuditExportSvc,
@@ -322,6 +326,8 @@ func NewServer(p ServerParams) *Server {
 		publicPaymentIntentLimiter:  newRateLimiter(5, time.Minute),
 		publicPaymentMethodsLimiter: newRateLimiter(30, time.Minute),
 		publicPaymentMethodsCache:   newPaymentMethodsCache(2 * time.Minute),
+		paymentMethodSvc:            p.PaymentMethodSvc,
+		paymentMethodConfigSvc:      p.PaymentMethodConfigSvc,
 		scheduler:                   p.Scheduler,
 	}
 
@@ -432,6 +438,13 @@ func (s *Server) RegisterAPIRoutes() {
 
 	// -------- Payment Webhooks --------
 	api.POST("/payments/webhooks/:provider", s.HandlePaymentWebhook)
+
+	// -------- Payment Methods (Customer) --------
+	api.GET("/payment-methods/available", s.APIKeyRequired(), s.ListAvailablePaymentMethods) // Public lookup
+	api.GET("/customers/:id/payment-methods", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectCustomer, authorization.ActionCustomerView), s.ListCustomerPaymentMethods)
+	api.POST("/customers/:id/payment-methods", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectCustomer, authorization.ActionCustomerUpdate), s.AttachPaymentMethod)
+	api.DELETE("/customers/:id/payment-methods/:pm_id", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectCustomer, authorization.ActionCustomerUpdate), s.DetachPaymentMethod)
+	api.POST("/customers/:id/payment-methods/:pm_id/default", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectCustomer, authorization.ActionCustomerUpdate), s.SetDefaultPaymentMethod)
 
 	api.POST("/usage", s.APIKeyRequired(), s.UsageIngestRateLimit(), s.authorizeOrgAction(authorization.ObjectUsage, authorization.ActionUsageIngest), s.IngestUsage)
 
@@ -576,6 +589,12 @@ func (s *Server) RegisterAdminRoutes() {
 	admin.GET("/payment-providers", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.ListPaymentProviderConfigs)
 	admin.POST("/payment-providers", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.UpsertPaymentProviderConfig)
 	admin.PATCH("/payment-providers/:provider", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.UpdatePaymentProviderStatus)
+
+	// -------- Payment Methods (Config) --------
+	admin.GET("/payment-method-configs", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.ListPaymentMethodConfigs)
+	admin.POST("/payment-method-configs", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.UpsertPaymentMethodConfig)
+	admin.DELETE("/payment-method-configs/:id", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.DeletePaymentMethodConfig)
+	admin.POST("/payment-method-configs/:id/toggle", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.TogglePaymentMethodConfig)
 
 	// -------- Customers --------
 	admin.GET("/customers", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.ListCustomers)

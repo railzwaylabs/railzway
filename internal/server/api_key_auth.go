@@ -44,7 +44,6 @@ func (s *Server) APIKeyRequired() gin.HandlerFunc {
 			return
 		}
 
-
 		if !s.apiKeyLimiter.Allow(parts[1]) {
 			AbortWithError(c, ErrRateLimited)
 			return

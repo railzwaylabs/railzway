@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/smallbiznis/railzway/internal/clock"
 	invoicedomain "github.com/smallbiznis/railzway/internal/invoice/domain"
 	"github.com/smallbiznis/railzway/internal/orgcontext"
+	paymentdomain "github.com/smallbiznis/railzway/internal/payment/domain"
 	pricedomain "github.com/smallbiznis/railzway/internal/price/domain"
 	priceamount "github.com/smallbiznis/railzway/internal/priceamount/domain"
 	productfeaturedomain "github.com/smallbiznis/railzway/internal/productfeature/domain"
@@ -38,6 +40,7 @@ type Service struct {
 	priceamountsvc     priceamount.Service
 	productFeatureRepo productfeaturedomain.Repository
 	quotaSvc           quotadomain.Service
+	paymentMethodSvc   paymentdomain.PaymentMethodService
 }
 
 type ServiceParam struct {
@@ -53,6 +56,7 @@ type ServiceParam struct {
 	PriceAmountsvc     priceamount.Service
 	ProductFeatureRepo productfeaturedomain.Repository
 	QuotaSvc           quotadomain.Service
+	PaymentMethodSvc   paymentdomain.PaymentMethodService
 }
 
 func NewService(p ServiceParam) subscriptiondomain.Service {
@@ -70,6 +74,7 @@ func NewService(p ServiceParam) subscriptiondomain.Service {
 		priceamountsvc:     p.PriceAmountsvc,
 		productFeatureRepo: p.ProductFeatureRepo,
 		quotaSvc:           p.QuotaSvc,
+		paymentMethodSvc:   p.PaymentMethodSvc,
 	}
 }
 
@@ -265,6 +270,19 @@ func (s *Service) Create(ctx context.Context, req subscriptiondomain.CreateSubsc
 	collectionMode, err := parseCollectionMode(string(req.CollectionMode))
 	if err != nil {
 		return subscriptiondomain.CreateSubscriptionResponse{}, err
+	}
+
+	// Validate payment method if charging automatically
+	if collectionMode == subscriptiondomain.ChargeAutomatically {
+		// Check for default payment method
+		_, err := s.paymentMethodSvc.GetDefaultPaymentMethod(ctx, customerID)
+		if err != nil {
+			// Determine if it is a not found error
+			if errors.Is(err, paymentdomain.ErrPaymentMethodNotFound) {
+				return subscriptiondomain.CreateSubscriptionResponse{}, subscriptiondomain.ErrMissingPaymentMethod
+			}
+			return subscriptiondomain.CreateSubscriptionResponse{}, err
+		}
 	}
 
 	now := s.clock.Now()

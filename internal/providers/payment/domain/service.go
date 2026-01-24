@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 	"errors"
+
+	"github.com/bwmarrin/snowflake"
 )
 
 type Service interface {
@@ -10,6 +12,7 @@ type Service interface {
 	ListConfigs(ctx context.Context) ([]ConfigSummary, error)
 	UpsertConfig(ctx context.Context, req UpsertRequest) (*ConfigSummary, error)
 	SetActive(ctx context.Context, provider string, isActive bool) (*ConfigSummary, error)
+	GetActiveProviderConfig(ctx context.Context, orgID snowflake.ID, provider string) (*ProviderConfig, error)
 }
 
 type CatalogProviderResponse struct {

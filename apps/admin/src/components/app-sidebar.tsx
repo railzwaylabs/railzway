@@ -16,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { BarChart3, Copy, CreditCard, Gauge, History, Home, Key, Package, Receipt, RefreshCcw, Settings, Tag, Users, Zap } from "lucide-react"
+import { BarChart3, Copy, CreditCard, Gauge, History, Home, Key, Package, Receipt, RefreshCcw, Settings, Tag, Users, Wallet, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -93,6 +93,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Payment providers",
       url: `${orgBasePath}/payment-providers`,
       icon: CreditCard,
+    },
+    {
+      title: "Payment methods",
+      url: `${orgBasePath}/payment-method-configs`,
+      icon: Wallet,
     },
     {
       title: "Audit Logs",

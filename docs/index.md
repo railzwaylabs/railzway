@@ -36,9 +36,10 @@ Each concept is documented independently, but designed to work together.
 Billing determines **what should be billed**.
 Payments determine **how money moves**.
 
-Railzway owns billing.
-Payments are intentionally out of scope.
+Railzway owns billing and **orchestrates** payments.
+It delegates actual processing to specialized providers.
 
+→ `payment-services.md`
 → `why-railzway-does-not-handle-payments.md`
 
 ---

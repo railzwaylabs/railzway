@@ -241,6 +241,26 @@ func convertEventDate(dateStr string) time.Time {
 	return t.UTC()
 }
 
+// AttachPaymentMethod (stub - not implemented for Adyen yet)
+func (a *Adapter) AttachPaymentMethod(ctx context.Context, customerProviderID, token string) (*paymentdomain.PaymentMethodDetails, error) {
+	return nil, paymentdomain.ErrInvalidProvider
+}
+
+// DetachPaymentMethod (stub - not implemented for Adyen yet)
+func (a *Adapter) DetachPaymentMethod(ctx context.Context, paymentMethodID string) error {
+	return paymentdomain.ErrInvalidProvider
+}
+
+// GetPaymentMethod (stub - not implemented for Adyen yet)
+func (a *Adapter) GetPaymentMethod(ctx context.Context, paymentMethodID string) (*paymentdomain.PaymentMethodDetails, error) {
+	return nil, paymentdomain.ErrInvalidProvider
+}
+
+// ListPaymentMethods (stub - not implemented for Adyen yet)
+func (a *Adapter) ListPaymentMethods(ctx context.Context, customerProviderID string) ([]*paymentdomain.PaymentMethodDetails, error) {
+	return nil, paymentdomain.ErrInvalidProvider
+}
+
 
 func readString(config map[string]any, key string) (string, bool) {
 	val, ok := config[key]
