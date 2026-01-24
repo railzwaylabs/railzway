@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/smallbiznis/railzway/internal/config"
-	"github.com/smallbiznis/railzway/pkg/telemetry/correlation"
+	"github.com/railzwaylabs/railzway/internal/config"
+	"github.com/railzwaylabs/railzway/pkg/telemetry/correlation"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"

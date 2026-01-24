@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	authdomain "github.com/smallbiznis/railzway/internal/auth/domain"
-	organizationdomain "github.com/smallbiznis/railzway/internal/organization/domain"
+	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
+	organizationdomain "github.com/railzwaylabs/railzway/internal/organization/domain"
 )
 
 type inviteMembersRequest struct {

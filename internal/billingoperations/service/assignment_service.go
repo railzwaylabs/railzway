@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	auditcontext "github.com/smallbiznis/railzway/internal/auditcontext"
-	"github.com/smallbiznis/railzway/internal/billingoperations/domain"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
+	auditcontext "github.com/railzwaylabs/railzway/internal/auditcontext"
+	"github.com/railzwaylabs/railzway/internal/billingoperations/domain"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"

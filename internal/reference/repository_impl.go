@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/smallbiznis/railzway/internal/reference/domain"
+	"github.com/railzwaylabs/railzway/internal/reference/domain"
 	"gorm.io/gorm"
 )
 

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	invoicedomain "github.com/smallbiznis/railzway/internal/invoice/domain"
+	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
 )
 
 // PublicInvoiceTokenService ensures a finalized invoice has exactly one active public access token.

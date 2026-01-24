@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/smallbiznis/railzway/internal/billingoperations/domain"
+	"github.com/railzwaylabs/railzway/internal/billingoperations/domain"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"

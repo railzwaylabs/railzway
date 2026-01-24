@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	ratingdomain "github.com/smallbiznis/railzway/internal/rating/domain"
-	subscriptiondomain "github.com/smallbiznis/railzway/internal/subscription/domain"
-	usagedomain "github.com/smallbiznis/railzway/internal/usage/domain"
+	ratingdomain "github.com/railzwaylabs/railzway/internal/rating/domain"
+	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
+	usagedomain "github.com/railzwaylabs/railzway/internal/usage/domain"
 	"gorm.io/gorm"
 )
 

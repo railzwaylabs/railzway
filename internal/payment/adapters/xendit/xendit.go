@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	paymentdomain "github.com/smallbiznis/railzway/internal/payment/domain"
+	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
 )
 
 // Factory creates Xendit adapters

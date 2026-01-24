@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/smallbiznis/railzway/internal/billingdashboard/rollup"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
+	"github.com/railzwaylabs/railzway/internal/billingdashboard/rollup"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
 )
 
 type rebuildBillingSnapshotsRequest struct {

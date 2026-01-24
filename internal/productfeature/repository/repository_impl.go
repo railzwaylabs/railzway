@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/internal/productfeature/domain"
+	"github.com/railzwaylabs/railzway/internal/productfeature/domain"
 	"gorm.io/gorm"
 )
 

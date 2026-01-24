@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	disputedomain "github.com/smallbiznis/railzway/internal/payment/dispute/domain"
-	paymentdomain "github.com/smallbiznis/railzway/internal/payment/domain"
+	disputedomain "github.com/railzwaylabs/railzway/internal/payment/dispute/domain"
+	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
 )
 
 type Factory struct{}

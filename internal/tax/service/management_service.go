@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
-	taxdomain "github.com/smallbiznis/railzway/internal/tax/domain"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	taxdomain "github.com/railzwaylabs/railzway/internal/tax/domain"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )

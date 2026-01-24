@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	authdomain "github.com/smallbiznis/railzway/internal/auth/domain"
-	"github.com/smallbiznis/railzway/internal/auth/password"
-	invoicedomain "github.com/smallbiznis/railzway/internal/invoice/domain"
-	invoicetemplatedomain "github.com/smallbiznis/railzway/internal/invoicetemplate/domain"
-	organizationdomain "github.com/smallbiznis/railzway/internal/organization/domain"
+	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
+	"github.com/railzwaylabs/railzway/internal/auth/password"
+	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
+	invoicetemplatedomain "github.com/railzwaylabs/railzway/internal/invoicetemplate/domain"
+	organizationdomain "github.com/railzwaylabs/railzway/internal/organization/domain"
 	"gorm.io/gorm"
 )
 

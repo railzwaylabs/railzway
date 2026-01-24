@@ -14,8 +14,8 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/google/uuid"
-	"github.com/smallbiznis/railzway/internal/auth/domain"
-	"github.com/smallbiznis/railzway/internal/auth/password"
+	"github.com/railzwaylabs/railzway/internal/auth/domain"
+	"github.com/railzwaylabs/railzway/internal/auth/password"
 	"go.uber.org/zap"
 )
 

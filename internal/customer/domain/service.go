@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/smallbiznis/railzway/pkg/db/pagination"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 type ListCustomerRequest struct {

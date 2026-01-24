@@ -57,6 +57,12 @@ type Config struct {
 	Email     EmailConfig
 	Logger    LoggerConfig
 	Privacy   PrivacyConfig
+	License   LicenseConfig
+}
+
+type LicenseConfig struct {
+	PublicKey string
+	FilePath  string
 }
 
 type EmailConfig struct {
@@ -231,6 +237,10 @@ func Load() Config {
 		},
 
 		InstanceID: loadOrCreateInstanceID(),
+		License: LicenseConfig{
+			PublicKey: strings.TrimSpace(getenv("RAILZWAY_LICENSE_PUBLIC_KEY", "")),
+			FilePath:  strings.TrimSpace(getenv("RAILZWAY_LICENSE_FILE_PATH", "")),
+		},
 	}
 
 	return cfg

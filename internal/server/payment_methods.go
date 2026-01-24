@@ -6,8 +6,8 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
-	"github.com/smallbiznis/railzway/internal/payment/domain"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	"github.com/railzwaylabs/railzway/internal/payment/domain"
 	"gorm.io/datatypes"
 )
 

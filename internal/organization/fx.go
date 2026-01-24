@@ -1,9 +1,9 @@
 package organization
 
 import (
-	"github.com/smallbiznis/railzway/internal/organization/event"
-	"github.com/smallbiznis/railzway/internal/organization/repository"
-	"github.com/smallbiznis/railzway/internal/organization/service"
+	"github.com/railzwaylabs/railzway/internal/organization/event"
+	"github.com/railzwaylabs/railzway/internal/organization/repository"
+	"github.com/railzwaylabs/railzway/internal/organization/service"
 	"go.uber.org/fx"
 )
 

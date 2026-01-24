@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	authdomain "github.com/smallbiznis/railzway/internal/auth/domain"
+	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
 	"go.uber.org/zap"
 )
 

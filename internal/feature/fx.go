@@ -1,8 +1,8 @@
 package feature
 
 import (
-	"github.com/smallbiznis/railzway/internal/feature/repository"
-	"github.com/smallbiznis/railzway/internal/feature/service"
+	"github.com/railzwaylabs/railzway/internal/feature/repository"
+	"github.com/railzwaylabs/railzway/internal/feature/service"
 	"go.uber.org/fx"
 )
 

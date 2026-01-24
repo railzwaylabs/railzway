@@ -9,10 +9,10 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
-	authdomain "github.com/smallbiznis/railzway/internal/auth/domain"
-	"github.com/smallbiznis/railzway/internal/auth/session"
-	"github.com/smallbiznis/railzway/internal/config"
-	orgdomain "github.com/smallbiznis/railzway/internal/organization/domain"
+	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
+	"github.com/railzwaylabs/railzway/internal/auth/session"
+	"github.com/railzwaylabs/railzway/internal/config"
+	orgdomain "github.com/railzwaylabs/railzway/internal/organization/domain"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )

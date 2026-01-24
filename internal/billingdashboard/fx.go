@@ -1,8 +1,8 @@
 package billingdashboard
 
 import (
-	"github.com/smallbiznis/railzway/internal/billingdashboard/rollup"
-	"github.com/smallbiznis/railzway/internal/billingdashboard/service"
+	"github.com/railzwaylabs/railzway/internal/billingdashboard/rollup"
+	"github.com/railzwaylabs/railzway/internal/billingdashboard/service"
 	"go.uber.org/fx"
 )
 

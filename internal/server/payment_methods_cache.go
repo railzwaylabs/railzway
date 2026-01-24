@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	publicinvoicedomain "github.com/smallbiznis/railzway/internal/publicinvoice/domain"
+	publicinvoicedomain "github.com/railzwaylabs/railzway/internal/publicinvoice/domain"
 )
 
 type paymentMethodsCache struct {

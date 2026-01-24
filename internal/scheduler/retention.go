@@ -3,7 +3,7 @@ package scheduler
 import (
 	"context"
 
-	paymentdomain "github.com/smallbiznis/railzway/internal/payment/domain"
+	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
 	"go.uber.org/zap"
 )
 

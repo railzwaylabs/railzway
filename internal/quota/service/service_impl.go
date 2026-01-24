@@ -7,9 +7,9 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/redis/go-redis/v9"
-	customerdomain "github.com/smallbiznis/railzway/internal/customer/domain"
-	quotadomain "github.com/smallbiznis/railzway/internal/quota/domain"
-	subscriptiondomain "github.com/smallbiznis/railzway/internal/subscription/domain"
+	customerdomain "github.com/railzwaylabs/railzway/internal/customer/domain"
+	quotadomain "github.com/railzwaylabs/railzway/internal/quota/domain"
+	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"

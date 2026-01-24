@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	billingoperationsdomain "github.com/smallbiznis/railzway/internal/billingoperations/domain"
+	billingoperationsdomain "github.com/railzwaylabs/railzway/internal/billingoperations/domain"
 )
 
 // POST /admin/billing-operations/record-follow-up

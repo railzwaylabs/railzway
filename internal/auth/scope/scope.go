@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/smallbiznis/railzway/internal/authorization"
+	"github.com/railzwaylabs/railzway/internal/authorization"
 )
 
 type Scope string
@@ -62,6 +62,9 @@ const (
 	ScopeCustomerDelete Scope = "customer:delete"
 
 	ScopePaymentProviderManage Scope = "payment_provider:manage"
+
+	ScopeOrganizationView   Scope = "organization:view"
+	ScopeOrganizationUpdate Scope = "organization:update"
 )
 
 type authzKey struct {
@@ -117,6 +120,9 @@ var authzScopeMap = map[authzKey]Scope{
 	{normalize(authorization.ObjectCustomer), normalize(authorization.ActionCustomerDelete)}: ScopeCustomerDelete,
 
 	{normalize(authorization.ObjectPaymentProvider), normalize(authorization.ActionPaymentProviderManage)}: ScopePaymentProviderManage,
+
+	{normalize(authorization.ObjectOrganization), normalize(authorization.ActionOrganizationView)}:   ScopeOrganizationView,
+	{normalize(authorization.ObjectOrganization), normalize(authorization.ActionOrganizationUpdate)}: ScopeOrganizationUpdate,
 }
 
 var allScopes = []Scope{
@@ -159,6 +165,8 @@ var allScopes = []Scope{
 	ScopeCustomerUpdate,
 	ScopeCustomerDelete,
 	ScopePaymentProviderManage,
+	ScopeOrganizationView,
+	ScopeOrganizationUpdate,
 }
 
 var validScopes = func() map[string]struct{} {

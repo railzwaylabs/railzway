@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	paymentdomain "github.com/smallbiznis/railzway/internal/payment/domain"
-	publicinvoicedomain "github.com/smallbiznis/railzway/internal/publicinvoice/domain"
+	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
+	publicinvoicedomain "github.com/railzwaylabs/railzway/internal/publicinvoice/domain"
 )
 
 type adyenClient struct {

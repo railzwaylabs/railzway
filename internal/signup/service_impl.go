@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	authdomain "github.com/smallbiznis/railzway/internal/auth/domain"
-	orgdomain "github.com/smallbiznis/railzway/internal/organization/domain"
-	"github.com/smallbiznis/railzway/internal/signup/domain"
+	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
+	orgdomain "github.com/railzwaylabs/railzway/internal/organization/domain"
+	"github.com/railzwaylabs/railzway/internal/signup/domain"
 )
 
 type service struct {

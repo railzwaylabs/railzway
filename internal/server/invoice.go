@@ -7,7 +7,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
-	invoicedomain "github.com/smallbiznis/railzway/internal/invoice/domain"
+	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
 )
 
 // @Summary      List Invoices

@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/internal/organization/domain"
+	"github.com/railzwaylabs/railzway/internal/organization/domain"
 	"gorm.io/gorm"
 )
 

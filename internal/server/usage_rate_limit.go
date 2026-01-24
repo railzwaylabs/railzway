@@ -9,10 +9,10 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/smallbiznis/railzway/internal/observability/logger"
-	obsmetrics "github.com/smallbiznis/railzway/internal/observability/metrics"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
-	"github.com/smallbiznis/railzway/internal/ratelimit"
+	"github.com/railzwaylabs/railzway/internal/observability/logger"
+	obsmetrics "github.com/railzwaylabs/railzway/internal/observability/metrics"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	"github.com/railzwaylabs/railzway/internal/ratelimit"
 	"go.uber.org/zap"
 )
 

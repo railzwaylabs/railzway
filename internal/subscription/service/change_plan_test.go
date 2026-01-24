@@ -7,12 +7,12 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/glebarez/sqlite"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
-	paymentdomain "github.com/smallbiznis/railzway/internal/payment/domain"
-	pricedomain "github.com/smallbiznis/railzway/internal/price/domain"
-	priceamountdomain "github.com/smallbiznis/railzway/internal/priceamount/domain"
-	productfeaturedomain "github.com/smallbiznis/railzway/internal/productfeature/domain"
-	subscriptiondomain "github.com/smallbiznis/railzway/internal/subscription/domain"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
+	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
+	priceamountdomain "github.com/railzwaylabs/railzway/internal/priceamount/domain"
+	productfeaturedomain "github.com/railzwaylabs/railzway/internal/productfeature/domain"
+	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )

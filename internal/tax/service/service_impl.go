@@ -5,7 +5,7 @@ import (
 	"math"
 
 	"github.com/bwmarrin/snowflake"
-	taxdomain "github.com/smallbiznis/railzway/internal/tax/domain"
+	taxdomain "github.com/railzwaylabs/railzway/internal/tax/domain"
 	"go.uber.org/fx"
 )
 

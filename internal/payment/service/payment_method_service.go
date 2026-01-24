@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/internal/payment/adapters"
-	"github.com/smallbiznis/railzway/internal/payment/domain"
-	providerservice "github.com/smallbiznis/railzway/internal/providers/payment/domain"
+	"github.com/railzwaylabs/railzway/internal/payment/adapters"
+	"github.com/railzwaylabs/railzway/internal/payment/domain"
+	providerservice "github.com/railzwaylabs/railzway/internal/providers/payment/domain"
 	"gorm.io/gorm"
 )
 

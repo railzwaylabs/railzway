@@ -1,21 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import {
   IconExternalLink,
   IconSearch,
+  IconDownload,
+  IconClock,
+  IconUser,
+  IconRobot,
+  IconKey,
 } from "@tabler/icons-react"
 
 import { admin } from "@/api/client"
 import { ForbiddenState } from "@/components/forbidden-state"
-import { Badge } from "@/components/ui/badge"
+import { RestrictedFeature } from "@/components/RestrictedFeature"
+import { AuditLogDetailSheet } from "../components/AuditLogDetailSheet"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -30,16 +29,20 @@ import { getErrorMessage, isForbiddenError } from "@/lib/api-errors"
 
 type AuditLog = Record<string, unknown>
 
+// Enterprise-grade timestamp formatting (ISO-ish but readable)
 const formatTimestamp = (value?: string | null) => {
   if (!value) return "-"
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return "-"
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
+  return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
+    month: "short",
     year: "numeric",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    timeZoneName: "short",
   }).format(date)
 }
 
@@ -73,58 +76,65 @@ const getMetadata = (log?: AuditLog) => {
 
 const humanizeAction = (action: string) => {
   if (!action) return "-"
+  // Split by dot, capitalize first letter of each word
+  // e.g. "invoice.finalized" -> "Invoice Finalized"
   return action
     .split(".")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ")
 }
 
+// Actor Representation Component
+const ActorCell = ({ log }: { log: AuditLog }) => {
+  const actorType = String(readField(log, ["actor_type", "ActorType"]) ?? "").toLowerCase()
+  const actorID = String(readField(log, ["actor_id", "ActorID"]) ?? "")
+
+  if (!actorType) return <span className="text-text-muted">-</span>
+
+  let Icon = IconUser
+  let label = "USER"
+
+  if (actorType === "system") {
+    Icon = IconRobot
+    label = "SYSTEM"
+  } else if (actorType === "api_key") {
+    Icon = IconKey
+    label = "API_KEY"
+  }
+
+  return (
+    <div className="flex flex-col text-xs">
+      <div className="flex items-center gap-1.5 font-medium mb-0.5">
+        <Icon className="h-3 w-3 opacity-70" />
+        <span className="uppercase tracking-wider text-[10px] text-text-muted font-bold">{label}</span>
+      </div>
+      {(actorType === "user" || actorType === "api_key") && actorID && (
+        <span className="font-mono text-[10px] text-text-primary ml-4 truncate max-w-[150px]" title={actorID}>
+          {actorID}
+        </span>
+      )}
+    </div>
+  )
+}
+
 const buildSummary = (log: AuditLog) => {
   const metadata = getMetadata(log)
-  const error = metadata.error
-  if (typeof error === "string" && error.trim()) {
-    return `Error: ${error}`
-  }
-  const reason = metadata.reason
-  if (typeof reason === "string" && reason.trim()) {
-    return `Reason: ${reason}`
-  }
+  const summaryParts = []
+
+  if (metadata.error) summaryParts.push(`Error: ${metadata.error}`)
+  if (metadata.reason) summaryParts.push(`Reason: ${metadata.reason}`)
+
   const status = metadata.status
   if (typeof status === "string" && status.trim()) {
-    return `Status: ${status}`
+    summaryParts.push(`Status: ${status}`)
   }
-  const invoiceNumber = metadata.invoice_number
-  if (typeof invoiceNumber === "number" || typeof invoiceNumber === "string") {
-    return `Invoice #${invoiceNumber}`
-  }
-  const periodStart = metadata.period_start
-  const periodEnd = metadata.period_end
-  if (typeof periodStart === "string" && typeof periodEnd === "string") {
-    return `${formatTimestamp(periodStart)} → ${formatTimestamp(periodEnd)}`
-  }
+
+  // Specific financial context
+  if (metadata.amount) summaryParts.push(`Amount: ${metadata.amount}`)
+  if (metadata.currency) summaryParts.push(`${metadata.currency}`)
+
+  if (summaryParts.length > 0) return summaryParts.join(" · ")
   return "—"
-}
-
-const actorLabel = (log: AuditLog) => {
-  const actorType = String(readField(log, ["actor_type", "ActorType"]) ?? "").toUpperCase()
-  const actorID = String(readField(log, ["actor_id", "ActorID"]) ?? "")
-  if (!actorType) return "-"
-  if (actorID) {
-    return `${actorType} · ${actorID}`
-  }
-  return actorType
-}
-
-const resourceTypeLabel = (log: AuditLog) => {
-  const targetType = String(readField(log, ["target_type", "TargetType"]) ?? "")
-  if (!targetType) return "-"
-  return targetType
-}
-
-const targetIDLabel = (log: AuditLog) => {
-  const targetID = String(readField(log, ["target_id", "TargetID"]) ?? "")
-  if (!targetID) return "-"
-  return targetID
 }
 
 const buildTargetLink = (orgId: string | undefined, log: AuditLog) => {
@@ -136,7 +146,9 @@ const buildTargetLink = (orgId: string | undefined, log: AuditLog) => {
     case "invoice":
       return `/orgs/${orgId}/invoices/${targetID}`
     case "subscription":
-      return `/orgs/${orgId}/subscriptions`
+      return `/orgs/${orgId}/subscriptions/${targetID}`
+    case "customer":
+      return `/orgs/${orgId}/customers/${targetID}`
     case "api_key":
       return `/orgs/${orgId}/api-keys`
     default:
@@ -155,13 +167,11 @@ const ALL_FILTER_VALUE = "__all__"
 const resourceTypeOptions = [
   { value: "product", label: "Product" },
   { value: "price", label: "Price" },
-  { value: "price_amount", label: "Price amount" },
   { value: "customer", label: "Customer" },
   { value: "subscription", label: "Subscription" },
-  { value: "billing_cycle", label: "Billing cycle" },
   { value: "invoice", label: "Invoice" },
-  { value: "payment_provider_config", label: "Payment provider config" },
-  { value: "api_key", label: "API key" },
+  { value: "payment_method", label: "Payment Method" },
+  { value: "api_key", label: "API Key" },
   { value: "user", label: "User" },
 ]
 
@@ -279,22 +289,7 @@ export default function OrgAuditLogsPage() {
     setAppliedFilters(cleared)
   }
 
-  const detailMetadata = useMemo(() => getMetadata(selectedLog ?? undefined), [selectedLog])
 
-  const detailRequestID = useMemo(() => {
-    const value = detailMetadata.request_id
-    return typeof value === "string" ? value : ""
-  }, [detailMetadata])
-
-  const detailSubscriptionID = useMemo(() => {
-    const value = detailMetadata.subscription_id
-    return typeof value === "string" ? value : ""
-  }, [detailMetadata])
-
-  const detailBillingCycleID = useMemo(() => {
-    const value = detailMetadata.billing_cycle_id
-    return typeof value === "string" ? value : ""
-  }, [detailMetadata])
 
   if (isForbidden) {
     return <ForbiddenState description="You do not have access to audit logs." />
@@ -302,124 +297,132 @@ export default function OrgAuditLogsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Audit log</h1>
-        <p className="text-text-muted text-sm">
-          Trace billing, security, and admin activity across this organization.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-border-subtle pb-6">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Audit Log</h1>
+          <p className="text-text-muted text-sm max-w-2xl">
+            A complete, immutable record of all billing, security, and administrative events.
+            Used for compliance and dispute resolution.
+          </p>
+        </div>
+        <div className="flex-shrink-0">
+          <RestrictedFeature feature="audit_export" description="Exporting audit logs as CSV/JSON is available in Railzway Plus.">
+            <Button variant="outline" className="h-9">
+              <IconDownload className="mr-2 h-4 w-4 opacity-70" />
+              Export
+            </Button>
+          </RestrictedFeature>
+        </div>
       </div>
 
-      <div className="rounded-lg border border-border-subtle bg-bg-primary p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
+      {/* Filters */}
+      <div className="bg-bg-subtle/30 rounded-md p-4 border border-border-subtle space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+            <IconSearch className="h-4 w-4 text-text-muted" />
             <Input
-              className="w-full min-w-50 max-w-xs"
+              className="h-9 bg-bg-surface"
               placeholder="Action (e.g. invoice.finalize)"
               value={filters.action}
-              onChange={(event) =>
-                setFilters((prev) => ({ ...prev, action: event.target.value }))
-              }
+              onChange={(event) => setFilters((prev) => ({ ...prev, action: event.target.value }))}
             />
+          </div>
+          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+            <span className="text-xs text-text-muted font-mono">ID:</span>
             <Input
-              className="w-full min-w-50 max-w-xs"
+              className="h-9 bg-bg-surface font-mono"
               placeholder="Resource ID"
               value={filters.resourceID}
-              onChange={(event) =>
-                setFilters((prev) => ({ ...prev, resourceID: event.target.value }))
-              }
+              onChange={(event) => setFilters((prev) => ({ ...prev, resourceID: event.target.value }))}
             />
-            <Select
-              value={filters.resourceType || ALL_FILTER_VALUE}
-              onValueChange={(value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  resourceType: value === ALL_FILTER_VALUE ? "" : value,
-                }))
-              }
-            >
-              <SelectTrigger className="w-45">
-                <SelectValue placeholder="Resource type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_FILTER_VALUE}>All resources</SelectItem>
-                {resourceTypeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.actorType || ALL_FILTER_VALUE}
-              onValueChange={(value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  actorType: value === ALL_FILTER_VALUE ? "" : value,
-                }))
-              }
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Actor type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_FILTER_VALUE}>All actors</SelectItem>
-                {actorTypeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          </div>
+          <Select
+            value={filters.resourceType || ALL_FILTER_VALUE}
+            onValueChange={(value) => setFilters((prev) => ({ ...prev, resourceType: value === ALL_FILTER_VALUE ? "" : value }))}
+          >
+            <SelectTrigger className="h-9 w-[180px] bg-bg-surface">
+              <SelectValue placeholder="Resource" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_FILTER_VALUE}>All Resources</SelectItem>
+              {resourceTypeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={filters.actorType || ALL_FILTER_VALUE}
+            onValueChange={(value) => setFilters((prev) => ({ ...prev, actorType: value === ALL_FILTER_VALUE ? "" : value }))}
+          >
+            <SelectTrigger className="h-9 w-[140px] bg-bg-surface">
+              <SelectValue placeholder="Actor" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_FILTER_VALUE}>All Actors</SelectItem>
+              {actorTypeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border-subtle/50">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-text-muted flex items-center gap-1">
+              <IconClock className="h-3 w-3" /> Time Range:
+            </span>
             <Input
               type="datetime-local"
-              className="w-50"
+              className="h-8 w-auto min-w-[180px] bg-bg-surface text-xs"
               value={filters.startAt}
-              onChange={(event) =>
-                setFilters((prev) => ({ ...prev, startAt: event.target.value }))
-              }
+              onChange={(event) => setFilters((prev) => ({ ...prev, startAt: event.target.value }))}
             />
+            <span className="text-text-muted text-xs">to</span>
             <Input
               type="datetime-local"
-              className="w-50"
+              className="h-8 w-auto min-w-[180px] bg-bg-surface text-xs"
               value={filters.endAt}
-              onChange={(event) =>
-                setFilters((prev) => ({ ...prev, endAt: event.target.value }))
-              }
+              onChange={(event) => setFilters((prev) => ({ ...prev, endAt: event.target.value }))}
             />
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleClear}>
+            <Button variant="ghost" size="sm" onClick={handleClear} className="h-8 text-text-muted hover:text-text-primary">
               Clear
             </Button>
-            <Button size="sm" onClick={handleApply}>
-              <IconSearch />
-              Apply
+            <Button size="sm" onClick={handleApply} className="h-8 px-4">
+              Apply Filters
             </Button>
           </div>
         </div>
       </div>
 
       {isLoading && (
-        <div className="text-text-muted text-sm">Loading audit logs...</div>
+        <div className="py-12 flex justify-center text-text-muted text-sm">
+          <span className="animate-pulse">Loading audit trail...</span>
+        </div>
       )}
-      {error && <div className="text-status-error text-sm">{error}</div>}
+      {error && (
+        <div className="p-4 rounded-md bg-status-error/10 border border-status-error/20 text-status-error text-sm">
+          {error}
+        </div>
+      )}
 
       {!isLoading && !error && logs.length === 0 && (
-        <div className="rounded-lg border border-dashed p-6 text-center text-text-muted text-sm">
-          No audit log entries match the selected filters.
+        <div className="rounded-lg border border-dashed border-border-subtle p-12 text-center">
+          <p className="text-text-muted text-sm">No audit events found matching the current criteria.</p>
         </div>
       )}
 
       {!error && logs.length > 0 && (
-        <div className="rounded-lg border border-border-subtle bg-bg-primary">
+        <div className="rounded-md border border-border-subtle bg-bg-surface overflow-hidden">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-bg-subtle/50">
               <TableRow>
-                <TableHead>Time</TableHead>
-                <TableHead>Actor</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Resource</TableHead>
-                <TableHead>Target ID</TableHead>
+                <TableHead className="w-[180px]">Timestamp</TableHead>
+                <TableHead className="w-[200px]">Actor</TableHead>
+                <TableHead className="w-[200px]">Action</TableHead>
+                <TableHead className="w-[150px]">Resource</TableHead>
+                <TableHead className="w-[150px]">Target ID</TableHead>
                 <TableHead>Summary</TableHead>
               </TableRow>
             </TableHeader>
@@ -427,39 +430,48 @@ export default function OrgAuditLogsPage() {
               {logs.map((log) => {
                 const createdAt = String(readField(log, ["created_at", "CreatedAt"]) ?? "")
                 const action = String(readField(log, ["action", "Action"]) ?? "")
+                const targetID = String(readField(log, ["target_id", "TargetID"]) ?? "")
                 const targetHref = buildTargetLink(orgId, log)
+                const resourceLabel = String(readField(log, ["target_type", "TargetType"]) ?? "")
+
                 return (
                   <TableRow
                     key={String(readField(log, ["id", "ID"]) ?? createdAt)}
-                    className="cursor-pointer"
+                    className="cursor-pointer hover:bg-bg-subtle/40 border-b border-border-subtle/50"
                     onClick={() => setSelectedLog(log)}
                   >
-                    <TableCell className="text-text-muted text-xs">
+                    <TableCell className="text-text-muted text-xs font-mono align-top py-3">
                       {formatTimestamp(createdAt)}
                     </TableCell>
-                    <TableCell className="text-text-muted text-xs">{actorLabel(log)}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">{humanizeAction(action)}</Badge>
-                        <span className="text-text-muted text-xs">{action || "-"}</span>
-                      </div>
+                    <TableCell className="align-top py-3">
+                      <ActorCell log={log} />
                     </TableCell>
-                    <TableCell className="text-text-muted text-xs">{resourceTypeLabel(log)}</TableCell>
-                    <TableCell className="text-text-muted text-xs">
+                    <TableCell className="align-top py-3">
+                      <div className="font-medium text-sm text-text-primary">{humanizeAction(action)}</div>
+                      <div className="text-xs text-text-muted font-mono mt-0.5 opacity-60">{action}</div>
+                    </TableCell>
+                    <TableCell className="text-text-primary text-xs align-top py-3 capitalize">
+                      {resourceLabel.replace(/_/g, " ")}
+                    </TableCell>
+                    <TableCell className="align-top py-3">
                       {targetHref ? (
                         <Link
                           to={targetHref}
-                          className="inline-flex items-center gap-1 text-accent-primary hover:underline"
+                          className="inline-flex items-center gap-1 font-mono text-xs text-accent-primary hover:underline"
                           onClick={(event) => event.stopPropagation()}
                         >
-                          {targetIDLabel(log)}
+                          {targetID.slice(0, 12)}...
                           <IconExternalLink className="h-3 w-3" />
                         </Link>
                       ) : (
-                        targetIDLabel(log)
+                        <span className="font-mono text-xs text-text-muted" title={targetID}>
+                          {targetID ? `${targetID.slice(0, 12)}...` : "-"}
+                        </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-text-muted text-xs">{buildSummary(log)}</TableCell>
+                    <TableCell className="text-text-muted text-xs align-top py-3">
+                      {buildSummary(log)}
+                    </TableCell>
                   </TableRow>
                 )
               })}
@@ -469,84 +481,25 @@ export default function OrgAuditLogsPage() {
       )}
 
       {hasMore && (
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center pt-4">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             disabled={isLoading}
             onClick={() => loadLogs(pageToken, true)}
+            className="text-text-muted hover:text-text-primary"
           >
-            Load more
+            Load older events
           </Button>
         </div>
       )}
 
-      <Dialog open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Audit log detail</DialogTitle>
-            <DialogDescription>
-              Review metadata, correlation IDs, and request context.
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedLog && (
-            <div className="space-y-4 text-sm">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <div className="text-text-muted">Timestamp</div>
-                  <div>{formatTimestamp(String(readField(selectedLog, ["created_at", "CreatedAt"]) ?? ""))}</div>
-                </div>
-                <div>
-                  <div className="text-text-muted">Action</div>
-                  <div>{String(readField(selectedLog, ["action", "Action"]) ?? "-")}</div>
-                </div>
-                <div>
-                  <div className="text-text-muted">Actor</div>
-                  <div>{actorLabel(selectedLog)}</div>
-                </div>
-                <div>
-                  <div className="text-text-muted">Resource</div>
-                  <div>{resourceTypeLabel(selectedLog)}</div>
-                </div>
-                <div>
-                  <div className="text-text-muted">Target ID</div>
-                  <div>{targetIDLabel(selectedLog)}</div>
-                </div>
-                <div>
-                  <div className="text-text-muted">Request ID</div>
-                  <div>{detailRequestID || "-"}</div>
-                </div>
-                <div>
-                  <div className="text-text-muted">Subscription ID</div>
-                  <div>{detailSubscriptionID || "-"}</div>
-                </div>
-                <div>
-                  <div className="text-text-muted">Billing cycle ID</div>
-                  <div>{detailBillingCycleID || "-"}</div>
-                </div>
-                <div>
-                  <div className="text-text-muted">IP address</div>
-                  <div>{String(readField(selectedLog, ["ip_address", "IPAddress"]) ?? "-")}</div>
-                </div>
-                <div className="sm:col-span-2">
-                  <div className="text-text-muted">User agent</div>
-                  <div className="break-words">
-                    {String(readField(selectedLog, ["user_agent", "UserAgent"]) ?? "-")}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div className="text-text-muted mb-2">Metadata</div>
-                <pre className="max-h-64 overflow-auto rounded-md border border-border-subtle bg-bg-subtle/40 p-3 text-xs text-text-muted">
-                  {JSON.stringify(detailMetadata, null, 2)}
-                </pre>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Drill-down Detail View */}
+      <AuditLogDetailSheet
+        open={!!selectedLog}
+        onOpenChange={(open) => !open && setSelectedLog(null)}
+        log={selectedLog}
+      />
     </div>
   )
 }

@@ -6,9 +6,9 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/google/uuid"
-	authdomain "github.com/smallbiznis/railzway/internal/auth/domain"
-	"github.com/smallbiznis/railzway/internal/auth/repository"
-	"github.com/smallbiznis/railzway/pkg/db"
+	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
+	"github.com/railzwaylabs/railzway/internal/auth/repository"
+	"github.com/railzwaylabs/railzway/pkg/db"
 	"go.uber.org/zap"
 )
 

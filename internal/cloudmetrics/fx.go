@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/smallbiznis/railzway/internal/config"
+	"github.com/railzwaylabs/railzway/internal/config"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"

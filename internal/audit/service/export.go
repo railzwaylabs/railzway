@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	auditdomain "github.com/smallbiznis/railzway/internal/audit/domain"
+	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
 	"gorm.io/gorm"
 )
 

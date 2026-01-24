@@ -1,8 +1,8 @@
 package billingoperations
 
 import (
-	"github.com/smallbiznis/railzway/internal/billingoperations/service"
-	"github.com/smallbiznis/railzway/internal/config"
+	"github.com/railzwaylabs/railzway/internal/billingoperations/service"
+	"github.com/railzwaylabs/railzway/internal/config"
 	"go.uber.org/fx"
 )
 

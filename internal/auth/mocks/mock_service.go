@@ -10,7 +10,7 @@ import (
 
 	snowflake "github.com/bwmarrin/snowflake"
 	gomock "github.com/golang/mock/gomock"
-	domain "github.com/smallbiznis/railzway/internal/auth/domain"
+	domain "github.com/railzwaylabs/railzway/internal/auth/domain"
 )
 
 // MockService is a mock of Service interface.

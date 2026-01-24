@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	templatedomain "github.com/smallbiznis/railzway/internal/invoicetemplate/domain"
+	templatedomain "github.com/railzwaylabs/railzway/internal/invoicetemplate/domain"
 )
 
 func (s *Server) CreateInvoiceTemplate(c *gin.Context) {

@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/snowflake"
-	auditdomain "github.com/smallbiznis/railzway/internal/audit/domain"
-	"github.com/smallbiznis/railzway/internal/billingoperations/domain"
-	"github.com/smallbiznis/railzway/internal/billingoperations/repository"
-	"github.com/smallbiznis/railzway/internal/clock"
-	"github.com/smallbiznis/railzway/internal/config"
+	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
+	"github.com/railzwaylabs/railzway/internal/billingoperations/domain"
+	"github.com/railzwaylabs/railzway/internal/billingoperations/repository"
+	"github.com/railzwaylabs/railzway/internal/clock"
+	"github.com/railzwaylabs/railzway/internal/config"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"

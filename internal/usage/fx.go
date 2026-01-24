@@ -1,11 +1,11 @@
 package usage
 
 import (
-	"github.com/smallbiznis/railzway/internal/cache"
-	"github.com/smallbiznis/railzway/internal/usage/liveevents"
-	"github.com/smallbiznis/railzway/internal/usage/repository"
-	"github.com/smallbiznis/railzway/internal/usage/service"
-	"github.com/smallbiznis/railzway/internal/usage/snapshot"
+	"github.com/railzwaylabs/railzway/internal/cache"
+	"github.com/railzwaylabs/railzway/internal/usage/liveevents"
+	"github.com/railzwaylabs/railzway/internal/usage/repository"
+	"github.com/railzwaylabs/railzway/internal/usage/service"
+	"github.com/railzwaylabs/railzway/internal/usage/snapshot"
 	"go.uber.org/fx"
 )
 

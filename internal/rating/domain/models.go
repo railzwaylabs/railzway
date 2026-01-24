@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	billingcycledomain "github.com/smallbiznis/railzway/internal/billingcycle/domain"
+	billingcycledomain "github.com/railzwaylabs/railzway/internal/billingcycle/domain"
 )
 
 // RatingResult captures the priced usage output for a billing cycle.

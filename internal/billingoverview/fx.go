@@ -1,7 +1,7 @@
 package billingoverview
 
 import (
-	"github.com/smallbiznis/railzway/internal/billingoverview/service"
+	"github.com/railzwaylabs/railzway/internal/billingoverview/service"
 	"go.uber.org/fx"
 )
 

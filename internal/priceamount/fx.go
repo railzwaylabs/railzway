@@ -1,8 +1,8 @@
 package priceamount
 
 import (
-	"github.com/smallbiznis/railzway/internal/priceamount/repository"
-	"github.com/smallbiznis/railzway/internal/priceamount/service"
+	"github.com/railzwaylabs/railzway/internal/priceamount/repository"
+	"github.com/railzwaylabs/railzway/internal/priceamount/service"
 	"go.uber.org/fx"
 )
 

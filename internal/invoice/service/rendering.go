@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	customerdomain "github.com/smallbiznis/railzway/internal/customer/domain"
-	invoicedomain "github.com/smallbiznis/railzway/internal/invoice/domain"
-	invoiceformat "github.com/smallbiznis/railzway/internal/invoice/format"
-	"github.com/smallbiznis/railzway/internal/invoice/render"
-	templatedomain "github.com/smallbiznis/railzway/internal/invoicetemplate/domain"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
+	customerdomain "github.com/railzwaylabs/railzway/internal/customer/domain"
+	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
+	invoiceformat "github.com/railzwaylabs/railzway/internal/invoice/format"
+	"github.com/railzwaylabs/railzway/internal/invoice/render"
+	templatedomain "github.com/railzwaylabs/railzway/internal/invoicetemplate/domain"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	"gorm.io/gorm"
 )
 

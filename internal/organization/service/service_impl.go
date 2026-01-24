@@ -10,10 +10,10 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gosimple/slug"
-	"github.com/smallbiznis/railzway/internal/organization/domain"
-	"github.com/smallbiznis/railzway/internal/organization/event"
-	"github.com/smallbiznis/railzway/internal/providers/email"
-	referencedomain "github.com/smallbiznis/railzway/internal/reference/domain"
+	"github.com/railzwaylabs/railzway/internal/organization/domain"
+	"github.com/railzwaylabs/railzway/internal/organization/event"
+	"github.com/railzwaylabs/railzway/internal/providers/email"
+	referencedomain "github.com/railzwaylabs/railzway/internal/reference/domain"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )

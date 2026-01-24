@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/smallbiznis/railzway/internal/auth/features"
+	"github.com/railzwaylabs/railzway/internal/auth/features"
 )
 
 // AuthProviderRegistry captures parsed providers and activation state.

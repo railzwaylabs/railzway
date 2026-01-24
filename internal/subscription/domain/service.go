@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/pkg/db/pagination"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 type ListSubscriptionRequest struct {

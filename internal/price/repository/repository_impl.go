@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/bwmarrin/snowflake"
-	pricedomain "github.com/smallbiznis/railzway/internal/price/domain"
+	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
 	"gorm.io/gorm"
 )
 

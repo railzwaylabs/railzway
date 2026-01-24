@@ -1,8 +1,8 @@
 package subscription
 
 import (
-	"github.com/smallbiznis/railzway/internal/subscription/repository"
-	"github.com/smallbiznis/railzway/internal/subscription/service"
+	"github.com/railzwaylabs/railzway/internal/subscription/repository"
+	"github.com/railzwaylabs/railzway/internal/subscription/service"
 	"go.uber.org/fx"
 )
 

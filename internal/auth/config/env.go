@@ -14,17 +14,18 @@ const (
 )
 
 type providerEnvSpec struct {
-	providerType string
-	prefix       string
-	displayName  string
+	providerType    string
+	prefix          string
+	displayName     string
+	requiresLicense bool // default false
 }
 
 var providerSpecs = []providerEnvSpec{
-	{providerType: "local", prefix: envPrefixLocal, displayName: "Local"},
-	{providerType: "oauth", prefix: envPrefixOAuth, displayName: "OAuth"},
-	{providerType: "github", prefix: envPrefixGitHub, displayName: "GitHub"},
-	{providerType: "google", prefix: envPrefixGoogle, displayName: "Google"},
-	{providerType: "railzway_com", prefix: envPrefixRailzwayCom, displayName: "Railzway.com"},
+	{providerType: "local", prefix: envPrefixLocal, displayName: "Local", requiresLicense: false},
+	{providerType: "oauth", prefix: envPrefixOAuth, displayName: "OAuth", requiresLicense: true},
+	{providerType: "github", prefix: envPrefixGitHub, displayName: "GitHub", requiresLicense: true},
+	{providerType: "google", prefix: envPrefixGoogle, displayName: "Google", requiresLicense: true},
+	{providerType: "railzway_com", prefix: envPrefixRailzwayCom, displayName: "Railzway.com", requiresLicense: false},
 }
 
 // ParseAuthProvidersFromEnv reads auth provider configuration from environment variables.
@@ -35,13 +36,13 @@ func ParseAuthProvidersFromEnv() map[string]AuthProviderConfig {
 		if !hasEnvPrefix(env, spec.prefix) {
 			continue
 		}
-		cfg := parseProviderConfig(spec.providerType, spec.prefix, spec.displayName)
+		cfg := parseProviderConfig(spec.providerType, spec.prefix, spec.displayName, spec.requiresLicense)
 		configs[cfg.Type] = cfg
 	}
 	return configs
 }
 
-func parseProviderConfig(providerType string, prefix string, defaultName string) AuthProviderConfig {
+func parseProviderConfig(providerType string, prefix string, defaultName string, requiresLicense bool) AuthProviderConfig {
 	name := strings.TrimSpace(getenv(prefix + "NAME"))
 	if name == "" {
 		if strings.TrimSpace(defaultName) != "" {
@@ -61,6 +62,7 @@ func parseProviderConfig(providerType string, prefix string, defaultName string)
 		APIURL:       strings.TrimSpace(getenv(prefix + "API_URL")),
 		Scopes:       parseScopes(getenv(prefix + "SCOPES")),
 		AllowSignUp:  getenvBoolFirst([]string{prefix + "ALLOW_SIGNUP", prefix + "ALLOW_SIGN_UP"}, false),
+		RequiresLicense: requiresLicense,
 	}
 }
 

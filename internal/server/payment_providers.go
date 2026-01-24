@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	paymentproviderdomain "github.com/smallbiznis/railzway/internal/providers/payment/domain"
+	paymentproviderdomain "github.com/railzwaylabs/railzway/internal/providers/payment/domain"
 )
 
 type upsertPaymentProviderConfigRequest struct {

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/smallbiznis/railzway/internal/authorization"
-	billingcycledomain "github.com/smallbiznis/railzway/internal/billingcycle/domain"
-	invoicedomain "github.com/smallbiznis/railzway/internal/invoice/domain"
-	obsmetrics "github.com/smallbiznis/railzway/internal/observability/metrics"
+	"github.com/railzwaylabs/railzway/internal/authorization"
+	billingcycledomain "github.com/railzwaylabs/railzway/internal/billingcycle/domain"
+	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
+	obsmetrics "github.com/railzwaylabs/railzway/internal/observability/metrics"
 	"go.uber.org/zap"
 )
 

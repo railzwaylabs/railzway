@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/pkg/db/pagination"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"gorm.io/gorm"
 )
 

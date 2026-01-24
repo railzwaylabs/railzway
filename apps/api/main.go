@@ -21,16 +21,16 @@ package main
 
 import (
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/internal/apikey"
-	"github.com/smallbiznis/railzway/internal/auth"
-	"github.com/smallbiznis/railzway/internal/clock"
-	"github.com/smallbiznis/railzway/internal/config"
-	"github.com/smallbiznis/railzway/internal/meter"
-	"github.com/smallbiznis/railzway/internal/observability"
-	"github.com/smallbiznis/railzway/internal/ratelimit"
-	"github.com/smallbiznis/railzway/internal/server"
-	"github.com/smallbiznis/railzway/internal/usage"
-	"github.com/smallbiznis/railzway/pkg/db"
+	"github.com/railzwaylabs/railzway/internal/apikey"
+	"github.com/railzwaylabs/railzway/internal/auth"
+	"github.com/railzwaylabs/railzway/internal/clock"
+	"github.com/railzwaylabs/railzway/internal/config"
+	"github.com/railzwaylabs/railzway/internal/meter"
+	"github.com/railzwaylabs/railzway/internal/observability"
+	"github.com/railzwaylabs/railzway/internal/ratelimit"
+	"github.com/railzwaylabs/railzway/internal/server"
+	"github.com/railzwaylabs/railzway/internal/usage"
+	"github.com/railzwaylabs/railzway/pkg/db"
 	"go.uber.org/fx"
 )
 

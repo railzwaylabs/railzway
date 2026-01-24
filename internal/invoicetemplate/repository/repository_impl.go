@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/bwmarrin/snowflake"
-	templatedomain "github.com/smallbiznis/railzway/internal/invoicetemplate/domain"
+	templatedomain "github.com/railzwaylabs/railzway/internal/invoicetemplate/domain"
 	"gorm.io/gorm"
 )
 

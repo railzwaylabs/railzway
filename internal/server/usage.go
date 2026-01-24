@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	usagedomain "github.com/smallbiznis/railzway/internal/usage/domain"
+	usagedomain "github.com/railzwaylabs/railzway/internal/usage/domain"
 )
 
 // @Summary      Ingest Usage

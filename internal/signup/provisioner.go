@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/snowflake"
-	billingeventdomain "github.com/smallbiznis/railzway/internal/billingevent/domain"
-	"github.com/smallbiznis/railzway/internal/signup/domain"
+	billingeventdomain "github.com/railzwaylabs/railzway/internal/billingevent/domain"
+	"github.com/railzwaylabs/railzway/internal/signup/domain"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )

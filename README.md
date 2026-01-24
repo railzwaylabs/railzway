@@ -83,8 +83,9 @@ To preserve correctness and clarity, the following are **intentionally out of sc
 #### Payment Execution
 
 - No native credit card processing (delegates to adapters)
-- **Stripe, Adyen, and Braintree Adapters** included for payment collection
+- **Stripe, Xendit, and Braintree Adapters** included for payment orchestration
 - Extensible provider interface for additional gateways
+- See [Payment Services Documentation](docs/payment-services.md)
 
 #### Merchant of Record & Compliance
 
@@ -368,6 +369,9 @@ Telemetry is **enabled by default** to help improve the project. To disable it, 
 ```bash
 CLOUD_METRICS_ENABLED=false
 ```
+
+### Security & Privacy "Defense in Depth"
+Railzway enforces strict boundaries. Even if a user manually enables SSO in the configuration without a license, the backend **Middleware Gatekeeper** will reject the authentication flow. Security is enforced at the API level, not just the UI level.
 
 ---
 

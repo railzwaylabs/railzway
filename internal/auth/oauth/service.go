@@ -12,8 +12,9 @@ import (
 	"net/url"
 	"strings"
 
-	authconfig "github.com/smallbiznis/railzway/internal/auth/config"
-	obstracing "github.com/smallbiznis/railzway/internal/observability/tracing"
+	authconfig "github.com/railzwaylabs/railzway/internal/auth/config"
+	"github.com/railzwaylabs/railzway/internal/license"
+	obstracing "github.com/railzwaylabs/railzway/internal/observability/tracing"
 )
 
 const (
@@ -56,12 +57,14 @@ type Identity struct {
 type service struct {
 	registry   authconfig.AuthProviderRegistry
 	httpClient *http.Client
+	license    *license.Service
 }
 
-func NewService(registry authconfig.AuthProviderRegistry) Service {
+func NewService(registry authconfig.AuthProviderRegistry, license *license.Service) Service {
 	return &service{
 		registry:   registry,
 		httpClient: obstracing.WrapHTTPClient(http.DefaultClient),
+		license:    license,
 	}
 }
 
@@ -72,6 +75,12 @@ func (s *service) RedirectURL(ctx context.Context, providerName string, req Redi
 	if err != nil {
 		return nil, err
 	}
+
+	// Gatekeeper: Ensure SSO capability is enabled if required by provider config
+	if cfg.RequiresLicense && !s.license.HasCapability("sso") {
+		return nil, ErrInvalidProvider
+	}
+
 	if strings.TrimSpace(cfg.ClientID) == "" || strings.TrimSpace(cfg.AuthURL) == "" {
 		return nil, ErrInvalidProvider
 	}
@@ -105,6 +114,12 @@ func (s *service) Login(ctx context.Context, providerName string, req LoginReque
 	if err != nil {
 		return nil, err
 	}
+
+	// Gatekeeper: Ensure SSO capability is enabled if required by provider config
+	if cfg.RequiresLicense && !s.license.HasCapability("sso") {
+		return nil, ErrInvalidProvider
+	}
+
 	if strings.TrimSpace(req.Code) == "" {
 		return nil, ErrInvalidRequest
 	}

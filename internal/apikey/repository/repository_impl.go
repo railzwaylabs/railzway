@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/bwmarrin/snowflake"
-	apikeydomain "github.com/smallbiznis/railzway/internal/apikey/domain"
+	apikeydomain "github.com/railzwaylabs/railzway/internal/apikey/domain"
 	"gorm.io/gorm"
 )
 

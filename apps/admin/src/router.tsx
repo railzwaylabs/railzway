@@ -8,6 +8,7 @@ import LoginPage from "@/pages/login"
 import OnboardingPage from "@/pages/onboarding"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAuthStore } from "@/stores/authStore"
+import { EnterpriseErrorBoundary } from "@/components/EnterpriseErrorBoundary"
 
 const AcceptInvitePage = lazy(() => import("@/pages/accept-invite"))
 
@@ -85,6 +86,8 @@ const AdminFeaturesPage = lazy(
 const AdminTaxDefinitionsPage = lazy(
   () => import("@/features/admin/catalog/pages/AdminTaxDefinitionsPage")
 )
+
+const LicensePage = lazy(() => import("@/features/settings/pages/LicensePage"))
 
 // eslint-disable-next-line react-refresh/only-export-components
 // eslint-disable-next-line react-refresh/only-export-components
@@ -203,6 +206,7 @@ export const router = createBrowserRouter([
           {
             path: "billing/operations",
             element: withFeatureBoundary(<OrgBillingOperationsPage />),
+            errorElement: <EnterpriseErrorBoundary />,
           },
           {
             path: "products",
@@ -275,6 +279,7 @@ export const router = createBrowserRouter([
           {
             path: "audit-logs",
             element: withFeatureBoundary(<OrgAuditLogsPage />),
+            errorElement: <EnterpriseErrorBoundary />,
           },
           {
             path: "payment-providers",
@@ -324,7 +329,8 @@ export const router = createBrowserRouter([
             path: "invoice-templates/:templateId",
             element: withFeatureBoundary(<OrgInvoiceTemplateFormPage />),
           },
-          { path: "settings", element: withFeatureBoundary(<OrgSettings />) },
+          { path: "settings", element: withFeatureBoundary(<OrgSettings />), errorElement: <EnterpriseErrorBoundary /> },
+          { path: "settings/license", element: withFeatureBoundary(<LicensePage />), errorElement: <EnterpriseErrorBoundary /> },
         ],
       },
     ],

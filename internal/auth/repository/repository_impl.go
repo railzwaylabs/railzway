@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/internal/auth/domain"
+	"github.com/railzwaylabs/railzway/internal/auth/domain"
 	"gorm.io/gorm"
 )
 

@@ -8,9 +8,9 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/glebarez/sqlite"
-	"github.com/smallbiznis/railzway/internal/billingoperations/domain"
-	"github.com/smallbiznis/railzway/internal/billingoperations/repository"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
+	"github.com/railzwaylabs/railzway/internal/billingoperations/domain"
+	"github.com/railzwaylabs/railzway/internal/billingoperations/repository"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"

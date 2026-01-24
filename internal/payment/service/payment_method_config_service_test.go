@@ -7,7 +7,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/glebarez/sqlite"
-	"github.com/smallbiznis/railzway/internal/payment/domain"
+	"github.com/railzwaylabs/railzway/internal/payment/domain"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )

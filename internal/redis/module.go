@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/smallbiznis/railzway/internal/config"
+	"github.com/railzwaylabs/railzway/internal/config"
 	"go.uber.org/fx"
 )
 

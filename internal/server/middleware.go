@@ -12,12 +12,12 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	auditdomain "github.com/smallbiznis/railzway/internal/audit/domain"
-	auditcontext "github.com/smallbiznis/railzway/internal/auditcontext"
-	authconfig "github.com/smallbiznis/railzway/internal/auth/config"
-	authdomain "github.com/smallbiznis/railzway/internal/auth/domain"
-	obscontext "github.com/smallbiznis/railzway/internal/observability/context"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
+	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
+	auditcontext "github.com/railzwaylabs/railzway/internal/auditcontext"
+	authconfig "github.com/railzwaylabs/railzway/internal/auth/config"
+	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
+	obscontext "github.com/railzwaylabs/railzway/internal/observability/context"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
 )
 
 const (
@@ -184,6 +184,45 @@ func (s *Server) OrgContext() gin.HandlerFunc {
 		ctx := orgcontext.WithOrgID(c.Request.Context(), resolvedOrgID)
 		ctx = obscontext.WithOrgID(ctx, strconv.FormatInt(resolvedOrgID, 10))
 		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
+}
+
+
+func (s *Server) LicenseContext() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		caps := s.licenseSvc.Capabilities()
+		c.Set("license_capabilities", caps)
+		c.Next()
+	}
+}
+
+func (s *Server) RequireCapability(capability string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		caps := s.licenseSvc.Capabilities()
+		
+		allowed := false
+		switch capability {
+		case "sso":
+			allowed = caps.SSO
+		case "rbac":
+			allowed = caps.RBAC
+		case "audit_export":
+			allowed = caps.AuditExport
+		default:
+			// Unknown capability is always denied
+			allowed = false
+		}
+
+
+		if !allowed {
+			// Strict error response as per architecture rules
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"error":   "FEATURE_NOT_ENABLED",
+				"message": "This feature requires Railzway Plus. Please upgrade your license.",
+			})
+			return
+		}
 		c.Next()
 	}
 }

@@ -6,7 +6,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
-	explanationservice "github.com/smallbiznis/railzway/internal/invoice/service"
+	explanationservice "github.com/railzwaylabs/railzway/internal/invoice/service"
 )
 
 // ExplainInvoice handles GET /admin/invoices/:id/explanation

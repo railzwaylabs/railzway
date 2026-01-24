@@ -2,14 +2,14 @@ package main
 
 import (
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/internal/config"
-	"github.com/smallbiznis/railzway/internal/observability"
-	"github.com/smallbiznis/railzway/internal/payment"
-	paymentprovider "github.com/smallbiznis/railzway/internal/providers/payment"
-	"github.com/smallbiznis/railzway/internal/publicinvoice"
-	"github.com/smallbiznis/railzway/internal/ratelimit"
-	"github.com/smallbiznis/railzway/internal/server"
-	"github.com/smallbiznis/railzway/pkg/db"
+	"github.com/railzwaylabs/railzway/internal/config"
+	"github.com/railzwaylabs/railzway/internal/observability"
+	"github.com/railzwaylabs/railzway/internal/payment"
+	paymentprovider "github.com/railzwaylabs/railzway/internal/providers/payment"
+	"github.com/railzwaylabs/railzway/internal/publicinvoice"
+	"github.com/railzwaylabs/railzway/internal/ratelimit"
+	"github.com/railzwaylabs/railzway/internal/server"
+	"github.com/railzwaylabs/railzway/pkg/db"
 	"go.uber.org/fx"
 )
 

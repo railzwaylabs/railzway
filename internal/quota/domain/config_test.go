@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/smallbiznis/railzway/internal/quota/domain"
+	"github.com/railzwaylabs/railzway/internal/quota/domain"
 	"github.com/stretchr/testify/assert"
 )
 

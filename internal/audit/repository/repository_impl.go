@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/smallbiznis/railzway/internal/audit/domain"
+	"github.com/railzwaylabs/railzway/internal/audit/domain"
 	"gorm.io/gorm"
 )
 

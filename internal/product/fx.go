@@ -1,8 +1,8 @@
 package product
 
 import (
-	"github.com/smallbiznis/railzway/internal/product/repository"
-	"github.com/smallbiznis/railzway/internal/product/service"
+	"github.com/railzwaylabs/railzway/internal/product/repository"
+	"github.com/railzwaylabs/railzway/internal/product/service"
 	"go.uber.org/fx"
 )
 

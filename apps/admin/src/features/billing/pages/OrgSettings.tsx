@@ -8,7 +8,9 @@ import { useState, useEffect } from "react"
 import { auth } from "@/api/client"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Edit2 } from "lucide-react"
+import LicensePage from "@/features/settings/pages/LicensePage"
 
 export default function OrgSettings() {
   const org = useOrgStore((s) => s.currentOrg)
@@ -23,13 +25,7 @@ export default function OrgSettings() {
   const handleUpdate = async () => {
     if (!org) return
     try {
-      // Using auth client because the route is under /auth/user/orgs/:id
-      // Wait, checking server.go, I added it to `user` group which is `auth.Group("/user")`.
-      // So endpoint is /auth/user/orgs/:id.
-      // auth client base is /auth.
       const res = await auth.patch(`/user/orgs/${org.id}`, { name })
-
-      // Update local store
       setOrg({ ...org, name: res.data.name })
       setIsEditing(false)
       toast.success("Organization updated")
@@ -46,52 +42,70 @@ export default function OrgSettings() {
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Settings</h1>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold">Settings</h1>
+        <p className="text-text-muted text-sm">
+          Manage your organization securely.
+        </p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Workspace</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="text-sm">
-            <div className="flex items-center justify-between">
-              {isEditing ? (
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="h-8 w-[200px]"
-                  />
-                  <Button size="sm" onClick={handleUpdate}>Save</Button>
-                  <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
-                </div>
-              ) : (
-                <div className="font-medium flex items-center gap-2">
-                  {org?.name}
-                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setIsEditing(true)}>
-                    <Edit2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              )}
-            </div>
-            <div className="text-text-muted">ID: {org?.id}</div>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="general" className="w-full">
+        <TabsList>
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="license">License</TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <div>
-            <CardTitle>Team Members</CardTitle>
-            <CardDescription>Manage who has access to this organization</CardDescription>
-          </div>
-          <InviteMemberDialog onSuccess={handleInviteSuccess} />
-        </CardHeader>
-        <CardContent>
-          <TeamMembersList />
-        </CardContent>
-      </Card>
+        <TabsContent value="general" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Workspace</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="text-sm">
+                <div className="flex items-center justify-between">
+                  {isEditing ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="h-8 w-[200px]"
+                      />
+                      <Button size="sm" onClick={handleUpdate}>Save</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+                    </div>
+                  ) : (
+                    <div className="font-medium flex items-center gap-2">
+                      {org?.name}
+                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setIsEditing(true)}>
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <div className="text-text-muted">ID: {org?.id}</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>Team Members</CardTitle>
+                <CardDescription>Manage who has access to this organization</CardDescription>
+              </div>
+              <InviteMemberDialog onSuccess={handleInviteSuccess} />
+            </CardHeader>
+            <CardContent>
+              <TeamMembersList />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="license" className="mt-4">
+          <LicensePage />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

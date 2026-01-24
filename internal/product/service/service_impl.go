@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
-	"github.com/smallbiznis/railzway/internal/product/domain"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	"github.com/railzwaylabs/railzway/internal/product/domain"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"

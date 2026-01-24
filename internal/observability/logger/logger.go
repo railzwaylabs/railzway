@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	obscontext "github.com/smallbiznis/railzway/internal/observability/context"
+	obscontext "github.com/railzwaylabs/railzway/internal/observability/context"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 	"go.uber.org/zap"

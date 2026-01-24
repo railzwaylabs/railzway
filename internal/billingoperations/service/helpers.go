@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/smallbiznis/railzway/internal/billingoperations/domain"
+	"github.com/railzwaylabs/railzway/internal/billingoperations/domain"
 )
 
 func timePtr(t sql.NullTime) *time.Time {

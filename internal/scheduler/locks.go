@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	billingcycledomain "github.com/smallbiznis/railzway/internal/billingcycle/domain"
-	invoicedomain "github.com/smallbiznis/railzway/internal/invoice/domain"
-	obsmetrics "github.com/smallbiznis/railzway/internal/observability/metrics"
-	subscriptiondomain "github.com/smallbiznis/railzway/internal/subscription/domain"
+	billingcycledomain "github.com/railzwaylabs/railzway/internal/billingcycle/domain"
+	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
+	obsmetrics "github.com/railzwaylabs/railzway/internal/observability/metrics"
+	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )

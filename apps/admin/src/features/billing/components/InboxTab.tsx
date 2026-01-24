@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Loader2, Inbox } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -13,11 +14,13 @@ import {
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
 import { useInbox, useClaimAssignment } from "../hooks/useIA"
 import { formatCurrency } from "../utils/formatting"
+import { IssueDetailSheet } from "./IssueDetailSheet"
 import { cn } from "@/lib/utils"
 
 export function InboxTab() {
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useInbox()
   const claimMutation = useClaimAssignment()
+  const [selectedIssue, setSelectedIssue] = useState<any>(null)
 
   const handleClaim = (entityType: string, entityId: string) => {
     claimMutation.mutate({
@@ -66,11 +69,14 @@ export function InboxTab() {
   )
   const paymentIssues = items.filter(item => item.category === "failed_payment" || item.risk_category === "failed_payment")
 
+
+
   const renderSection = (title: string, sectionItems: typeof items) => {
     if (sectionItems.length === 0) return null
 
     return (
       <div className="space-y-4">
+        {/* ... header ... */}
         <div className="flex items-center gap-2 px-1">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
           <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
@@ -95,7 +101,11 @@ export function InboxTab() {
                 const isFailedPayment = item.category === "failed_payment" || item.risk_category === "failed_payment"
 
                 return (
-                  <TableRow key={`${item.entity_type}-${item.entity_id}-${index}`} className="group">
+                  <TableRow
+                    key={`${item.entity_type}-${item.entity_id}-${index}`}
+                    className="group cursor-pointer hover:bg-muted/50"
+                    onClick={() => setSelectedIssue(item)}
+                  >
                     <TableCell>
                       <Badge
                         variant="secondary"
@@ -110,7 +120,6 @@ export function InboxTab() {
                                 : "bg-slate-500/10 text-slate-600 border-slate-500/20"
                         )}
                       >
-                        {/* API returns risk_category or category depending on endpoint version/mock */}
                         {(item.risk_category || item.category || "Unknown").replace(/_/g, " ")}
                       </Badge>
                     </TableCell>
@@ -149,7 +158,10 @@ export function InboxTab() {
                         variant="outline"
                         className="h-7 text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
                         disabled={isClaiming}
-                        onClick={() => handleClaim(item.entity_type, item.entity_id)}
+                        onClick={(e) => {
+                          e.stopPropagation() // Prevent row click
+                          handleClaim(item.entity_type, item.entity_id)
+                        }}
                       >
                         {isClaiming ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
@@ -207,6 +219,12 @@ export function InboxTab() {
           )}
         </>
       )}
+
+      <IssueDetailSheet
+        open={!!selectedIssue}
+        onOpenChange={(open) => !open && setSelectedIssue(null)}
+        issue={selectedIssue}
+      />
     </div>
   )
 }

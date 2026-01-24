@@ -1,10 +1,10 @@
 package auth
 
 import (
-	authconfig "github.com/smallbiznis/railzway/internal/auth/config"
-	"github.com/smallbiznis/railzway/internal/auth/oauth"
-	"github.com/smallbiznis/railzway/internal/auth/repository"
-	"github.com/smallbiznis/railzway/internal/auth/service"
+	authconfig "github.com/railzwaylabs/railzway/internal/auth/config"
+	"github.com/railzwaylabs/railzway/internal/auth/oauth"
+	"github.com/railzwaylabs/railzway/internal/auth/repository"
+	"github.com/railzwaylabs/railzway/internal/auth/service"
 	"go.uber.org/fx"
 )
 

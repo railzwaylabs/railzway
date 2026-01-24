@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/smallbiznis/railzway/internal/usage/liveevents"
+	"github.com/railzwaylabs/railzway/internal/usage/liveevents"
 )
 
 func (s *Server) StreamMeterLiveEvents(c *gin.Context) {

@@ -10,7 +10,7 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
-	auditdomain "github.com/smallbiznis/railzway/internal/audit/domain"
+	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -36,6 +36,7 @@ const (
 	ObjectAuditLog          = "audit_log"
 	ObjectPaymentProvider   = "payment_provider"
 	ObjectUsage             = "usage"
+	ObjectOrganization      = "organization"
 )
 
 const (
@@ -120,6 +121,9 @@ const (
 	ActionInvoiceDelete = "invoice.delete"
 
 	ActionUsageIngest = "usage.ingest"
+
+	ActionOrganizationView   = "organization.view"
+	ActionOrganizationUpdate = "organization.update"
 )
 
 type Params struct {
@@ -380,6 +384,7 @@ func seedPolicies(enforcer *casbin.SyncedEnforcer) error {
 		{"role:admin", ObjectAPIKey, ActionAPIKeyView},
 		{"role:admin", ObjectAuditLog, ActionAuditLogView},
 		{"role:admin", ObjectPaymentProvider, ActionPaymentProviderManage},
+		{"role:admin", ObjectOrganization, ActionOrganizationView},
 
 		// Owner permissions
 		{"role:owner", ObjectSubscription, ActionSubscriptionActivate},
@@ -398,6 +403,8 @@ func seedPolicies(enforcer *casbin.SyncedEnforcer) error {
 		{"role:owner", ObjectAPIKey, ActionAPIKeyRevoke},
 		{"role:owner", ObjectAuditLog, ActionAuditLogView},
 		{"role:owner", ObjectPaymentProvider, ActionPaymentProviderManage},
+		{"role:owner", ObjectOrganization, ActionOrganizationView},
+		{"role:owner", ObjectOrganization, ActionOrganizationUpdate},
 
 		// FinOps permissions
 		{"role:finops", ObjectBillingOperations, ActionBillingOperationsView},
@@ -475,6 +482,7 @@ func seedPolicies(enforcer *casbin.SyncedEnforcer) error {
 		{"role:system", ObjectInvoice, ActionInvoiceDelete},
 
 		{"role:system", ObjectUsage, ActionUsageIngest},
+		{"role:system", ObjectOrganization, ActionOrganizationView},
 	}
 
 	for _, policy := range policies {

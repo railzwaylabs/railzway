@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	apikeydomain "github.com/smallbiznis/railzway/internal/apikey/domain"
-	authscope "github.com/smallbiznis/railzway/internal/auth/scope"
-	"github.com/smallbiznis/railzway/internal/orgcontext"
+	apikeydomain "github.com/railzwaylabs/railzway/internal/apikey/domain"
+	authscope "github.com/railzwaylabs/railzway/internal/auth/scope"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"

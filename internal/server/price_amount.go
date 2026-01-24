@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	priceamountdomain "github.com/smallbiznis/railzway/internal/priceamount/domain"
+	priceamountdomain "github.com/railzwaylabs/railzway/internal/priceamount/domain"
 )
 
 // @Summary      Create Price Amount

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	invoicedomain "github.com/smallbiznis/railzway/internal/invoice/domain"
-	ledgerdomain "github.com/smallbiznis/railzway/internal/ledger/domain"
+	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
+	ledgerdomain "github.com/railzwaylabs/railzway/internal/ledger/domain"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
