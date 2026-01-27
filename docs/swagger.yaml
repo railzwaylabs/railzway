@@ -3,7 +3,7 @@ definitions:
   datatypes.JSONMap:
     additionalProperties: true
     type: object
-  github_com_smallbiznis_railzway_internal_customer_domain.Customer:
+  github_com_railzwaylabs_railzway_internal_customer_domain.Customer:
     properties:
       created_at:
         type: string
@@ -22,7 +22,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  github_com_smallbiznis_railzway_internal_invoice_domain.Invoice:
+  github_com_railzwaylabs_railzway_internal_invoice_domain.Invoice:
     properties:
       billingCycleID:
         type: integer
@@ -49,7 +49,7 @@ definitions:
       items:
         description: Items is populated for API responses, not persisted
         items:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItem'
+          $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_invoice_domain.InvoiceItem'
         type: array
       metadata:
         $ref: '#/definitions/datatypes.JSONMap'
@@ -66,7 +66,7 @@ definitions:
       renderedPDFURL:
         type: string
       status:
-        $ref: '#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceStatus'
+        $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_invoice_domain.InvoiceStatus'
       subscriptionID:
         type: integer
       subtotalAmount:
@@ -84,7 +84,7 @@ definitions:
       voidedAt:
         type: string
     type: object
-  github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItem:
+  github_com_railzwaylabs_railzway_internal_invoice_domain.InvoiceItem:
     properties:
       amount:
         type: integer
@@ -97,7 +97,7 @@ definitions:
       invoiceID:
         type: integer
       lineType:
-        $ref: '#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItemLineType'
+        $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_invoice_domain.InvoiceItemLineType'
       metadata:
         $ref: '#/definitions/datatypes.JSONMap'
       orgID:
@@ -109,7 +109,7 @@ definitions:
       unitPrice:
         type: integer
     type: object
-  github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItemLineType:
+  github_com_railzwaylabs_railzway_internal_invoice_domain.InvoiceItemLineType:
     enum:
     - subscription
     - usage
@@ -123,7 +123,7 @@ definitions:
     - InvoiceItemLineTypeCredit
     - InvoiceItemLineTypeOneOff
     - InvoiceItemLineTypeTax
-  github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceStatus:
+  github_com_railzwaylabs_railzway_internal_invoice_domain.InvoiceStatus:
     enum:
     - DRAFT
     - FINALIZED
@@ -133,7 +133,7 @@ definitions:
     - InvoiceStatusDraft
     - InvoiceStatusFinalized
     - InvoiceStatusVoid
-  github_com_smallbiznis_railzway_internal_invoice_domain.RenderInvoiceResponse:
+  github_com_railzwaylabs_railzway_internal_invoice_domain.RenderInvoiceResponse:
     properties:
       invoice_template_id:
         type: string
@@ -144,7 +144,7 @@ definitions:
       rendered_pdf_url:
         type: string
     type: object
-  github_com_smallbiznis_railzway_internal_meter_domain.Meter:
+  github_com_railzwaylabs_railzway_internal_meter_domain.Meter:
     properties:
       active:
         type: boolean
@@ -165,7 +165,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  github_com_smallbiznis_railzway_internal_price_domain.CreateRequest:
+  github_com_railzwaylabs_railzway_internal_price_domain.CreateRequest:
     properties:
       active:
         type: boolean
@@ -207,7 +207,7 @@ definitions:
       version:
         type: integer
     type: object
-  github_com_smallbiznis_railzway_internal_price_domain.Price:
+  github_com_railzwaylabs_railzway_internal_price_domain.Price:
     properties:
       active:
         type: boolean
@@ -254,7 +254,7 @@ definitions:
       version:
         type: integer
     type: object
-  github_com_smallbiznis_railzway_internal_price_domain.Response:
+  github_com_railzwaylabs_railzway_internal_price_domain.Response:
     properties:
       active:
         type: boolean
@@ -304,7 +304,7 @@ definitions:
       version:
         type: integer
     type: object
-  github_com_smallbiznis_railzway_internal_priceamount_domain.CreateRequest:
+  github_com_railzwaylabs_railzway_internal_priceamount_domain.CreateRequest:
     properties:
       currency:
         type: string
@@ -326,7 +326,7 @@ definitions:
       unit_amount_cents:
         type: integer
     type: object
-  github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount:
+  github_com_railzwaylabs_railzway_internal_priceamount_domain.PriceAmount:
     properties:
       created_at:
         type: string
@@ -359,7 +359,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  github_com_smallbiznis_railzway_internal_pricetier_domain.CreateRequest:
+  github_com_railzwaylabs_railzway_internal_pricetier_domain.CreateRequest:
     properties:
       end_quantity:
         type: number
@@ -379,7 +379,7 @@ definitions:
       unit_amount_cents:
         type: integer
     type: object
-  github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier:
+  github_com_railzwaylabs_railzway_internal_pricetier_domain.PriceTier:
     properties:
       created_at:
         type: string
@@ -406,7 +406,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  github_com_smallbiznis_railzway_internal_product_domain.Product:
+  github_com_railzwaylabs_railzway_internal_product_domain.Product:
     properties:
       active:
         type: boolean
@@ -427,7 +427,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  github_com_smallbiznis_railzway_internal_reference_domain.Country:
+  github_com_railzwaylabs_railzway_internal_reference_domain.Country:
     properties:
       code:
         type: string
@@ -436,7 +436,7 @@ definitions:
       name:
         type: string
     type: object
-  github_com_smallbiznis_railzway_internal_reference_domain.Currency:
+  github_com_railzwaylabs_railzway_internal_reference_domain.Currency:
     properties:
       code:
         type: string
@@ -451,7 +451,7 @@ definitions:
       symbol:
         type: string
     type: object
-  github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest:
+  github_com_railzwaylabs_railzway_internal_subscription_domain.CreateSubscriptionItemRequest:
     properties:
       meter_id:
         type: string
@@ -460,7 +460,7 @@ definitions:
       quantity:
         type: integer
     type: object
-  github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionRequest:
+  github_com_railzwaylabs_railzway_internal_subscription_domain.CreateSubscriptionRequest:
     properties:
       billing_cycle_type:
         type: string
@@ -470,7 +470,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest'
+          $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.CreateSubscriptionItemRequest'
         type: array
       metadata:
         additionalProperties: {}
@@ -478,7 +478,7 @@ definitions:
       trial_days:
         type: integer
     type: object
-  github_com_smallbiznis_railzway_internal_subscription_domain.Subscription:
+  github_com_railzwaylabs_railzway_internal_subscription_domain.Subscription:
     properties:
       activatedAt:
         type: string
@@ -523,7 +523,7 @@ definitions:
       startAt:
         type: string
       status:
-        $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.SubscriptionStatus'
+        $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.SubscriptionStatus'
       trialEndsAt:
         type: string
       trialStartsAt:
@@ -531,7 +531,7 @@ definitions:
       updatedAt:
         type: string
     type: object
-  github_com_smallbiznis_railzway_internal_subscription_domain.SubscriptionStatus:
+  github_com_railzwaylabs_railzway_internal_subscription_domain.SubscriptionStatus:
     enum:
     - DRAFT
     - ACTIVE
@@ -545,7 +545,7 @@ definitions:
     - SubscriptionStatusPaused
     - SubscriptionStatusCanceled
     - SubscriptionStatusEnded
-  github_com_smallbiznis_railzway_internal_usage_domain.CreateIngestRequest:
+  github_com_railzwaylabs_railzway_internal_usage_domain.CreateIngestRequest:
     properties:
       customer_id:
         minLength: 1
@@ -572,7 +572,7 @@ definitions:
     - recorded_at
     - value
     type: object
-  github_com_smallbiznis_railzway_internal_usage_domain.UsageEvent:
+  github_com_railzwaylabs_railzway_internal_usage_domain.UsageEvent:
     properties:
       customer_id:
         type: integer
@@ -673,7 +673,7 @@ definitions:
     properties:
       items:
         items:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest'
+          $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.CreateSubscriptionItemRequest'
         type: array
     type: object
   internal_server.updateMeterRequest:
@@ -724,7 +724,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_reference_domain.Country'
+              $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_reference_domain.Country'
             type: array
       security:
       - ApiKeyAuth: []
@@ -743,7 +743,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_reference_domain.Currency'
+              $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_reference_domain.Currency'
             type: array
       security:
       - ApiKeyAuth: []
@@ -791,7 +791,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer'
+              $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_customer_domain.Customer'
             type: array
       security:
       - ApiKeyAuth: []
@@ -815,7 +815,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_customer_domain.Customer'
       security:
       - ApiKeyAuth: []
       summary: Create Customer
@@ -838,7 +838,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_customer_domain.Customer'
       security:
       - ApiKeyAuth: []
       summary: Get Customer
@@ -909,7 +909,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.Invoice'
+              $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_invoice_domain.Invoice'
             type: array
       security:
       - ApiKeyAuth: []
@@ -933,7 +933,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.Invoice'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_invoice_domain.Invoice'
       security:
       - ApiKeyAuth: []
       summary: Get Invoice
@@ -956,7 +956,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.RenderInvoiceResponse'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_invoice_domain.RenderInvoiceResponse'
       security:
       - ApiKeyAuth: []
       summary: Render Invoice
@@ -995,7 +995,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter'
+              $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_meter_domain.Meter'
             type: array
       summary: List Meters
       tags:
@@ -1017,7 +1017,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_meter_domain.Meter'
       summary: Create Meter
       tags:
       - meters
@@ -1056,7 +1056,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_meter_domain.Meter'
       summary: Get Meter
       tags:
       - meters
@@ -1082,7 +1082,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_meter_domain.Meter'
       summary: Update Meter
       tags:
       - meters
@@ -1103,7 +1103,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount'
+              $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_priceamount_domain.PriceAmount'
             type: array
       security:
       - ApiKeyAuth: []
@@ -1120,14 +1120,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.CreateRequest'
+          $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_priceamount_domain.CreateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_priceamount_domain.PriceAmount'
       security:
       - ApiKeyAuth: []
       summary: Create Price Amount
@@ -1150,7 +1150,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_priceamount_domain.PriceAmount'
       security:
       - ApiKeyAuth: []
       summary: Get Price Amount
@@ -1168,7 +1168,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier'
+              $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_pricetier_domain.PriceTier'
             type: array
       security:
       - ApiKeyAuth: []
@@ -1185,14 +1185,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.CreateRequest'
+          $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_pricetier_domain.CreateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_pricetier_domain.PriceTier'
       security:
       - ApiKeyAuth: []
       summary: Create Price Tier
@@ -1215,7 +1215,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_pricetier_domain.PriceTier'
       security:
       - ApiKeyAuth: []
       summary: Get Price Tier
@@ -1233,7 +1233,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price'
+              $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.Price'
             type: array
       security:
       - ApiKeyAuth: []
@@ -1257,7 +1257,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.Price'
       security:
       - ApiKeyAuth: []
       summary: Create Price
@@ -1280,7 +1280,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.Price'
       security:
       - ApiKeyAuth: []
       summary: Get Price
@@ -1298,7 +1298,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response'
+              $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.Response'
             type: array
       security:
       - ApiKeyAuth: []
@@ -1315,14 +1315,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.CreateRequest'
+          $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.CreateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.Response'
       security:
       - ApiKeyAuth: []
       summary: Create Pricing
@@ -1345,7 +1345,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.Response'
       security:
       - ApiKeyAuth: []
       summary: Get Pricing
@@ -1380,7 +1380,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product'
+              $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_product_domain.Product'
             type: array
       security:
       - ApiKeyAuth: []
@@ -1404,7 +1404,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_product_domain.Product'
       security:
       - ApiKeyAuth: []
       summary: Create Product
@@ -1427,7 +1427,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_product_domain.Product'
       security:
       - ApiKeyAuth: []
       summary: Get Product
@@ -1455,7 +1455,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_product_domain.Product'
       security:
       - ApiKeyAuth: []
       summary: Update Product
@@ -1478,7 +1478,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_product_domain.Product'
       security:
       - ApiKeyAuth: []
       summary: Archive Product
@@ -1521,7 +1521,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription'
+              $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.Subscription'
             type: array
       security:
       - ApiKeyAuth: []
@@ -1538,14 +1538,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionRequest'
+          $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.CreateSubscriptionRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.Subscription'
       security:
       - ApiKeyAuth: []
       summary: Create Subscription
@@ -1568,7 +1568,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.Subscription'
       security:
       - ApiKeyAuth: []
       summary: Get Subscription
@@ -1639,7 +1639,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.Subscription'
       security:
       - ApiKeyAuth: []
       summary: Replace Subscription Items
@@ -1723,14 +1723,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_usage_domain.CreateIngestRequest'
+          $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_usage_domain.CreateIngestRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_usage_domain.UsageEvent'
+            $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_usage_domain.UsageEvent'
       security:
       - ApiKeyAuth: []
       summary: Ingest Usage
