@@ -1,93 +1,123 @@
 # Deployment Guide
 
-This guide explains how to deploy Railzway services using Docker and Docker Compose.
+This guide explains how to deploy Railzway services using the **Unified Docker Strategy**.
 
-## 🐳 Docker Images
+## 🐳 Docker Images & Build Strategy
 
-We publish the following images to GitHub Container Registry (GHCR):
+Railzway uses a **single multi-stage `Dockerfile`** at the project root. This single file can build specialized images for all system components.
+
+### 1. Unified `Dockerfile` Targets
+
+To build a specific component manualy, use the `--target` flag:
+
+```bash
+# Admin Monolith (UI + API)
+docker build --target railzway-admin -t railzway-admin .
+
+# Invoice UI (Customer Facing)
+docker build --target railzway-invoice -t railzway-invoice .
+
+# Scheduler (Background Jobs)
+docker build --target railzway-scheduler -t railzway-scheduler .
+
+# Migration Runner (Tools)
+docker build --target railzway-migration -t railzway-migration .
+```
+
+### 2. Published Images (GHCR)
+
+We automatically build and publish these targets to GitHub Container Registry:
 
 | Service | Image | Description |
 | :--- | :--- | :--- |
-| **Admin (Monolith)** | `ghcr.io/smallbiznis/railzway/railzway-admin` | Core Monolith. Serving Admin UI + API. |
+| **Admin** | `ghcr.io/smallbiznis/railzway/railzway-admin` | Core Monolith. Serving Admin UI + API. |
 | **Invoice** | `ghcr.io/smallbiznis/railzway/railzway-invoice` | Customer-facing Invoice Checkout UI. |
 | **Scheduler** | `ghcr.io/smallbiznis/railzway/railzway-scheduler` | Background workers (Rating, Invoicing). No UI. |
 | **Migration** | `ghcr.io/smallbiznis/railzway/railzway-migration` | One-off container for running database migrations. |
 
+---
+
 ## 🚀 Running with Docker Compose
 
-Create a `docker-compose.yml` file with the following content:
+We support two primary workflows: **Local Development** (Build from Source) and **Production** (Pull from Registry).
+
+### A. Local Development
+
+The default `docker-compose.yml` in the root directory is configured for local development. It builds images directly from your local source code.
+
+**1. Start Infrastructure & Build:**
+```bash
+docker-compose up -d --build postgres redis
+```
+
+**2. Run Migrations (First Time Only):**
+```bash
+# This compiles the migration target and runs schema updates
+docker-compose run --rm migration
+```
+
+**3. Start Services:**
+```bash
+docker-compose up -d
+```
+
+**Access Points:**
+- **Admin Dashboard**: [http://localhost:8080](http://localhost:8080)
+- **Public Invoice UI**: [http://localhost:3000](http://localhost:3000)
+
+### B. Production Deployment
+
+For production, create a specific `docker-compose.prod.yml` that uses the pre-built images from GHCR.
+
+**Example `docker-compose.prod.yml`**:
 
 ```yaml
+version: "3.8"
 services:
-  # Database
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_USER: railzway
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: railzway
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
-  # Infrastructure
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-
-  # -----------------------------------------------------
-  # Core Services
-  # -----------------------------------------------------
-  
-  # 1. Admin Dashboard (UI + API)
   admin:
     image: ghcr.io/smallbiznis/railzway/railzway-admin:latest
-    ports:
-      - "8080:8080"
+    restart: always
     environment:
       - PORT=8080
       - DB_HOST=postgres
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_HOST=redis
-    depends_on:
-      - postgres
-      - redis
+    ports: ["8080:8080"]
+    depends_on: [postgres, redis]
 
-  # 2. Scheduler (Background Jobs)
-  scheduler:
-    image: ghcr.io/smallbiznis/railzway/railzway-scheduler:latest
-    environment:
-      - ENABLED_JOBS=billing,usage,invoice # Run all jobs
-      - DB_HOST=postgres
-      - REDIS_HOST=redis
-    depends_on:
-      - postgres
-      - redis
-
-  # 3. Public Invoice Service
   invoice:
     image: ghcr.io/smallbiznis/railzway/railzway-invoice:latest
-    ports:
-      - "3000:8080" # Exposed on port 3000
+    restart: always
     environment:
-      - PORT=8080
-      - API_URL=http://admin:8080 # Points to Admin API for data
-    depends_on:
-      - admin
+      - API_URL=http://admin:8080
+    ports: ["3000:8080"]
+    depends_on: [admin]
+
+  scheduler:
+    image: ghcr.io/smallbiznis/railzway/railzway-scheduler:latest
+    restart: always
+    environment:
+      - ENABLED_JOBS=billing,usage,invoice
+    depends_on: [postgres, redis]
+
+  # External Infra (Managed DB recommended for Prod)
+  postgres:
+    image: postgres:15-alpine
+    volumes: [postgres_data:/var/lib/postgresql/data]
+  
+  redis:
+    image: redis:7-alpine
 
 volumes:
   postgres_data:
 ```
 
-### Start the Stack
-```bash
-docker-compose up -d
-```
+---
 
-## 📦 Running Individual Containers
+## 📦 Running Individual Containers (Docker Run)
 
-If you prefer `docker run`:
+If you need to verify or run a single container manually:
 
 ### 1. Run Admin Service
 ```bash
@@ -108,85 +138,17 @@ docker run -d \
   ghcr.io/smallbiznis/railzway/railzway-scheduler:latest
 ```
 
-> Note: `host.docker.internal` allows the container to access services running on your host machine (like local Postgres).
+> **Note**: `host.docker.internal` is used to access services running on the host machine. On Linux, proceed with `--network host` or valid IP address configuration.
 
 ## Environment Variables
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `PORT` | HTTP Port to listen on | `8080` |
-| `DB_HOST` | Postgres Host | `localhost` |
-| `DB_USER` | Postgres User | `postgres` |
-| `DB_NAME` | Postgres DB Name | `postgres` |
-| `REDIS_HOST` | Redis Host | `localhost` |
-| `ENABLED_JOBS` | Comma-separated list of jobs (Scheduler only) | All jobs |
-| `ENSURE_DEFAULT_ORG_AND_USER` | Auto-create default org + admin on startup (OSS/dev) | `true` |
-| `BOOTSTRAP_DEFAULT_ORG_ID` | Explicit org ID for auto-bootstrap | `0` |
-| `BOOTSTRAP_DEFAULT_ORG_NAME` | Explicit org name for auto-bootstrap | (empty) |
-| `BOOTSTRAP_DEFAULT_ORG_SLUG` | Explicit org slug for auto-bootstrap | (empty) |
-| `BOOTSTRAP_ADMIN_EMAIL` | Admin email for auto-bootstrap | `admin@railzway.com` |
-| `BOOTSTRAP_ADMIN_PASSWORD` | Admin password for auto-bootstrap | `admin` |
-
-> **Note:** Use `BOOTSTRAP_DEFAULT_ORG_*` for both OSS and Cloud.
-
-## Org Activation Boundary (Cloud vs Core)
-
-These rules are **hard constraints** for a Cloud-ready control-plane without leaking domain logic into the core engine:
-
-1. **OrgGate never joins `organizations`.**  
-   All enforcement reads **only** `org_bootstrap_state` by `org_id`.  
-   If you need to log `org_name` or `slug`, do it in the handler layer by enrichment, **not** inside the gate.
-2. **No implicit activation path.**  
-   `CreateOrganization(...)` must create `org_bootstrap_state = initializing` (or `active` only via backfill/compat).  
-   Activation must be explicit via `ActivateOrganization(org_id)` (or control-plane event) and irreversible.
-3. **Slug is UX-only, never a billing key.**  
-   All billing/scheduler/ledger logic uses `org_id`.  
-   Slug lookup is allowed only at the edge (convert slug → org_id), then the core uses `org_id` exclusively.
-
-## Testing: Migration Guard & Org Activation
-
-> **Run these steps on a dev database only.**
-
-### 1) Migration Guard (Schema Gate)
-
-1. Run migrations:
-   ```bash
-   go run ./cmd/railzway migrate
-   ```
-2. Verify `system_bootstrap_state` is `active`:
-   ```sql
-   SELECT status, schema_version, activated_at FROM system_bootstrap_state;
-   ```
-3. Start services (should succeed):
-   ```bash
-   go run ./cmd/railzway serve
-   go run ./cmd/railzway scheduler
-   ```
-4. Force a failure state (dev only):
-   ```sql
-   UPDATE system_bootstrap_state SET status = 'initializing';
-   ```
-5. Start services again (should **fail fast** at schema gate):
-   ```bash
-   go run ./cmd/railzway serve
-   go run ./cmd/railzway scheduler
-   ```
-
-### 2) Org Activation Gate
-
-1. Create an org and initialize bootstrap state (dev only):
-   ```sql
-   INSERT INTO organizations (id, name, slug) VALUES (123, 'Test Org', 'test-org');
-   INSERT INTO org_bootstrap_state (org_id, status, created_at)
-   VALUES (123, 'initializing', NOW());
-   ```
-2. Try a billing or scheduler action for `org_id = 123`  
-   Expected: **denied** (org is not active).
-3. Activate explicitly:
-   ```sql
-   UPDATE org_bootstrap_state
-   SET status = 'active', activated_at = NOW()
-   WHERE org_id = 123;
-   ```
-4. Retry the same billing/scheduler action  
-   Expected: **allowed**.
+| `PORT` | HTTP Port to listen on (Admin/Invoice). | `8080` |
+| `DB_HOST` | Postgres Hostname. | `localhost` |
+| `DB_USER` | Postgres Username. | `postgres` |
+| `DB_PASSWORD` | Postgres Password. | (empty) |
+| `DB_NAME` | Postgres Database Name. | `postgres` |
+| `REDIS_HOST` | Redis Hostname. | `localhost` |
+| `API_URL` | (Invoice Service Only) URL to the Admin API. | `http://admin:8080` |
+| `ENABLED_JOBS` | (Scheduler Only) Comma-separated list of jobs. | All jobs |
