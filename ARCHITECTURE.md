@@ -101,33 +101,25 @@ At no point does Railzway store or process payment credentials.
 
 ---
 
-## Deployment Topology (Hybrid)
+Railzway uses a **Unified Binary** approach (`cmd/railzway`) packaged into specialized Docker images:
 
-Railzway supports two primary deployment models using the same codebase:
+### 1. Admin Image (`railzway-admin`)
+- **Contains**: Monolith Binary + Admin UI Assets
+- **Role**: Primary Control Plane. Serves the Admin Dashboard and the Core API.
 
-### 1. Monolith (All-in-One)
-A single binary (`apps/railzway`) containing all logic and the Admin UI.
-- **Best for**: Development, small-scale deployments, low complexity.
-- **Docker Image**: `ghcr.io/smallbiznis/railzway`
+### 2. Invoice Image (`railzway-invoice`)
+- **Contains**: Monolith Binary + Invoice UI Assets
+- **Role**: Customer-facing Checkout UI. Securely rendered public invoices.
 
-### 2. Microservices (Granular Planes)
-The monolith is sliced into 4 discrete planes for independent scaling:
+### 3. Scheduler Image (`railzway-scheduler`)
+- **Contains**: Monolith Binary (No UI Assets)
+- **Role**: Background Plane. Runs async jobs (Rating, Invoicing).
 
-#### Control Plane (`apps/admin`)
-- **Responsibility**: Organization management, configuration, internal dashboards.
-- **Scaling**: Low traffic, high availability for staff.
+### 4. Migration Image (`railzway-migration`)
+- **Contains**: Monolith Binary (No UI Assets)
+- **Role**: Ephemeral task runner for database schema migrations.
 
-#### Customer Plane (`apps/invoice`)
-- **Responsibility**: Public invoice rendering, payment collection UI.
-- **Scaling**: High burst capacity (end-of-month traffic).
-
-#### Background Plane (`apps/scheduler`)
-- **Responsibility**: Async jobs (rating, ensuring cycles, generating invoices).
-- **Scaling**: Throughput-oriented. Configurable via `ENABLED_JOBS` env var (e.g., dedicated workers for rating vs invoicing).
-
-#### Data Plane (`apps/api`)
-- **Responsibility**: High-volume programmatic billing API.
-- **Scaling**: Horizontal scaling for API ingestion and queries.
+**Note**: All images run the exact same Go binary (`railzway`), ensuring consistent logic across all planes. The difference is only in the static frontend assets included and the command executed (`serve` vs `scheduler` vs `migrate`).
 
 ---
 

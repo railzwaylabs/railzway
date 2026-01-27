@@ -162,6 +162,7 @@ func RegisterRoutes(s *Server) {
 	s.RegisterAuthRoutes()
 	s.RegisterAPIRoutes()
 	s.RegisterAdminRoutes()
+	s.RegisterPublicRoutes()
 	s.RegisterUIRoutes()
 	s.RegisterFallback()
 }
