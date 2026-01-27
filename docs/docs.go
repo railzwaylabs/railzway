@@ -47,7 +47,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_reference_domain.Country"
+                                "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_reference_domain.Country"
                             }
                         }
                     }
@@ -78,7 +78,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_reference_domain.Currency"
+                                "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_reference_domain.Currency"
                             }
                         }
                     }
@@ -153,7 +153,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer"
+                                "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_customer_domain.Customer"
                             }
                         }
                     }
@@ -191,7 +191,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_customer_domain.Customer"
                         }
                     }
                 }
@@ -228,7 +228,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_customer_domain.Customer"
                         }
                     }
                 }
@@ -338,7 +338,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.Invoice"
+                                "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_invoice_domain.Invoice"
                             }
                         }
                     }
@@ -376,7 +376,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.Invoice"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_invoice_domain.Invoice"
                         }
                     }
                 }
@@ -413,7 +413,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.RenderInvoiceResponse"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_invoice_domain.RenderInvoiceResponse"
                         }
                     }
                 }
@@ -470,7 +470,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter"
+                                "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_meter_domain.Meter"
                             }
                         }
                     }
@@ -503,7 +503,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_meter_domain.Meter"
                         }
                     }
                 }
@@ -535,7 +535,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_meter_domain.Meter"
                         }
                     }
                 }
@@ -601,7 +601,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_meter_domain.Meter"
                         }
                     }
                 }
@@ -639,7 +639,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount"
+                                "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_priceamount_domain.PriceAmount"
                             }
                         }
                     }
@@ -669,7 +669,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.CreateRequest"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_priceamount_domain.CreateRequest"
                         }
                     }
                 ],
@@ -677,7 +677,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_priceamount_domain.PriceAmount"
                         }
                     }
                 }
@@ -714,7 +714,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_priceamount_domain.PriceAmount"
                         }
                     }
                 }
@@ -744,7 +744,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier"
+                                "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_pricetier_domain.PriceTier"
                             }
                         }
                     }
@@ -774,7 +774,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.CreateRequest"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_pricetier_domain.CreateRequest"
                         }
                     }
                 ],
@@ -782,7 +782,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_pricetier_domain.PriceTier"
                         }
                     }
                 }
@@ -819,7 +819,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_pricetier_domain.PriceTier"
                         }
                     }
                 }
@@ -849,7 +849,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price"
+                                "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.Price"
                             }
                         }
                     }
@@ -887,7 +887,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.Price"
                         }
                     }
                 }
@@ -924,7 +924,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.Price"
                         }
                     }
                 }
@@ -954,7 +954,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response"
+                                "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.Response"
                             }
                         }
                     }
@@ -984,7 +984,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.CreateRequest"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.CreateRequest"
                         }
                     }
                 ],
@@ -992,7 +992,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.Response"
                         }
                     }
                 }
@@ -1029,7 +1029,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.Response"
                         }
                     }
                 }
@@ -1085,7 +1085,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                                "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_product_domain.Product"
                             }
                         }
                     }
@@ -1123,7 +1123,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_product_domain.Product"
                         }
                     }
                 }
@@ -1160,7 +1160,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_product_domain.Product"
                         }
                     }
                 }
@@ -1204,7 +1204,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_product_domain.Product"
                         }
                     }
                 }
@@ -1241,7 +1241,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_product_domain.Product"
                         }
                     }
                 }
@@ -1309,7 +1309,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription"
+                                "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.Subscription"
                             }
                         }
                     }
@@ -1339,7 +1339,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionRequest"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.CreateSubscriptionRequest"
                         }
                     }
                 ],
@@ -1347,7 +1347,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.Subscription"
                         }
                     }
                 }
@@ -1384,7 +1384,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.Subscription"
                         }
                     }
                 }
@@ -1498,7 +1498,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.Subscription"
                         }
                     }
                 }
@@ -1637,7 +1637,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_usage_domain.CreateIngestRequest"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_usage_domain.CreateIngestRequest"
                         }
                     }
                 ],
@@ -1645,7 +1645,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_usage_domain.UsageEvent"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_usage_domain.UsageEvent"
                         }
                     }
                 }
@@ -1657,7 +1657,7 @@ const docTemplate = `{
             "type": "object",
             "additionalProperties": true
         },
-        "github_com_smallbiznis_railzway_internal_customer_domain.Customer": {
+        "github_com_railzwaylabs_railzway_internal_customer_domain.Customer": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -1686,7 +1686,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_invoice_domain.Invoice": {
+        "github_com_railzwaylabs_railzway_internal_invoice_domain.Invoice": {
             "type": "object",
             "properties": {
                 "billingCycleID": {
@@ -1726,7 +1726,7 @@ const docTemplate = `{
                     "description": "Items is populated for API responses, not persisted",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItem"
+                        "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_invoice_domain.InvoiceItem"
                     }
                 },
                 "metadata": {
@@ -1751,7 +1751,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceStatus"
+                    "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_invoice_domain.InvoiceStatus"
                 },
                 "subscriptionID": {
                     "type": "integer"
@@ -1779,7 +1779,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItem": {
+        "github_com_railzwaylabs_railzway_internal_invoice_domain.InvoiceItem": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -1798,7 +1798,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "lineType": {
-                    "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItemLineType"
+                    "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_invoice_domain.InvoiceItemLineType"
                 },
                 "metadata": {
                     "$ref": "#/definitions/datatypes.JSONMap"
@@ -1817,7 +1817,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItemLineType": {
+        "github_com_railzwaylabs_railzway_internal_invoice_domain.InvoiceItemLineType": {
             "type": "string",
             "enum": [
                 "subscription",
@@ -1834,7 +1834,7 @@ const docTemplate = `{
                 "InvoiceItemLineTypeTax"
             ]
         },
-        "github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceStatus": {
+        "github_com_railzwaylabs_railzway_internal_invoice_domain.InvoiceStatus": {
             "type": "string",
             "enum": [
                 "DRAFT",
@@ -1847,7 +1847,7 @@ const docTemplate = `{
                 "InvoiceStatusVoid"
             ]
         },
-        "github_com_smallbiznis_railzway_internal_invoice_domain.RenderInvoiceResponse": {
+        "github_com_railzwaylabs_railzway_internal_invoice_domain.RenderInvoiceResponse": {
             "type": "object",
             "properties": {
                 "invoice_template_id": {
@@ -1864,7 +1864,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_meter_domain.Meter": {
+        "github_com_railzwaylabs_railzway_internal_meter_domain.Meter": {
             "type": "object",
             "properties": {
                 "active": {
@@ -1896,7 +1896,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_price_domain.CreateRequest": {
+        "github_com_railzwaylabs_railzway_internal_price_domain.CreateRequest": {
             "type": "object",
             "properties": {
                 "active": {
@@ -1959,7 +1959,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_price_domain.Price": {
+        "github_com_railzwaylabs_railzway_internal_price_domain.Price": {
             "type": "object",
             "properties": {
                 "active": {
@@ -2030,7 +2030,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_price_domain.Response": {
+        "github_com_railzwaylabs_railzway_internal_price_domain.Response": {
             "type": "object",
             "properties": {
                 "active": {
@@ -2105,7 +2105,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_priceamount_domain.CreateRequest": {
+        "github_com_railzwaylabs_railzway_internal_priceamount_domain.CreateRequest": {
             "type": "object",
             "properties": {
                 "currency": {
@@ -2138,7 +2138,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount": {
+        "github_com_railzwaylabs_railzway_internal_priceamount_domain.PriceAmount": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -2188,7 +2188,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_pricetier_domain.CreateRequest": {
+        "github_com_railzwaylabs_railzway_internal_pricetier_domain.CreateRequest": {
             "type": "object",
             "properties": {
                 "end_quantity": {
@@ -2218,7 +2218,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier": {
+        "github_com_railzwaylabs_railzway_internal_pricetier_domain.PriceTier": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -2259,7 +2259,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_product_domain.Product": {
+        "github_com_railzwaylabs_railzway_internal_product_domain.Product": {
             "type": "object",
             "properties": {
                 "active": {
@@ -2291,7 +2291,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_reference_domain.Country": {
+        "github_com_railzwaylabs_railzway_internal_reference_domain.Country": {
             "type": "object",
             "properties": {
                 "code": {
@@ -2305,7 +2305,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_reference_domain.Currency": {
+        "github_com_railzwaylabs_railzway_internal_reference_domain.Currency": {
             "type": "object",
             "properties": {
                 "code": {
@@ -2328,7 +2328,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest": {
+        "github_com_railzwaylabs_railzway_internal_subscription_domain.CreateSubscriptionItemRequest": {
             "type": "object",
             "properties": {
                 "meter_id": {
@@ -2342,7 +2342,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionRequest": {
+        "github_com_railzwaylabs_railzway_internal_subscription_domain.CreateSubscriptionRequest": {
             "type": "object",
             "properties": {
                 "billing_cycle_type": {
@@ -2357,7 +2357,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest"
+                        "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.CreateSubscriptionItemRequest"
                     }
                 },
                 "metadata": {
@@ -2369,7 +2369,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_subscription_domain.Subscription": {
+        "github_com_railzwaylabs_railzway_internal_subscription_domain.Subscription": {
             "type": "object",
             "properties": {
                 "activatedAt": {
@@ -2436,7 +2436,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.SubscriptionStatus"
+                    "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.SubscriptionStatus"
                 },
                 "trialEndsAt": {
                     "type": "string"
@@ -2449,7 +2449,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_subscription_domain.SubscriptionStatus": {
+        "github_com_railzwaylabs_railzway_internal_subscription_domain.SubscriptionStatus": {
             "type": "string",
             "enum": [
                 "DRAFT",
@@ -2466,7 +2466,7 @@ const docTemplate = `{
                 "SubscriptionStatusEnded"
             ]
         },
-        "github_com_smallbiznis_railzway_internal_usage_domain.CreateIngestRequest": {
+        "github_com_railzwaylabs_railzway_internal_usage_domain.CreateIngestRequest": {
             "type": "object",
             "required": [
                 "customer_id",
@@ -2502,7 +2502,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_usage_domain.UsageEvent": {
+        "github_com_railzwaylabs_railzway_internal_usage_domain.UsageEvent": {
             "type": "object",
             "properties": {
                 "customer_id": {
@@ -2655,7 +2655,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest"
+                        "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_subscription_domain.CreateSubscriptionItemRequest"
                     }
                 }
             }
