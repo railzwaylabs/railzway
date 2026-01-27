@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { formatDistanceToNow } from "date-fns"
 import { getBillingCycles, getBillingActivity } from "../api/dashboard"
+import { SystemReadiness } from "../components/SystemReadiness"
 
 export default function OrgHome() {
   const { orgId } = useParams()
@@ -56,6 +57,9 @@ export default function OrgHome() {
           <p className="text-muted-foreground text-sm">System command center · {new Date().toLocaleDateString()}</p>
         </div>
       </div>
+
+      {/* System Readiness Status */}
+      <SystemReadiness />
 
       {/* HUD Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

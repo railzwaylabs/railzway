@@ -41,6 +41,14 @@ func (s *Scheduler) RecoverySweepJob(ctx context.Context) error {
 
 		for _, cycle := range cycles {
 			s.logCycleClaimed(ctx, "recovery_sweep", cycle)
+			if err := s.ensureOrgActive(ctx, cycle.OrgID); err != nil {
+				jobErr = errors.Join(jobErr, err)
+				s.logSchedulerError(ctx, run, "scheduler.org.inactive", "recovery_sweep", cycle.OrgID, err,
+					zap.String("cycle_id", idString(cycle.ID)),
+					zap.String("subscription_id", idString(cycle.SubscriptionID)),
+				)
+				continue
+			}
 			if err := s.authorizeSystem(ctx, cycle.OrgID, authorization.ObjectBillingCycle, authorization.ActionBillingCycleRate); err != nil {
 				jobErr = errors.Join(jobErr, err)
 				s.logSchedulerError(ctx, run, "scheduler.authorize.failed", "recovery_sweep", cycle.OrgID, err,
@@ -152,6 +160,14 @@ func (s *Scheduler) RecoverySweepJob(ctx context.Context) error {
 
 		for _, cycle := range cycles {
 			s.logCycleClaimed(ctx, "recovery_sweep", cycle)
+			if err := s.ensureOrgActive(ctx, cycle.OrgID); err != nil {
+				jobErr = errors.Join(jobErr, err)
+				s.logSchedulerError(ctx, run, "scheduler.org.inactive", "recovery_sweep", cycle.OrgID, err,
+					zap.String("cycle_id", idString(cycle.ID)),
+					zap.String("subscription_id", idString(cycle.SubscriptionID)),
+				)
+				continue
+			}
 			if err := s.authorizeSystem(ctx, cycle.OrgID, authorization.ObjectBillingCycle, authorization.ActionBillingCycleClose); err != nil {
 				jobErr = errors.Join(jobErr, err)
 				s.logSchedulerError(ctx, run, "scheduler.authorize.failed", "recovery_sweep", cycle.OrgID, err,

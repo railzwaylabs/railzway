@@ -8,6 +8,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/authorization"
 	"github.com/railzwaylabs/railzway/internal/billingdashboard/rollup"
 	"github.com/railzwaylabs/railzway/internal/billingoperations"
+	"github.com/railzwaylabs/railzway/internal/bootstrap"
 	"github.com/railzwaylabs/railzway/internal/clock"
 	"github.com/railzwaylabs/railzway/internal/config"
 	"github.com/railzwaylabs/railzway/internal/feature"
@@ -35,6 +36,8 @@ func main() {
 		fx.Provide(RegisterSnowflake),
 		db.Module,
 		clock.Module,
+		bootstrap.Module,
+		fx.Invoke(bootstrap.EnforceSchemaGate),
 
 		// Domain services required by scheduler
 		scheduler.Module,

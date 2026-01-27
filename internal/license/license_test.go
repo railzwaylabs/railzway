@@ -2,6 +2,7 @@ package license
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -58,7 +59,7 @@ func TestLicenseVerification(t *testing.T) {
 		require.NoError(t, err)
 
 		// Tamper with the JSON
-		tamperedJSON := []byte(string(licenseJSON) + " ") // Whitespace might be ignored by JSON decoder but signature over bytes? 
+
 		// Actually, our current implementation re-marshals the payload from the decoded struct.
 		// So modifying the JSON structure *values* is the attack we check.
 
@@ -66,22 +67,22 @@ func TestLicenseVerification(t *testing.T) {
 		// This requires simple string manipulation since we don't want to re-sign
 		// We replace "evil-corp" with "good-corp" without updating signature
 		// Note: The signature is base64, usually at the end.
-		
+
 		// If we modify the payload, the signature verification must fail.
 		// Since we unmarshal -> marshal -> verify, changing the input JSON values changes the marshaled bytes.
-		
+
 		// Let's try to just use a different payload but same signature
 		badPayload := Payload{
-			OrgID: "hacked-corp", 
+			OrgID:     "hacked-corp",
 			ExpiresAt: time.Now().Add(time.Hour),
 		}
 		// Create a license struct with valid signature from previous, but bad payload
 		var l License
 		_ = json.Unmarshal(licenseJSON, &l)
 		l.Payload = badPayload // Swapped!
-		
+
 		badLicenseJSON, _ := json.Marshal(l)
-		
+
 		_, err = verifier.ParseAndVerify(badLicenseJSON)
 		assert.ErrorIs(t, err, ErrInvalidSignature)
 	})

@@ -69,10 +69,10 @@
   --blur-lg: 16px;
 
   --z-base: 0;
-  --z-header: 10;
-  --z-overlay: 20;
-  --z-modal: 40;
-  --z-toast: 50;
+  --z-header: 50;
+  --z-overlay: 60;
+  --z-modal: 70;
+  --z-toast: 80;
 
   --motion-fast: 150ms;
   --motion-base: 200ms;

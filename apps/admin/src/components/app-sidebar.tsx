@@ -122,7 +122,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <NavLink to={`${orgBasePath}/home`}>
-                <img src="/primary.svg" className="size-6" alt="Logo" />
+                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-600 text-white text-xs font-bold shadow-sm">
+                  R
+                </span>
                 <span className="text-base font-semibold">Railzway</span>
               </NavLink>
             </SidebarMenuButton>

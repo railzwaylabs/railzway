@@ -10,6 +10,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gosimple/slug"
+	"github.com/railzwaylabs/railzway/internal/bootstrap"
 	"github.com/railzwaylabs/railzway/internal/organization/domain"
 	"github.com/railzwaylabs/railzway/internal/organization/event"
 	"github.com/railzwaylabs/railzway/internal/providers/email"
@@ -25,9 +26,10 @@ type service struct {
 	genID     *snowflake.Node
 	publisher event.EventPublisher
 	email     email.Provider
+	orgState  bootstrap.OrgStateService
 }
 
-func NewService(db *gorm.DB, repo domain.Repository, ref referencedomain.Repository, genID *snowflake.Node, publisher event.EventPublisher, email email.Provider) domain.Service {
+func NewService(db *gorm.DB, repo domain.Repository, ref referencedomain.Repository, genID *snowflake.Node, publisher event.EventPublisher, email email.Provider, orgState bootstrap.OrgStateService) domain.Service {
 	return &service{
 		db:        db,
 		repo:      repo,
@@ -35,6 +37,7 @@ func NewService(db *gorm.DB, repo domain.Repository, ref referencedomain.Reposit
 		genID:     genID,
 		publisher: publisher,
 		email:     email,
+		orgState:  orgState,
 	}
 }
 
@@ -101,6 +104,18 @@ func (s *service) Create(ctx context.Context, userID snowflake.ID, req domain.Cr
 
 		if err := repo.AddMember(ctx, member); err != nil {
 			return err
+		}
+
+		if s.orgState != nil {
+			stateSvc := s.orgState.WithTx(tx)
+			if err := stateSvc.Initialize(ctx, orgID, now); err != nil {
+				return err
+			}
+			// NOTE: auto-activation is for backward compatibility.
+			// Cloud control-plane should trigger activation explicitly.
+			if err := stateSvc.Activate(ctx, orgID, now); err != nil {
+				return err
+			}
 		}
 
 		return nil

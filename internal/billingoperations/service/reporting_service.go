@@ -27,7 +27,7 @@ func (s *Service) ListOverdueInvoices(ctx context.Context, limit int) (domain.Ov
 		return domain.OverdueInvoicesResponse{}, err
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 	rows, err := s.repo.ListOverdueInvoices(ctx, snowflake.ID(orgID), currency, now, limit)
 	if err != nil {
 		return domain.OverdueInvoicesResponse{}, err
@@ -120,7 +120,7 @@ func (s *Service) ListOutstandingCustomers(ctx context.Context, limit int) (doma
 		return domain.OutstandingCustomersResponse{}, err
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 	rows, err := s.repo.ListOutstandingCustomers(ctx, snowflake.ID(orgID), currency, now, limit)
 	if err != nil {
 		return domain.OutstandingCustomersResponse{}, err
@@ -230,7 +230,7 @@ func (s *Service) ListPaymentIssues(ctx context.Context, limit int) (domain.Paym
 		limit = 25
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 	rows, err := s.repo.ListPaymentIssues(ctx, snowflake.ID(orgID), now, limit)
 	if err != nil {
 		return domain.PaymentIssuesResponse{}, err
@@ -314,7 +314,7 @@ func (s *Service) GetOperations(ctx context.Context, limit int) (domain.BillingO
 		return domain.BillingOperationsResponse{}, err
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 	summary, err := s.repo.LoadActionSummary(ctx, snowflake.ID(orgID), currency, now)
 	if err != nil {
 		return domain.BillingOperationsResponse{}, err
@@ -681,7 +681,7 @@ func (s *Service) GetInbox(ctx context.Context, req domain.InboxRequest) (domain
 		return domain.InboxResponse{}, err
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 	rows, err := s.repo.ListInboxItems(ctx, snowflake.ID(orgID), limit, now)
 	if err != nil {
 		return domain.InboxResponse{}, err
@@ -731,7 +731,7 @@ func (s *Service) GetMyWork(ctx context.Context, userID string, req domain.MyWor
 		return domain.MyWorkResponse{}, err
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 	rows, err := s.repo.ListMyWorkItems(ctx, snowflake.ID(orgID), userID, limit, now)
 	if err != nil {
 		return domain.MyWorkResponse{}, err
@@ -801,7 +801,7 @@ func (s *Service) GetRecentlyResolved(ctx context.Context, userID string, req do
 		limit = 25
 	}
 
-	since := s.clock.Now().UTC().AddDate(0, 0, -7) // Last 7 days by default
+	since := s.clock.Now(ctx).UTC().AddDate(0, 0, -7) // Last 7 days by default
 
 	rows, err := s.repo.ListRecentlyResolvedItems(ctx, snowflake.ID(orgID), userID, limit, since)
 	if err != nil {
@@ -861,7 +861,7 @@ func (s *Service) GetTeamView(ctx context.Context, req domain.TeamViewRequest) (
 		return domain.TeamViewResponse{}, err
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 	rows, err := s.repo.GetTeamViewStats(ctx, snowflake.ID(orgID), now)
 	if err != nil {
 		return domain.TeamViewResponse{}, err
@@ -916,7 +916,7 @@ func (s *Service) GetExposureAnalysis(ctx context.Context, req domain.ExposureAn
 		return domain.ExposureAnalysisResponse{}, err
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 	stats, err := s.repo.GetExposureStats(ctx, snowflake.ID(orgID), now)
 	if err != nil {
 		return domain.ExposureAnalysisResponse{}, err

@@ -23,6 +23,7 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/railzwaylabs/railzway/internal/apikey"
 	"github.com/railzwaylabs/railzway/internal/auth"
+	"github.com/railzwaylabs/railzway/internal/bootstrap"
 	"github.com/railzwaylabs/railzway/internal/clock"
 	"github.com/railzwaylabs/railzway/internal/config"
 	"github.com/railzwaylabs/railzway/internal/meter"
@@ -41,6 +42,8 @@ func main() {
 		fx.Provide(RegisterSnowflake),
 		db.Module,
 		clock.Module,
+		bootstrap.Module,
+		fx.Invoke(bootstrap.EnforceSchemaGate),
 
 		// Core dependencies for API
 		auth.Module,   // For API Key validation logic

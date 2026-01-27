@@ -1,12 +1,30 @@
+// @title           Railzway API
+// @version         1.0
+// @description     Railzway Billing & Operations API
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.email  support@railzway.com
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      railzway.com/docs
+// @BasePath  /api
+// @Schemes 	http https
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+
 package main
 
 import (
 	"github.com/bwmarrin/snowflake"
+	"github.com/railzwaylabs/railzway/internal/bootstrap"
 	"github.com/railzwaylabs/railzway/internal/clock"
-	"github.com/railzwaylabs/railzway/internal/migration"
 	"github.com/railzwaylabs/railzway/internal/observability"
 	"github.com/railzwaylabs/railzway/internal/redis"
-	"github.com/railzwaylabs/railzway/internal/scheduler"
 	"github.com/railzwaylabs/railzway/internal/server"
 	"github.com/railzwaylabs/railzway/pkg/db"
 	"go.uber.org/fx"
@@ -21,24 +39,12 @@ func main() {
 		db.Module,
 		clock.Module,
 		redis.Module,
+		bootstrap.Module,
+		fx.Invoke(bootstrap.EnforceSchemaGate),
+		fx.Invoke(bootstrap.EnsureDefaultOrgAndUser),
 		server.Module,
 
 		// Functional Domains
-		scheduler.Module,
-		migration.Module,
-
-		// All other domain modules usually imported by specific apps
-		// We can mostly rely on server.Module importing them transitively or explicitly here
-		// but server.Module already imports MOST of them.
-
-		// server.Module now invokes RegisterRoutes automatically.
-
-		// RunHTTP is invoked by server.Module or explicitly?
-		// server.Module has fx.Invoke(RunHTTP).
-		// We can leave it or be explicit.
-		// To be safe, let's Suppress server.Module's autodrive if needed, or just let it run.
-		// But server.Module defines `fx.Invoke(RunHTTP)` at line 125.
-		// So it will run automatically.
 	)
 	app.Run()
 }

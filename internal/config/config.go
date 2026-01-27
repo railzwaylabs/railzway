@@ -78,9 +78,7 @@ type LoggerConfig struct {
 }
 
 type CloudConfig struct {
-	OrganizationID   string
-	OrganizationName string
-	Metrics          CloudMetricsConfig
+	Metrics CloudMetricsConfig
 }
 
 type CloudMetricsConfig struct {
@@ -92,11 +90,19 @@ type CloudMetricsConfig struct {
 
 type BootstrapConfig struct {
 	EnsureDefaultOrgAndUser bool
-	AllowSignUp             bool
-	AllowAssignOrg          bool
-	AllowAssignUserRole     string
-	AutoAssignOrgID         string
-	AutoAssignOrgRole       string
+
+	DefaultOrgID   int64
+	DefaultOrgName string
+	DefaultOrgSlug string
+
+	AdminEmail    string
+	AdminPassword string
+
+	AllowSignUp         bool
+	AllowAssignOrg      bool
+	AllowAssignUserRole string
+	AutoAssignOrgID     string
+	AutoAssignOrgRole   string
 }
 
 type RateLimitConfig struct {
@@ -151,12 +157,13 @@ func Load() Config {
 		authCookieSecure = getenvBool("AUTH_COOKIE_SECURE", false)
 	}
 
-	defaultOrgID := getenvInt64("DEFAULT_ORG", 0)
+	bootstrapDefaultOrgID := getenvInt64("BOOTSTRAP_DEFAULT_ORG_ID", 0)
+	defaultOrgID := bootstrapDefaultOrgID
 
 	// Invariant: In Cloud mode, we MUST be single-tenant.
-	// We determine tenancy at deployment time via DEFAULT_ORG.
+	// We determine tenancy at deployment time via BOOTSTRAP_DEFAULT_ORG_ID.
 	if mode == ModeCloud && defaultOrgID == 0 {
-		log.Fatal("CRITICAL: RAILZWAY_MODE=cloud requires DEFAULT_ORG to be set. This instance is single-tenant.")
+		log.Fatal("CRITICAL: RAILZWAY_MODE=cloud requires BOOTSTRAP_DEFAULT_ORG_ID to be set. This instance is single-tenant.")
 	}
 
 	cfg := Config{
@@ -172,8 +179,6 @@ func Load() Config {
 		OTLPEndpoint:                getenv("OTLP_ENDPOINT", "localhost:4317"),
 		StaticDir:                   getenv("STATIC_DIR", "apps/admin/dist"),
 		Cloud: CloudConfig{
-			OrganizationID:   strings.TrimSpace(getenv("CLOUD_ORGANIZATION_ID", "")),
-			OrganizationName: getenv("CLOUD_ORGANIZATION_NAME", ""),
 			Metrics: CloudMetricsConfig{
 				Enabled:   getenvBool("CLOUD_METRICS_ENABLED", true),
 				Exporter:  strings.ToLower(getenv("CLOUD_METRICS_EXPORTER", "prometheus_remote_write")),
@@ -183,6 +188,11 @@ func Load() Config {
 		},
 		Bootstrap: BootstrapConfig{
 			EnsureDefaultOrgAndUser: getenvBool("ENSURE_DEFAULT_ORG_AND_USER", true),
+			DefaultOrgID:            bootstrapDefaultOrgID,
+			DefaultOrgSlug:          strings.TrimSpace(getenv("BOOTSTRAP_DEFAULT_ORG_SLUG", "")),
+			DefaultOrgName:          strings.TrimSpace(getenv("BOOTSTRAP_DEFAULT_ORG_NAME", "")),
+			AdminEmail:              strings.TrimSpace(getenv("BOOTSTRAP_ADMIN_EMAIL", "")),
+			AdminPassword:           strings.TrimSpace(getenv("BOOTSTRAP_ADMIN_PASSWORD", "")),
 			AllowSignUp:             getenvBool("ALLOW_SIGNUP", false),
 			AllowAssignOrg:          getenvBool("ALLOW_ASSIGN_ORG", false),
 			AllowAssignUserRole:     strings.TrimSpace(getenv("ALLOW_ASSIGN_USER_ROLE", "")),

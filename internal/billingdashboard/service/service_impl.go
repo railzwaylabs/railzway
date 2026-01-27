@@ -196,7 +196,7 @@ func (s *Service) ListBillingActivity(ctx context.Context, limit int) (billingda
 		// Fallback to UTC if timezone loading fails
 		loc = time.UTC
 	}
-	now := s.clock.Now().In(loc)
+	now := s.clock.Now(ctx).In(loc)
 	today := truncateToDate(now)
 	yesterday := today.AddDate(0, 0, -1)
 

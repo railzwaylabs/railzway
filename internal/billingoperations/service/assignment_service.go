@@ -45,7 +45,7 @@ func (s *Service) RecordAction(ctx context.Context, req domain.RecordActionReque
 		return domain.RecordActionResponse{}, domain.ErrInvalidIdempotencyKey
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 	bucket := now.Truncate(24 * time.Hour)
 	actionID := s.genID.Generate()
 
@@ -177,7 +177,7 @@ func (s *Service) ClaimAssignment(ctx context.Context, req domain.ClaimAssignmen
 		return domain.AssignmentResponse{}, domain.ErrInvalidAssignmentTTL
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 	expiresAt := now.Add(time.Duration(ttlMinutes) * time.Minute)
 
 	var result *domain.AssignmentResponse
@@ -333,7 +333,7 @@ func (s *Service) ReleaseAssignment(ctx context.Context, req domain.ReleaseAssig
 		return domain.ErrInvalidAssignee
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		repoTx := s.repo.WithTx(tx)
@@ -437,7 +437,7 @@ func (s *Service) ResolveAssignment(ctx context.Context, req domain.ResolveAssig
 		return domain.ErrInvalidAssignee
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		repoTx := s.repo.WithTx(tx)
@@ -522,7 +522,7 @@ func (s *Service) RecordFollowUp(ctx context.Context, req domain.RecordFollowUpR
 		return domain.ErrInvalidEntityID // Or a specific error for assignment ID
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// This is a simplified version of what follow_up.go might have done

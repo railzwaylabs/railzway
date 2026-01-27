@@ -48,7 +48,7 @@ func (s *Service) GetMRR(ctx context.Context, req billingoverview.OverviewReques
 	// We use req.End as the "as of" timestamp. If not provided, we use Now.
 	asOf := req.End
 	if asOf.IsZero() {
-		asOf = s.clock.Now().UTC()
+		asOf = s.clock.Now(ctx).UTC()
 	} else {
 		asOf = asOf.UTC()
 	}
@@ -88,7 +88,7 @@ func (s *Service) GetMRRMovement(ctx context.Context, req billingoverview.Overvi
 		return billingoverview.MRRMovementResponse{}, billingoverview.ErrInvalidOrganization
 	}
 
-	start, end := normalizeRange(req, s.clock.Now())
+	start, end := normalizeRange(req, s.clock.Now(ctx))
 	rangeEnd := endOfPeriod(end, req.Granularity)
 	currency, err := s.loadOrgCurrency(ctx, orgID)
 	if err != nil {
@@ -149,7 +149,7 @@ func (s *Service) GetRevenue(ctx context.Context, req billingoverview.OverviewRe
 		return billingoverview.RevenueResponse{}, billingoverview.ErrInvalidOrganization
 	}
 
-	start, end := normalizeRange(req, s.clock.Now())
+	start, end := normalizeRange(req, s.clock.Now(ctx))
 	rangeEnd := endOfPeriod(end, req.Granularity)
 	currency, err := s.loadOrgCurrency(ctx, orgID)
 	if err != nil {
@@ -197,7 +197,7 @@ func (s *Service) GetOutstandingBalance(ctx context.Context, req billingoverview
 		return billingoverview.OutstandingBalanceResponse{}, err
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 	row, err := s.loadOutstandingBalance(ctx, orgID, currency, now)
 	if err != nil {
 		return billingoverview.OutstandingBalanceResponse{}, err
@@ -217,7 +217,7 @@ func (s *Service) GetCollectionRate(ctx context.Context, req billingoverview.Ove
 		return billingoverview.CollectionRateResponse{}, billingoverview.ErrInvalidOrganization
 	}
 
-	start, end := normalizeRange(req, s.clock.Now())
+	start, end := normalizeRange(req, s.clock.Now(ctx))
 	rangeEnd := endOfPeriod(end, req.Granularity)
 	currency, err := s.loadOrgCurrency(ctx, orgID)
 	if err != nil {
@@ -255,7 +255,7 @@ func (s *Service) GetSubscribers(ctx context.Context, req billingoverview.Overvi
 		return billingoverview.SubscribersResponse{}, billingoverview.ErrInvalidOrganization
 	}
 
-	start, end := normalizeRange(req, s.clock.Now())
+	start, end := normalizeRange(req, s.clock.Now(ctx))
 	rangeEnd := endOfPeriod(end, req.Granularity)
 	series, err := s.listSubscribersSeries(ctx, orgID, start, end, req.Granularity)
 	if err != nil {

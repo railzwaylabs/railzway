@@ -28,6 +28,7 @@ import (
 	billingoperationsdomain "github.com/railzwaylabs/railzway/internal/billingoperations/domain"
 	"github.com/railzwaylabs/railzway/internal/billingoverview"
 	billingoverviewdomain "github.com/railzwaylabs/railzway/internal/billingoverview/domain"
+	"github.com/railzwaylabs/railzway/internal/bootstrap"
 	"github.com/railzwaylabs/railzway/internal/cloudmetrics"
 	"github.com/railzwaylabs/railzway/internal/config"
 	"github.com/railzwaylabs/railzway/internal/customer"
@@ -79,6 +80,8 @@ import (
 	"github.com/railzwaylabs/railzway/internal/subscription"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
 	taxdomain "github.com/railzwaylabs/railzway/internal/tax/domain"
+	"github.com/railzwaylabs/railzway/internal/testclock"
+	testclockdomain "github.com/railzwaylabs/railzway/internal/testclock/domain"
 	"github.com/railzwaylabs/railzway/internal/usage"
 	usagedomain "github.com/railzwaylabs/railzway/internal/usage/domain"
 	"github.com/railzwaylabs/railzway/internal/usage/liveevents"
@@ -125,6 +128,7 @@ var Module = fx.Module("http.server",
 	subscription.Module,
 	usage.Module,
 	quota.Module,
+	testclock.Module,
 	fx.Provide(NewServer),
 	fx.Invoke(RegisterRoutes),
 	fx.Invoke(RunHTTP),
@@ -154,6 +158,7 @@ func registerGin(obsCfg observability.Config, httpMetrics *obsmetrics.HTTPMetric
 }
 
 func RegisterRoutes(s *Server) {
+	s.RegisterSystemRoutes()
 	s.RegisterAuthRoutes()
 	s.RegisterAPIRoutes()
 	s.RegisterAdminRoutes()
@@ -234,56 +239,60 @@ type Server struct {
 	publicPaymentMethodsCache   *paymentMethodsCache
 	paymentMethodSvc            paymentdomain.PaymentMethodService
 	paymentMethodConfigSvc      paymentdomain.PaymentMethodConfigService
+	testClockSvc                testclockdomain.Service
 
 	licenseSvc *license.Service
 	scheduler  *scheduler.Scheduler `optional:"true"`
+	schemaGate bootstrap.SchemaGate
 }
 
 type ServerParams struct {
 	fx.In
 
-	Gin                  *gin.Engine
-	Cfg                  config.Config
-	DB                   *gorm.DB
-	Authsvc              authdomain.Service              `optional:"true"`
-	OAuthsvc             authoauth.Service               `optional:"true"`
-	Sessions             *session.Manager                `optional:"true"`
-	GenID                *snowflake.Node                 `optional:"true"`
-	APIKeySvc            apikeydomain.Service            `optional:"true"`
-	AuthzSvc             authorization.Service           `optional:"true"`
-	AuditSvc             auditdomain.Service             `optional:"true"`
-	AuditExportSvc       auditdomain.ExportService       `optional:"true"`
-	BillingDashboardSvc  billingdashboarddomain.Service  `optional:"true"`
-	BillingOperationsSvc billingoperationsdomain.Service `optional:"true"`
-	BillingOverviewSvc   billingoverviewdomain.Service   `optional:"true"`
-	BillingRollup        *billingrollup.Service          `optional:"true"`
-	InvoiceSvc           invoicedomain.Service           `optional:"true"`
-	MeterSvc             meterdomain.Service             `optional:"true"`
-	OrganizationSvc      organizationdomain.Service      `optional:"true"`
-	CustomerSvc          customerdomain.Service          `optional:"true"`
-	PriceSvc             pricedomain.Service             `optional:"true"`
-	PriceAmountSvc       priceamountdomain.Service       `optional:"true"`
-	PriceTierSvc         pricetierdomain.Service         `optional:"true"`
-	ProductSvc           productdomain.Service           `optional:"true"`
-	ProductFeatureSvc    productfeaturedomain.Service    `optional:"true"`
-	FeatureSvc           featuredomain.Service           `optional:"true"`
-	PaymentSvc           paymentdomain.Service           `optional:"true"`
-	PaymentProviderSvc   paymentproviderdomain.Service   `optional:"true"`
-	InvoiceTemplateSvc   invoicetemplatedomain.Service   `optional:"true"`
-	Refrepo              referencedomain.Repository      `optional:"true"`
-	RatingSvc            ratingdomain.Service            `optional:"true"`
-	SubscriptionSvc      subscriptiondomain.Service      `optional:"true"`
-	Usagesvc             usagedomain.Service             `optional:"true"`
-	TaxSvc               taxdomain.Service               `optional:"true"`
-	LiveMeterEvents      *liveevents.Hub                 `optional:"true"`
-	PublicInvoiceSvc     publicinvoicedomain.Service     `optional:"true"`
-	ObsMetrics           *obsmetrics.Metrics             `optional:"true"`
-	UsageLimiter         *ratelimit.UsageIngestLimiter   `optional:"true"`
-	PaymentMethodSvc     paymentdomain.PaymentMethodService
+	Gin                    *gin.Engine
+	Cfg                    config.Config
+	DB                     *gorm.DB
+	Authsvc                authdomain.Service              `optional:"true"`
+	OAuthsvc               authoauth.Service               `optional:"true"`
+	Sessions               *session.Manager                `optional:"true"`
+	GenID                  *snowflake.Node                 `optional:"true"`
+	APIKeySvc              apikeydomain.Service            `optional:"true"`
+	AuthzSvc               authorization.Service           `optional:"true"`
+	AuditSvc               auditdomain.Service             `optional:"true"`
+	AuditExportSvc         auditdomain.ExportService       `optional:"true"`
+	BillingDashboardSvc    billingdashboarddomain.Service  `optional:"true"`
+	BillingOperationsSvc   billingoperationsdomain.Service `optional:"true"`
+	BillingOverviewSvc     billingoverviewdomain.Service   `optional:"true"`
+	BillingRollup          *billingrollup.Service          `optional:"true"`
+	InvoiceSvc             invoicedomain.Service           `optional:"true"`
+	MeterSvc               meterdomain.Service             `optional:"true"`
+	OrganizationSvc        organizationdomain.Service      `optional:"true"`
+	CustomerSvc            customerdomain.Service          `optional:"true"`
+	PriceSvc               pricedomain.Service             `optional:"true"`
+	PriceAmountSvc         priceamountdomain.Service       `optional:"true"`
+	PriceTierSvc           pricetierdomain.Service         `optional:"true"`
+	ProductSvc             productdomain.Service           `optional:"true"`
+	ProductFeatureSvc      productfeaturedomain.Service    `optional:"true"`
+	FeatureSvc             featuredomain.Service           `optional:"true"`
+	PaymentSvc             paymentdomain.Service           `optional:"true"`
+	PaymentProviderSvc     paymentproviderdomain.Service   `optional:"true"`
+	InvoiceTemplateSvc     invoicetemplatedomain.Service   `optional:"true"`
+	Refrepo                referencedomain.Repository      `optional:"true"`
+	RatingSvc              ratingdomain.Service            `optional:"true"`
+	SubscriptionSvc        subscriptiondomain.Service      `optional:"true"`
+	Usagesvc               usagedomain.Service             `optional:"true"`
+	TaxSvc                 taxdomain.Service               `optional:"true"`
+	LiveMeterEvents        *liveevents.Hub                 `optional:"true"`
+	PublicInvoiceSvc       publicinvoicedomain.Service     `optional:"true"`
+	ObsMetrics             *obsmetrics.Metrics             `optional:"true"`
+	UsageLimiter           *ratelimit.UsageIngestLimiter   `optional:"true"`
+	PaymentMethodSvc       paymentdomain.PaymentMethodService
 	PaymentMethodConfigSvc paymentdomain.PaymentMethodConfigService
+	TestClockSvc           testclockdomain.Service `optional:"true"`
 
 	LicenseSvc *license.Service
 	Scheduler  *scheduler.Scheduler `optional:"true"`
+	SchemaGate bootstrap.SchemaGate `optional:"true"`
 }
 
 func NewServer(p ServerParams) *Server {
@@ -332,8 +341,10 @@ func NewServer(p ServerParams) *Server {
 		publicPaymentMethodsCache:   newPaymentMethodsCache(2 * time.Minute),
 		paymentMethodSvc:            p.PaymentMethodSvc,
 		paymentMethodConfigSvc:      p.PaymentMethodConfigSvc,
+		testClockSvc:                p.TestClockSvc,
 		licenseSvc:                  p.LicenseSvc,
 		scheduler:                   p.Scheduler,
+		schemaGate:                  p.SchemaGate,
 	}
 
 	return svc
@@ -588,6 +599,7 @@ func (s *Server) RegisterAdminRoutes() {
 	admin.GET("/billing-operations/invoices/:id/payments", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.GetBillingOperationsInvoicePayments)
 
 	admin.GET("/organizations/:id/members", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleMember, organizationdomain.RoleFinOps), s.ListOrganizationMembers)
+	admin.GET("/organizations/:id/readiness", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.GetOrganizationReadiness)
 
 	// -------- Billing Operations Actions --------
 	admin.POST("/billing-operations/claim", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleMember, organizationdomain.RoleFinOps), s.PostBillingOperationsAssignment)
@@ -630,19 +642,27 @@ func (s *Server) RegisterAdminRoutes() {
 	admin.POST("/api-keys/:key_id/revoke", s.RequireRole(organizationdomain.RoleOwner), s.authorizeOrgAction(authorization.ObjectAPIKey, authorization.ActionAPIKeyRevoke), s.RevokeAPIKey)
 
 	admin.GET("/system/capabilities", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.GetSystemCapabilities)
+
+	// -------- Test Clocks --------
+	admin.GET("/test-clocks", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.ListTestClocks)
+	admin.POST("/test-clocks", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.CreateTestClock)
+	admin.GET("/test-clocks/:id", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.GetTestClock)
+	admin.POST("/test-clocks/:id/advance", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.AdvanceTestClock)
+	admin.DELETE("/test-clocks/:id", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.DeleteTestClock)
+	admin.PATCH("/test-clocks/:id", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.UpdateTestClock)
 }
 
 func (s *Server) GetSSOConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"status": "enabled", 
+		"status":   "enabled",
 		"provider": "saml",
-		"message": "You are seeing this because your license includes 'sso'.",
+		"message":  "You are seeing this because your license includes 'sso'.",
 	})
 }
 
 func (s *Server) UpdateSSOConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"status": "updated",
+		"status":  "updated",
 		"message": "SSO configuration updated (stub).",
 	})
 }

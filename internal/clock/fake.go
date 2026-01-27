@@ -1,6 +1,9 @@
 package clock
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type FakeClock struct {
 	now time.Time
@@ -10,7 +13,7 @@ func NewFakeClock(t time.Time) *FakeClock {
 	return &FakeClock{now: t.UTC()}
 }
 
-func (c *FakeClock) Now() time.Time {
+func (c *FakeClock) Now(ctx context.Context) time.Time {
 	return c.now
 }
 

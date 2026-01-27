@@ -9,6 +9,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	billingcycledomain "github.com/railzwaylabs/railzway/internal/billingcycle/domain"
+	"github.com/railzwaylabs/railzway/internal/bootstrap"
 	priceamountdomain "github.com/railzwaylabs/railzway/internal/priceamount/domain"
 	ratingdomain "github.com/railzwaylabs/railzway/internal/rating/domain"
 	"github.com/railzwaylabs/railzway/internal/rating/repository"
@@ -25,6 +26,7 @@ type Service struct {
 	genID           *snowflake.Node
 	repo            ratingdomain.Repository
 	priceAmountRepo priceamountdomain.Repository
+	orgGate         bootstrap.OrgGate
 }
 
 type ServiceParam struct {
@@ -34,6 +36,7 @@ type ServiceParam struct {
 	Log             *zap.Logger
 	GenID           *snowflake.Node
 	PriceAmountRepo priceamountdomain.Repository
+	OrgGate         bootstrap.OrgGate `optional:"true"`
 }
 
 func NewService(p ServiceParam) ratingdomain.Service {
@@ -44,6 +47,7 @@ func NewService(p ServiceParam) ratingdomain.Service {
 		genID:           p.GenID,
 		repo:            repository.NewRepository(p.DB),
 		priceAmountRepo: p.PriceAmountRepo,
+		orgGate:         p.OrgGate,
 	}
 }
 
@@ -62,6 +66,11 @@ func (s *Service) RunRating(ctx context.Context, billingCycleID string) error {
 	}
 	if cycle.Status != billingcycledomain.BillingCycleStatusClosing {
 		return ratingdomain.ErrBillingCycleNotClosing
+	}
+	if s.orgGate != nil {
+		if err := s.orgGate.MustBeActive(ctx, cycle.OrgID); err != nil {
+			return err
+		}
 	}
 
 	subscription, err := s.repo.GetSubscription(ctx, cycle.OrgID, cycle.SubscriptionID)

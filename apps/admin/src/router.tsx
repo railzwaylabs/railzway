@@ -30,6 +30,12 @@ const OrgSubscriptionDetailPage = lazy(
 const OrgSubscriptionCreatePage = lazy(
   () => import("@/features/billing/pages/OrgSubscriptionCreatePage")
 )
+const OrgTestClockCreatePage = lazy(
+  () => import("@/features/billing/pages/OrgTestClockCreatePage")
+)
+const OrgTestClockDetailPage = lazy(
+  () => import("@/features/billing/pages/OrgTestClockDetailPage")
+)
 const OrgSettings = lazy(() => import("@/features/billing/pages/OrgSettings"))
 const OrgPaymentProvidersPage = lazy(
   () => import("@/features/billing/pages/OrgPaymentProvidersPage")
@@ -308,6 +314,14 @@ export const router = createBrowserRouter([
           {
             path: "subscriptions/create",
             element: withFeatureBoundary(<OrgSubscriptionCreatePage />),
+          },
+          {
+            path: "test-clocks/create",
+            element: withFeatureBoundary(<OrgTestClockCreatePage />),
+          },
+          {
+            path: "test-clocks/:clockId",
+            element: withFeatureBoundary(<OrgTestClockDetailPage />),
           },
           {
             path: "invoices",

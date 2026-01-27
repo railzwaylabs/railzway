@@ -285,7 +285,7 @@ func (s *Service) Create(ctx context.Context, req subscriptiondomain.CreateSubsc
 		}
 	}
 
-	now := s.clock.Now()
+	now := s.clock.Now(ctx)
 	subscription := subscriptiondomain.Subscription{
 		ID:               s.genID.Generate(),
 		OrgID:            orgID,
@@ -1012,7 +1012,7 @@ func (s *Service) buildSubscriptionEntitlements(
 }
 
 func (s *Service) loadPriceAmount(ctx context.Context, priceID string) ([]priceamount.Response, error) {
-	now := s.clock.Now()
+	now := s.clock.Now(ctx)
 	return s.priceamountsvc.List(ctx, priceamount.ListPriceAmountRequest{
 		PriceID:       priceID,
 		EffectiveFrom: &now,

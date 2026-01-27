@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
 	billingcycledomain "github.com/railzwaylabs/railzway/internal/billingcycle/domain"
+	billingopsdomain "github.com/railzwaylabs/railzway/internal/billingoperations/domain"
 	"github.com/railzwaylabs/railzway/internal/clock"
 	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
 	ledgerdomain "github.com/railzwaylabs/railzway/internal/ledger/domain"
@@ -116,6 +117,72 @@ func (m *mockAuthzSvc) Authorize(ctx context.Context, subject, domain, object, a
 	return nil
 }
 
+type mockBillingOpsSvc struct{}
+
+func (m *mockBillingOpsSvc) ListOverdueInvoices(ctx context.Context, limit int) (billingopsdomain.OverdueInvoicesResponse, error) {
+	return billingopsdomain.OverdueInvoicesResponse{}, nil
+}
+func (m *mockBillingOpsSvc) ListOutstandingCustomers(ctx context.Context, limit int) (billingopsdomain.OutstandingCustomersResponse, error) {
+	return billingopsdomain.OutstandingCustomersResponse{}, nil
+}
+func (m *mockBillingOpsSvc) ListPaymentIssues(ctx context.Context, limit int) (billingopsdomain.PaymentIssuesResponse, error) {
+	return billingopsdomain.PaymentIssuesResponse{}, nil
+}
+func (m *mockBillingOpsSvc) GetOperations(ctx context.Context, limit int) (billingopsdomain.BillingOperationsResponse, error) {
+	return billingopsdomain.BillingOperationsResponse{}, nil
+}
+func (m *mockBillingOpsSvc) RecordAction(ctx context.Context, req billingopsdomain.RecordActionRequest) (billingopsdomain.RecordActionResponse, error) {
+	return billingopsdomain.RecordActionResponse{}, nil
+}
+func (m *mockBillingOpsSvc) ClaimAssignment(ctx context.Context, req billingopsdomain.ClaimAssignmentRequest) (billingopsdomain.AssignmentResponse, error) {
+	return billingopsdomain.AssignmentResponse{}, nil
+}
+func (m *mockBillingOpsSvc) ReleaseAssignment(ctx context.Context, req billingopsdomain.ReleaseAssignmentRequest) error {
+	return nil
+}
+func (m *mockBillingOpsSvc) ResolveAssignment(ctx context.Context, req billingopsdomain.ResolveAssignmentRequest) error {
+	return nil
+}
+func (m *mockBillingOpsSvc) EvaluateSLAs(ctx context.Context) error {
+	return nil
+}
+func (m *mockBillingOpsSvc) CalculatePerformance(ctx context.Context, userID string, start, end time.Time) (billingopsdomain.FinOpsScoreSnapshot, error) {
+	return billingopsdomain.FinOpsScoreSnapshot{}, nil
+}
+func (m *mockBillingOpsSvc) GetPerformanceHistory(ctx context.Context, userID string, limit int) ([]billingopsdomain.FinOpsScoreSnapshot, error) {
+	return nil, nil
+}
+func (m *mockBillingOpsSvc) AggregateDailyPerformance(ctx context.Context) error {
+	return nil
+}
+func (m *mockBillingOpsSvc) GetMyPerformance(ctx context.Context, userID string, req billingopsdomain.GetPerformanceRequest) (*billingopsdomain.PerformanceResponse, error) {
+	return nil, nil
+}
+func (m *mockBillingOpsSvc) GetTeamPerformance(ctx context.Context, req billingopsdomain.GetPerformanceRequest) (*billingopsdomain.TeamPerformanceResponse, error) {
+	return nil, nil
+}
+func (m *mockBillingOpsSvc) GetInbox(ctx context.Context, req billingopsdomain.InboxRequest) (billingopsdomain.InboxResponse, error) {
+	return billingopsdomain.InboxResponse{}, nil
+}
+func (m *mockBillingOpsSvc) GetMyWork(ctx context.Context, userID string, req billingopsdomain.MyWorkRequest) (billingopsdomain.MyWorkResponse, error) {
+	return billingopsdomain.MyWorkResponse{}, nil
+}
+func (m *mockBillingOpsSvc) GetRecentlyResolved(ctx context.Context, userID string, req billingopsdomain.RecentlyResolvedRequest) (billingopsdomain.RecentlyResolvedResponse, error) {
+	return billingopsdomain.RecentlyResolvedResponse{}, nil
+}
+func (m *mockBillingOpsSvc) GetTeamView(ctx context.Context, req billingopsdomain.TeamViewRequest) (billingopsdomain.TeamViewResponse, error) {
+	return billingopsdomain.TeamViewResponse{}, nil
+}
+func (m *mockBillingOpsSvc) GetExposureAnalysis(ctx context.Context, req billingopsdomain.ExposureAnalysisRequest) (billingopsdomain.ExposureAnalysisResponse, error) {
+	return billingopsdomain.ExposureAnalysisResponse{}, nil
+}
+func (m *mockBillingOpsSvc) RecordFollowUp(ctx context.Context, req billingopsdomain.RecordFollowUpRequest) error {
+	return nil
+}
+func (m *mockBillingOpsSvc) GetInvoicePayments(ctx context.Context, invoiceID string) (billingopsdomain.InvoicePaymentsResponse, error) {
+	return billingopsdomain.InvoicePaymentsResponse{}, nil
+}
+
 // TestScheduler_RunOnce_FakeClock_30Days verifies scheduler behavior over a simulated 30-day period
 func TestScheduler_RunOnce_FakeClock_30Days(t *testing.T) {
 	// 1. Setup DB
@@ -168,6 +235,7 @@ func TestScheduler_RunOnce_FakeClock_30Days(t *testing.T) {
 		CREATE TABLE billing_cycles (
 			id INTEGER PRIMARY KEY,
 			org_id INTEGER,
+			test_clock_id INTEGER,
 			subscription_id INTEGER,
 			period_start DATETIME,
 			period_end DATETIME,
@@ -295,7 +363,8 @@ func TestScheduler_RunOnce_FakeClock_30Days(t *testing.T) {
 		LedgerSvc:       &mockLedgerSvc{},
 		SubscriptionSvc: &mockSubscriptionSvc{},
 		AuditSvc:        &mockAuditSvc{},
-		AuthzSvc:        &mockAuthzSvc{},
+		AuthzSvc:             &mockAuthzSvc{},
+		BillingOperationsSvc: &mockBillingOpsSvc{},
 		GenID:           node,
 		Clock:           fakeClock,
 		Config: Config{
@@ -353,12 +422,12 @@ func TestScheduler_RunOnce_FakeClock_30Days(t *testing.T) {
 	// Let's advance day by day
 	targetDate := startTime.AddDate(0, 0, 32) // Feb 2
 
-	for fakeClock.Now().Before(targetDate) {
+	for fakeClock.Now(ctx).Before(targetDate) {
 		fakeClock.Advance(24 * time.Hour)
 		// Run scheduler each "day"
 		// In reality scheduler runs every 30s, but we just need to hit the transition point
 		if err := scheduler.RunOnce(ctx); err != nil {
-			t.Fatalf("RunOnce failed at %v: %v", fakeClock.Now(), err)
+			t.Fatalf("RunOnce failed at %v: %v", fakeClock.Now(ctx), err)
 		}
 	}
 
