@@ -37,6 +37,7 @@ import { useCursorPagination } from "@/hooks/useCursorPagination"
 import { getErrorMessage, isForbiddenError } from "@/lib/api-errors"
 import { canManageBilling } from "@/lib/roles"
 import { useOrgStore } from "@/stores/orgStore"
+import OrgTestClocksList from "./OrgTestClocksList"
 
 type Subscription = {
   id?: string | number
@@ -138,6 +139,8 @@ export default function OrgSubscriptionsPage() {
   const role = useOrgStore((state) => state.currentOrg?.role)
   const canManage = canManageBilling(role)
   const [searchParams, setSearchParams] = useSearchParams()
+  const currentTab = searchParams.get("tab") ?? "subscriptions"
+
   const createPath = orgId ? `/orgs/${orgId}/subscriptions/create` : "/orgs"
   const statusParam = searchParams.get("status") ?? "ALL"
   const statusFilter = statusTabs.some((tab) => tab.value === statusParam)
@@ -157,6 +160,12 @@ export default function OrgSubscriptionsPage() {
     } else {
       next.set("status", value)
     }
+    setSearchParams(next, { replace: true })
+  }
+
+  const handleTabChange = (value: string) => {
+    const next = new URLSearchParams(searchParams)
+    next.set("tab", value)
     setSearchParams(next, { replace: true })
   }
 
@@ -226,266 +235,283 @@ export default function OrgSubscriptionsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold">Subscriptions</h1>
-          <p className="text-text-muted text-sm">
-            Monitor recurring revenue, lifecycle states, and customer plans.
-          </p>
+          {currentTab === "subscriptions" && (
+            <p className="text-text-muted text-sm">
+              Monitor recurring revenue, lifecycle states, and customer plans.
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {canManage ? (
-            <Button size="sm" asChild>
-              <Link to={createPath}>Create subscription</Link>
-            </Button>
-          ) : (
-            <Button size="sm" disabled>
-              Create subscription
-            </Button>
+          {currentTab === "subscriptions" && (
+            canManage ? (
+              <Button size="sm" asChild>
+                <Link to={createPath}>Create subscription</Link>
+              </Button>
+            ) : (
+              <Button size="sm" disabled>
+                Create subscription
+              </Button>
+            )
           )}
         </div>
       </div>
 
-      <Tabs value={statusFilter} onValueChange={handleStatusChange}>
-        <TabsList className="flex w-full flex-wrap justify-start">
-          {statusTabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              {tab.label}
-            </TabsTrigger>
-          ))}
+      <Tabs value={currentTab} onValueChange={handleTabChange}>
+        <TabsList>
+          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
+          <TabsTrigger value="test-clocks">Test clocks</TabsTrigger>
         </TabsList>
       </Tabs>
 
-      <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-start">
-        <Card>
-          <CardHeader>
-            <div>
-              <CardTitle>Filters</CardTitle>
-              <CardDescription>Filter by customer and created date.</CardDescription>
-            </div>
-            <CardAction>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={!hasFilters}
-                onClick={handleClearFilters}
-              >
-                Clear filters
-              </Button>
-            </CardAction>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="subscription-filter-customer">Customer ID</Label>
-                <Input
-                  id="subscription-filter-customer"
-                  placeholder="e.g. 1234567890"
-                  value={customerIdFilter}
-                  onChange={(event) => {
-                    const next = new URLSearchParams(searchParams)
-                    const value = event.target.value.trim()
-                    if (value) {
-                      next.set("customer_id", value)
-                    } else {
-                      next.delete("customer_id")
-                    }
-                    setSearchParams(next, { replace: true })
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="subscription-filter-created-from">Created from</Label>
-                <Input
-                  id="subscription-filter-created-from"
-                  type="date"
-                  value={createdFrom}
-                  onChange={(event) => {
-                    const next = new URLSearchParams(searchParams)
-                    const value = event.target.value
-                    if (value) {
-                      next.set("created_from", value)
-                    } else {
-                      next.delete("created_from")
-                    }
-                    setSearchParams(next, { replace: true })
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="subscription-filter-created-to">Created to</Label>
-                <Input
-                  id="subscription-filter-created-to"
-                  type="date"
-                  value={createdTo}
-                  onChange={(event) => {
-                    const next = new URLSearchParams(searchParams)
-                    const value = event.target.value
-                    if (value) {
-                      next.set("created_to", value)
-                    } else {
-                      next.delete("created_to")
-                    }
-                    setSearchParams(next, { replace: true })
-                  }}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <div />
-      </div>
+      {currentTab === "test-clocks" && <OrgTestClocksList />}
 
-      {isLoading && subscriptions.length === 0 && (
-        <TableSkeleton
-          rows={6}
-          columnTemplate="grid-cols-[1.6fr_1.2fr_0.8fr_1fr_1fr_1fr_auto]"
-          headerWidths={["w-24", "w-20", "w-12", "w-20", "w-16", "w-16", "w-6"]}
-          cellWidths={["w-[70%]", "w-[60%]", "w-[50%]", "w-[60%]", "w-[60%]", "w-[60%]", "w-3"]}
-        />
-      )}
-      {errorMessage && <div className="text-status-error text-sm">{errorMessage}</div>}
-      {!isLoading && !errorMessage && subscriptions.length === 0 && (
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>No subscriptions yet</EmptyTitle>
-            <EmptyDescription>
-              Start billing by creating your first customer subscription.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button asChild>
-              <Link to={createPath}>Create subscription</Link>
-            </Button>
-          </EmptyContent>
-        </Empty>
-      )}
-      {subscriptions.length > 0 && (
+      {currentTab === "subscriptions" && (
         <>
-          <div className="rounded-lg border">
-            <Table className="min-w-[720px]">
-              <TableHeader className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-bg-surface">
-              <TableRow>
-                <TableHead>Subscription</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Collection</TableHead>
-                <TableHead>Start date</TableHead>
-                <TableHead>Updated</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {subscriptions.map((subscription, index) => {
-                const id = readField(subscription, ["id", "ID"], "")
-                const displayID = id || "-"
-                const rowKey = id || `subscription-${index}`
-                const customerID = readField(subscription, [
-                  "customer_id",
-                  "CustomerID",
-                ])
-                const status = readField(subscription, ["status", "Status"], "")
-                const normalizedStatus = status ? status.toUpperCase() : ""
-                const collectionMode = readField(
-                  subscription,
-                  ["collection_mode", "CollectionMode"],
-                  ""
-                )
-                const startAt = readField(subscription, ["start_at", "StartAt"], "")
-                const updatedAt = readField(
-                  subscription,
-                  ["updated_at", "UpdatedAt"],
-                  ""
-                )
+          <Tabs value={statusFilter} onValueChange={handleStatusChange}>
+            <TabsList className="flex w-full flex-wrap justify-start">
+              {statusTabs.map((tab) => (
+                <TabsTrigger key={tab.value} value={tab.value}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
 
-                return (
-                  <TableRow key={rowKey}>
-                    <TableCell className="font-medium">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm">Subscription</span>
-                        {id ? (
-                          <Link
-                            className="text-text-muted text-xs hover:text-accent-primary"
-                            to={`/orgs/${orgId}/subscriptions/${id}`}
-                          >
-                            {displayID}
-                          </Link>
-                        ) : (
-                          <span className="text-text-muted text-xs">{displayID}</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm">{customerID}</span>
-                        <span className="text-text-muted text-xs">
-                          Customer
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusVariant(normalizedStatus)}>
-                        {formatStatus(normalizedStatus)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatCollectionMode(collectionMode)}</TableCell>
-                    <TableCell>{formatDate(startAt)}</TableCell>
-                    <TableCell>{formatDate(updatedAt)}</TableCell>
-                    <TableCell className="text-right">
-                      {id ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          asChild
-                          aria-label="Open subscription actions"
-                        >
-                          <Link to={`/orgs/${orgId}/subscriptions/${id}`}>
-                            View
-                          </Link>
-                        </Button>
-                      ) : (
-                        <Button variant="ghost" size="icon-sm" aria-label="Open subscription actions">
-                          ...
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-              {isLoadingMore && (
-                <TableRow>
-                  <TableCell colSpan={7}>
-                    <div className="text-text-muted flex items-center gap-2 text-sm">
-                      <Spinner className="size-4" />
-                      Loading subscriptions...
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-start">
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle>Filters</CardTitle>
+                  <CardDescription>Filter by customer and created date.</CardDescription>
+                </div>
+                <CardAction>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={!hasFilters}
+                    onClick={handleClearFilters}
+                  >
+                    Clear filters
+                  </Button>
+                </CardAction>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="subscription-filter-customer">Customer ID</Label>
+                    <Input
+                      id="subscription-filter-customer"
+                      placeholder="e.g. 1234567890"
+                      value={customerIdFilter}
+                      onChange={(event) => {
+                        const next = new URLSearchParams(searchParams)
+                        const value = event.target.value.trim()
+                        if (value) {
+                          next.set("customer_id", value)
+                        } else {
+                          next.delete("customer_id")
+                        }
+                        setSearchParams(next, { replace: true })
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="subscription-filter-created-from">Created from</Label>
+                    <Input
+                      id="subscription-filter-created-from"
+                      type="date"
+                      value={createdFrom}
+                      onChange={(event) => {
+                        const next = new URLSearchParams(searchParams)
+                        const value = event.target.value
+                        if (value) {
+                          next.set("created_from", value)
+                        } else {
+                          next.delete("created_from")
+                        }
+                        setSearchParams(next, { replace: true })
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="subscription-filter-created-to">Created to</Label>
+                    <Input
+                      id="subscription-filter-created-to"
+                      type="date"
+                      value={createdTo}
+                      onChange={(event) => {
+                        const next = new URLSearchParams(searchParams)
+                        const value = event.target.value
+                        if (value) {
+                          next.set("created_to", value)
+                        } else {
+                          next.delete("created_to")
+                        }
+                        setSearchParams(next, { replace: true })
+                      }}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <div />
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-text-muted text-sm">
-              Showing {subscriptions.length} subscriptions
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!hasPrev || isLoadingMore}
-                onClick={() => void loadPrev()}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!hasNext || isLoadingMore}
-                onClick={() => void loadNext()}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        </>
+
+          {isLoading && subscriptions.length === 0 && (
+            <TableSkeleton
+              rows={6}
+              columnTemplate="grid-cols-[1.6fr_1.2fr_0.8fr_1fr_1fr_1fr_auto]"
+              headerWidths={["w-24", "w-20", "w-12", "w-20", "w-16", "w-16", "w-6"]}
+              cellWidths={["w-[70%]", "w-[60%]", "w-[50%]", "w-[60%]", "w-[60%]", "w-[60%]", "w-3"]}
+            />
+          )}
+          {errorMessage && <div className="text-status-error text-sm">{errorMessage}</div>}
+          {!isLoading && !errorMessage && subscriptions.length === 0 && (
+            <Empty>
+              <EmptyHeader>
+                <EmptyTitle>No subscriptions yet</EmptyTitle>
+                <EmptyDescription>
+                  Start billing by creating your first customer subscription.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button asChild>
+                  <Link to={createPath}>Create subscription</Link>
+                </Button>
+              </EmptyContent>
+            </Empty>
+          )}
+          {subscriptions.length > 0 && (
+            <>
+              <div className="rounded-lg border">
+                <Table className="min-w-[720px]">
+                  <TableHeader className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-bg-surface">
+                    <TableRow>
+                      <TableHead>Subscription</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Collection</TableHead>
+                      <TableHead>Start date</TableHead>
+                      <TableHead>Updated</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {subscriptions.map((subscription, index) => {
+                      const id = readField(subscription, ["id", "ID"], "")
+                      const displayID = id || "-"
+                      const rowKey = id || `subscription-${index}`
+                      const customerID = readField(subscription, [
+                        "customer_id",
+                        "CustomerID",
+                      ])
+                      const status = readField(subscription, ["status", "Status"], "")
+                      const normalizedStatus = status ? status.toUpperCase() : ""
+                      const collectionMode = readField(
+                        subscription,
+                        ["collection_mode", "CollectionMode"],
+                        ""
+                      )
+                      const startAt = readField(subscription, ["start_at", "StartAt"], "")
+                      const updatedAt = readField(
+                        subscription,
+                        ["updated_at", "UpdatedAt"],
+                        ""
+                      )
+
+                      return (
+                        <TableRow key={rowKey}>
+                          <TableCell className="font-medium">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm">Subscription</span>
+                              {id ? (
+                                <Link
+                                  className="text-text-muted text-xs hover:text-accent-primary"
+                                  to={`/orgs/${orgId}/subscriptions/${id}`}
+                                >
+                                  {displayID}
+                                </Link>
+                              ) : (
+                                <span className="text-text-muted text-xs">{displayID}</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm">{customerID}</span>
+                              <span className="text-text-muted text-xs">
+                                Customer
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={statusVariant(normalizedStatus)}>
+                              {formatStatus(normalizedStatus)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatCollectionMode(collectionMode)}</TableCell>
+                          <TableCell>{formatDate(startAt)}</TableCell>
+                          <TableCell>{formatDate(updatedAt)}</TableCell>
+                          <TableCell className="text-right">
+                            {id ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                aria-label="Open subscription actions"
+                              >
+                                <Link to={`/orgs/${orgId}/subscriptions/${id}`}>
+                                  View
+                                </Link>
+                              </Button>
+                            ) : (
+                              <Button variant="ghost" size="icon-sm" aria-label="Open subscription actions">
+                                ...
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                    {isLoadingMore && (
+                      <TableRow>
+                        <TableCell colSpan={7}>
+                          <div className="text-text-muted flex items-center gap-2 text-sm">
+                            <Spinner className="size-4" />
+                            Loading subscriptions...
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="text-text-muted text-sm">
+                  Showing {subscriptions.length} subscriptions
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!hasPrev || isLoadingMore}
+                    onClick={() => void loadPrev()}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!hasNext || isLoadingMore}
+                    onClick={() => void loadNext()}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </> // Closing conditional render for subscriptions tab
       )}
     </div>
   )

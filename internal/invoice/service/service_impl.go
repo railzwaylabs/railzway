@@ -14,6 +14,7 @@ import (
 	"github.com/bwmarrin/snowflake"
 	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
 	billingcycledomain "github.com/railzwaylabs/railzway/internal/billingcycle/domain"
+	"github.com/railzwaylabs/railzway/internal/bootstrap"
 	"github.com/railzwaylabs/railzway/internal/events"
 	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
 	invoiceformat "github.com/railzwaylabs/railzway/internal/invoice/format"
@@ -110,6 +111,7 @@ type ServiceParam struct {
 	Outbox         *events.Outbox `optional:"true"`
 	EmailProvider  email.Provider
 	PDFProvider    pdf.Provider
+	OrgGate        bootstrap.OrgGate `optional:"true"`
 }
 
 type Service struct {
@@ -127,6 +129,7 @@ type Service struct {
 	outbox         *events.Outbox
 	emailProvider  email.Provider
 	pdfProvider    pdf.Provider
+	orgGate        bootstrap.OrgGate
 }
 
 func NewService(p ServiceParam) invoicedomain.Service {
@@ -145,6 +148,7 @@ func NewService(p ServiceParam) invoicedomain.Service {
 		outbox:         p.Outbox,
 		emailProvider:  p.EmailProvider,
 		pdfProvider:    p.PDFProvider,
+		orgGate:        p.OrgGate,
 	}
 }
 
@@ -327,6 +331,11 @@ func (s *Service) GenerateInvoice(ctx context.Context, billingCycleID string) (*
 		}
 		if !cycle.PeriodEnd.After(cycle.PeriodStart) {
 			return invoicedomain.ErrInvalidBillingCycle
+		}
+		if s.orgGate != nil {
+			if err := s.orgGate.MustBeActive(ctx, cycle.OrgID); err != nil {
+				return err
+			}
 		}
 
 		existingID, err := s.findInvoiceByBillingCycle(ctx, tx, cycle.ID)
@@ -691,6 +700,11 @@ func (s *Service) FinalizeInvoice(ctx context.Context, invoiceID string) error {
 		if invoice == nil {
 			return invoicedomain.ErrInvoiceNotFound
 		}
+		if s.orgGate != nil {
+			if err := s.orgGate.MustBeActive(ctx, invoice.OrgID); err != nil {
+				return err
+			}
+		}
 		if invoice.Status == invoicedomain.InvoiceStatusFinalized {
 			s.log.Info("invoice already finalized, skipping", zap.String("invoice_id", invoiceID))
 			return nil
@@ -854,6 +868,11 @@ func (s *Service) VoidInvoice(ctx context.Context, invoiceID string, reason stri
 		}
 		if invoice == nil {
 			return invoicedomain.ErrInvoiceNotFound
+		}
+		if s.orgGate != nil {
+			if err := s.orgGate.MustBeActive(ctx, invoice.OrgID); err != nil {
+				return err
+			}
 		}
 		if invoice.Status != invoicedomain.InvoiceStatusFinalized {
 			return invoicedomain.ErrInvoiceNotFinalized

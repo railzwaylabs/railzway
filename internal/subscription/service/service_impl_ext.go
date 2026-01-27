@@ -29,7 +29,7 @@ func (s *Service) ChangePlan(ctx context.Context, req subscriptiondomain.ChangeP
 		return subscriptiondomain.ErrInvalidSubscriptionStatus
 	}
 
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. Fetch Subscription

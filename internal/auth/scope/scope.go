@@ -51,6 +51,16 @@ const (
 	ScopePriceUpdate Scope = "price:update"
 	ScopePriceDelete Scope = "price:delete"
 
+	ScopePriceAmountView   Scope = "price_amount:view"
+	ScopePriceAmountCreate Scope = "price_amount:create"
+	ScopePriceAmountUpdate Scope = "price_amount:update"
+	ScopePriceAmountDelete Scope = "price_amount:delete"
+
+	ScopePriceTierView   Scope = "price_tier:view"
+	ScopePriceTierCreate Scope = "price_tier:create"
+	ScopePriceTierUpdate Scope = "price_tier:update"
+	ScopePriceTierDelete Scope = "price_tier:delete"
+
 	ScopeMeterView   Scope = "meter:view"
 	ScopeMeterCreate Scope = "meter:create"
 	ScopeMeterUpdate Scope = "meter:update"
@@ -109,6 +119,16 @@ var authzScopeMap = map[authzKey]Scope{
 	{normalize(authorization.ObjectPrice), normalize(authorization.ActionPriceUpdate)}: ScopePriceUpdate,
 	{normalize(authorization.ObjectPrice), normalize(authorization.ActionPriceDelete)}: ScopePriceDelete,
 
+	{normalize(authorization.ObjectPriceAmount), normalize(authorization.ActionPriceAmountView)}:   ScopePriceAmountView,
+	{normalize(authorization.ObjectPriceAmount), normalize(authorization.ActionPriceAmountCreate)}: ScopePriceAmountCreate,
+	{normalize(authorization.ObjectPriceAmount), normalize(authorization.ActionPriceAmountUpdate)}: ScopePriceAmountUpdate,
+	{normalize(authorization.ObjectPriceAmount), normalize(authorization.ActionPriceAmountDelete)}: ScopePriceAmountDelete,
+
+	{normalize(authorization.ObjectPriceTier), normalize(authorization.ActionPriceTierView)}:   ScopePriceTierView,
+	{normalize(authorization.ObjectPriceTier), normalize(authorization.ActionPriceTierCreate)}: ScopePriceTierCreate,
+	{normalize(authorization.ObjectPriceTier), normalize(authorization.ActionPriceTierUpdate)}: ScopePriceTierUpdate,
+	{normalize(authorization.ObjectPriceTier), normalize(authorization.ActionPriceTierDelete)}: ScopePriceTierDelete,
+
 	{normalize(authorization.ObjectMeter), normalize(authorization.ActionMeterView)}:   ScopeMeterView,
 	{normalize(authorization.ObjectMeter), normalize(authorization.ActionMeterCreate)}: ScopeMeterCreate,
 	{normalize(authorization.ObjectMeter), normalize(authorization.ActionMeterUpdate)}: ScopeMeterUpdate,
@@ -156,6 +176,14 @@ var allScopes = []Scope{
 	ScopePriceCreate,
 	ScopePriceUpdate,
 	ScopePriceDelete,
+	ScopePriceAmountView,
+	ScopePriceAmountCreate,
+	ScopePriceAmountUpdate,
+	ScopePriceAmountDelete,
+	ScopePriceTierView,
+	ScopePriceTierCreate,
+	ScopePriceTierUpdate,
+	ScopePriceTierDelete,
 	ScopeMeterView,
 	ScopeMeterCreate,
 	ScopeMeterUpdate,

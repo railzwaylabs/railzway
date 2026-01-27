@@ -74,6 +74,18 @@ const getMetadata = (log?: AuditLog) => {
   return {}
 }
 
+const readMetadataValue = (
+  metadata: Record<string, unknown>,
+  fields: string[]
+) => {
+  for (const field of fields) {
+    if (field in metadata) {
+      return metadata[field]
+    }
+  }
+  return undefined
+}
+
 const humanizeAction = (action: string) => {
   if (!action) return "-"
   // Split by dot, capitalize first letter of each word
@@ -121,13 +133,18 @@ const buildSummary = (log: AuditLog) => {
   const metadata = getMetadata(log)
   const summaryParts = []
 
-  if (metadata.error) summaryParts.push(`Error: ${metadata.error}`)
-  if (metadata.reason) summaryParts.push(`Reason: ${metadata.reason}`)
+  const fromStatus = readMetadataValue(metadata, ["from_status", "fromStatus", "previous_status", "prev_status"])
+  const toStatus = readMetadataValue(metadata, ["to_status", "toStatus", "next_status"])
+  const status = readMetadataValue(metadata, ["status", "current_status"])
 
-  const status = metadata.status
-  if (typeof status === "string" && status.trim()) {
+  if (typeof fromStatus === "string" && typeof toStatus === "string" && fromStatus && toStatus) {
+    summaryParts.push(`Status: ${fromStatus} → ${toStatus}`)
+  } else if (typeof status === "string" && status.trim()) {
     summaryParts.push(`Status: ${status}`)
   }
+
+  if (metadata.error) summaryParts.push(`Error: ${metadata.error}`)
+  if (metadata.reason) summaryParts.push(`Reason: ${metadata.reason}`)
 
   // Specific financial context
   if (metadata.amount) summaryParts.push(`Amount: ${metadata.amount}`)

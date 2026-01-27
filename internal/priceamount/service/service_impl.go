@@ -73,7 +73,7 @@ func (s *Service) Create(ctx context.Context, req priceamountdomain.CreateReques
 	}
 
 	// 4. Normalize effective_from to minute precision
-	effectiveFrom := normalizeToMinutePrecision(s.clock.Now())
+	effectiveFrom := normalizeToMinutePrecision(s.clock.Now(ctx))
 	if req.EffectiveFrom != nil {
 		effectiveFrom = normalizeToMinutePrecision(*req.EffectiveFrom)
 	}
@@ -130,7 +130,7 @@ func (s *Service) Create(ctx context.Context, req priceamountdomain.CreateReques
 
 			// Close the current window
 			current.EffectiveTo = &effectiveFrom
-			current.UpdatedAt = s.clock.Now()
+			current.UpdatedAt = s.clock.Now(ctx)
 			if _, err := s.repo.Update(ctx, tx, current); err != nil {
 				return err
 			}
@@ -164,7 +164,7 @@ func (s *Service) Create(ctx context.Context, req priceamountdomain.CreateReques
 		}
 
 		// 10. Insert new price amount (append-only)
-		now := s.clock.Now()
+		now := s.clock.Now(ctx)
 		entity = &priceamountdomain.PriceAmount{
 			ID:                 s.genID.Generate(),
 			OrgID:              orgID,
@@ -188,7 +188,7 @@ func (s *Service) Create(ctx context.Context, req priceamountdomain.CreateReques
 		return nil, err
 	}
 
-	return s.toResponse(entity), nil
+	return s.toResponse(ctx, entity), nil
 }
 
 // resolvePricingDimension determines the immutable pricing dimension for this request.
@@ -359,7 +359,7 @@ func validateAmountValues(req priceamountdomain.CreateRequest) error {
 	return nil
 }
 
-func (s *Service) toResponse(a *priceamountdomain.PriceAmount) *priceamountdomain.Response {
+func (s *Service) toResponse(ctx context.Context, a *priceamountdomain.PriceAmount) *priceamountdomain.Response {
 	var meterID *snowflake.ID
 	if a.MeterID != nil {
 		value := a.MeterID
@@ -379,7 +379,7 @@ func (s *Service) toResponse(a *priceamountdomain.PriceAmount) *priceamountdomai
 		EffectiveTo:        a.EffectiveTo,
 		RevokedAt:          a.RevokedAt,
 		RevokedReason:      a.RevokedReason,
-		Status:             deriveStatus(a, s.clock.Now()),
+		Status:             deriveStatus(a, s.clock.Now(ctx)),
 		CreatedAt:          a.CreatedAt,
 		UpdatedAt:          a.UpdatedAt,
 	}
@@ -446,7 +446,7 @@ func (s *Service) List(ctx context.Context, req priceamountdomain.ListPriceAmoun
 
 	resp := make([]priceamountdomain.Response, 0, len(items))
 	for i := range items {
-		resp = append(resp, *s.toResponse(&items[i]))
+		resp = append(resp, *s.toResponse(ctx, &items[i]))
 	}
 
 	return resp, nil
@@ -471,7 +471,7 @@ func (s *Service) Get(ctx context.Context, req priceamountdomain.GetPriceAmountB
 		return nil, priceamountdomain.ErrNotFound
 	}
 
-	return s.toResponse(entity), nil
+	return s.toResponse(ctx, entity), nil
 }
 
 func parseID(value string) (snowflake.ID, error) {
@@ -487,8 +487,8 @@ func (o whereOption) Apply(db *gorm.DB) *gorm.DB {
 	return db.Where(o.query, o.args...)
 }
 
-func (s *Service) resolveEffectiveRange(req priceamountdomain.CreateRequest) (time.Time, *time.Time, error) {
-	effectiveFrom := s.clock.Now()
+func (s *Service) resolveEffectiveRange(ctx context.Context, req priceamountdomain.CreateRequest) (time.Time, *time.Time, error) {
+	effectiveFrom := s.clock.Now(ctx)
 	if req.EffectiveFrom != nil {
 		effectiveFrom = req.EffectiveFrom.UTC()
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/billingdashboard"
 	"github.com/railzwaylabs/railzway/internal/billingoperations"
 	"github.com/railzwaylabs/railzway/internal/billingoverview"
+	"github.com/railzwaylabs/railzway/internal/bootstrap"
 	"github.com/railzwaylabs/railzway/internal/clock"
 	"github.com/railzwaylabs/railzway/internal/cloudmetrics"
 	"github.com/railzwaylabs/railzway/internal/config"
@@ -22,7 +23,6 @@ import (
 	"github.com/railzwaylabs/railzway/internal/invoicetemplate"
 	"github.com/railzwaylabs/railzway/internal/ledger"
 	"github.com/railzwaylabs/railzway/internal/meter"
-	"github.com/railzwaylabs/railzway/internal/migration"
 	"github.com/railzwaylabs/railzway/internal/observability"
 	"github.com/railzwaylabs/railzway/internal/organization"
 	"github.com/railzwaylabs/railzway/internal/payment"
@@ -47,12 +47,14 @@ import (
 func main() {
 	app := fx.New(
 		config.Module,
-		migration.Module,
 		cloudmetrics.Module,
 		observability.Module,
 		fx.Provide(RegisterSnowflake),
 		db.Module,
 		clock.Module,
+		bootstrap.Module,
+		fx.Invoke(bootstrap.EnforceSchemaGate),
+		fx.Invoke(bootstrap.EnsureDefaultOrgAndUser),
 
 		// Admin needs almost everything
 		authorization.Module,
@@ -97,7 +99,6 @@ func main() {
 			s.RegisterFallback()
 		}),
 		fx.Invoke(server.RunHTTP),
-
 	)
 	app.Run()
 }

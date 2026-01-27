@@ -43,7 +43,7 @@ func TestRunJobTimeoutDoesNotReturnErrorAndIncrementsTimeout(t *testing.T) {
 		"env":     "test",
 		"job":     "timeout_job",
 	}
-	if got := getCounterValue(t, registry, "valora_scheduler_job_timeouts_total", labels); got != 1 {
+	if got := getCounterValue(t, registry, "railzway_scheduler_job_timeouts_total", labels); got != 1 {
 		t.Fatalf("expected timeout count 1, got %v", got)
 	}
 
@@ -53,7 +53,7 @@ func TestRunJobTimeoutDoesNotReturnErrorAndIncrementsTimeout(t *testing.T) {
 		"job":     "timeout_job",
 		"reason":  obsmetrics.SchedulerJobReasonDeadlineExceeded,
 	}
-	if got := getCounterValue(t, registry, "valora_scheduler_job_errors_total", errorLabels); got != 1 {
+	if got := getCounterValue(t, registry, "railzway_scheduler_job_errors_total", errorLabels); got != 1 {
 		t.Fatalf("expected error count 1, got %v", got)
 	}
 }

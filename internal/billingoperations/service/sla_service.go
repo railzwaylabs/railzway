@@ -15,7 +15,7 @@ func (s *Service) EvaluateSLAs(ctx context.Context) error {
 		initialResponseSLA = 30 * time.Minute
 		idleActionSLA      = 60 * time.Minute
 	)
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 
 	var records []domain.BillingAssignmentRecord
 	records, err := s.repo.ListActiveAssignments(ctx)

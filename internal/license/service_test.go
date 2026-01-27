@@ -1,12 +1,10 @@
 package license
 
 import (
-	"encoding/base64"
-	"encoding/json"
-	"os"
 	"testing"
 	"time"
 
+	"github.com/railzwaylabs/railzway/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -17,7 +15,14 @@ func TestService_LoadLicense(t *testing.T) {
 	privStr, pubStr, err := GenerateKeyPair()
 	require.NoError(t, err)
 
-	svc, err := NewService(logger, pubStr)
+	// Create config with public key
+	cfg := config.Config{
+		License: config.LicenseConfig{
+			PublicKey: pubStr,
+		},
+	}
+
+	svc, err := NewService(logger, cfg)
 	require.NoError(t, err)
 
 	t.Run("Valid License", func(t *testing.T) {
@@ -41,7 +46,7 @@ func TestService_LoadLicense(t *testing.T) {
 		// Strategy says: "If verification fails: A warning is logged, Plus features are disabled, OSS functionality continues uninterrupted"
 		// The LoadLicense method returns error, but the caller (main.go) decides whether to crash or continue.
 		// The service itself should not activate capabilities.
-		
+
 		payload := Payload{
 			OrgID:     "expired",
 			Features:  []string{"sso"},
@@ -53,16 +58,21 @@ func TestService_LoadLicense(t *testing.T) {
 		err = svc.LoadLicense(string(licBytes))
 		assert.ErrorIs(t, err, ErrExpired)
 
-		// Capabilities should remain disabled (or revert to disabled if previously enabled? 
+		// Capabilities should remain disabled (or revert to disabled if previously enabled?
 		// Our implementation replaces state, so yes, if we fail to load, we don't update capabilities?
 		// Actually, if we fail, we should probably ENSURE capabilities are disabled if we consider this "invalid state".
-		// But currently LoadLicense only updates state on success. 
+		// But currently LoadLicense only updates state on success.
 		// If we call LoadLicense twice, once valid, then invalid, the old valid state remains?
 		// That might be wrong. If explicit reload fails, we should probably keep old state OR clear it.
 		// For startup, it's fine.
-		
+
 		// Let's create a fresh service for this test to be sure
-		svc2, _ := NewService(logger, pubStr)
+		cfg := config.Config{
+			License: config.LicenseConfig{
+				PublicKey: pubStr,
+			},
+		}
+		svc2, _ := NewService(logger, cfg)
 		err = svc2.LoadLicense(string(licBytes))
 		assert.Error(t, err)
 		assert.False(t, svc2.Capabilities().SSO)

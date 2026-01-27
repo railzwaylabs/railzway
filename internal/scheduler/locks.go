@@ -12,6 +12,8 @@ import (
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+
+	testclockctx "github.com/railzwaylabs/railzway/internal/testclock/context"
 )
 
 type WorkSubscription struct {
@@ -60,7 +62,10 @@ func (s *Scheduler) fetchSubscriptionsForWork(ctx context.Context, tx *gorm.DB, 
 	var subscriptions []WorkSubscription
 	schedMetrics := obsmetrics.Scheduler()
 	lockStart := time.Now()
-	err := tx.WithContext(ctx).Raw(
+
+	
+	// Apply test clock scope
+	err := applyTestClockScope(ctx, tx).WithContext(ctx).Raw(
 		`SELECT id, org_id, status, activated_at, billing_cycle_type
 		 FROM subscriptions
 		 WHERE status = ?
@@ -70,6 +75,7 @@ func (s *Scheduler) fetchSubscriptionsForWork(ctx context.Context, tx *gorm.DB, 
 		status,
 		limit,
 	).Scan(&subscriptions).Error
+	
 	schedMetrics.ObserveDBLockWait(obsmetrics.LockResourceSubscriptionsForWork, time.Since(lockStart))
 	if err != nil {
 		return nil, err
@@ -96,7 +102,10 @@ func (s *Scheduler) fetchBillingCyclesForWork(ctx context.Context, where string,
 	)
 	args = append(args, limit)
 	lockStart := time.Now()
-	if err := s.db.WithContext(ctx).Raw(query, args...).Scan(&cycles).Error; err != nil {
+
+	
+	// Use Scopes to build the query safely
+	if err := applyTestClockScope(ctx, s.db).WithContext(ctx).Raw(query, args...).Scan(&cycles).Error; err != nil {
 		schedMetrics.ObserveDBLockWait(obsmetrics.LockResourceBillingCyclesForWork, time.Since(lockStart))
 		return cycles, err
 	}
@@ -109,11 +118,10 @@ func (s *Scheduler) fetchSubscriptionsNeedingCycle(ctx context.Context, tx *gorm
 	schedMetrics := obsmetrics.Scheduler()
 	lockStart := time.Now()
 
-	// Select Active subscriptions that DO NOT have an OPEN billing cycle
-	// Note: We use FOR UPDATE SKIP LOCKED on the subscription row to ensure exclusive access
-	// PostgreSQL: FOR UPDATE OF s SKIP LOCKED
-	// MySQL/SQLite: FOR UPDATE SKIP LOCKED works (or striped by test)
-	err := tx.WithContext(ctx).Raw(
+
+
+	// Apply test clock scope
+	err := applyTestClockScope(ctx, tx).WithContext(ctx).Raw(
 		`SELECT s.id, s.org_id, s.status, s.activated_at, s.billing_cycle_type
 		 FROM subscriptions s
 		 WHERE s.status = ?
@@ -201,13 +209,21 @@ func (s *Scheduler) findLastCycle(ctx context.Context, tx *gorm.DB, orgID, subsc
 
 func (s *Scheduler) insertCycle(ctx context.Context, tx *gorm.DB, cycleID, orgID, subscriptionID snowflake.ID, periodStart, periodEnd, now time.Time) error {
 	openedAt := now
+	
+	testClockID, _ := testclockctx.TestClockIDFromContext(ctx)
+	var testClockIDPtr *snowflake.ID
+	if testClockID != 0 {
+		testClockIDPtr = &testClockID
+	}
+
 	if err := tx.WithContext(ctx).Exec(
 		`INSERT INTO billing_cycles (
-			id, org_id, subscription_id, period_start, period_end, status,
+			id, org_id, test_clock_id, subscription_id, period_start, period_end, status,
 			opened_at, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		cycleID,
 		orgID,
+		testClockIDPtr,
 		subscriptionID,
 		periodStart,
 		periodEnd,

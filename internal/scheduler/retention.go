@@ -20,7 +20,7 @@ func (s *Scheduler) ResizeWebhookLogsJob(ctx context.Context) error {
 		return nil
 	}
 
-	cutoff := s.clock.Now().AddDate(0, 0, -retentionDays)
+	cutoff := s.clock.Now(ctx).AddDate(0, 0, -retentionDays)
 	s.log.Info("cleaning up webhook logs", zap.Time("cutoff", cutoff))
 
 	// Assuming we have a repository method or we use DB directly.

@@ -266,7 +266,7 @@ func (s *Server) webConfigErrors() []string {
 	var errs []string
 
 	if s.cfg.IsCloud() && s.cfg.DefaultOrgID == 0 {
-		errs = append(errs, "DEFAULT_ORG is required for cloud mode")
+		errs = append(errs, "BOOTSTRAP_DEFAULT_ORG_ID is required for cloud mode")
 	}
 	if !s.cfg.IsCloud() && s.cfg.Bootstrap.AllowAssignOrg {
 		if strings.TrimSpace(s.cfg.Bootstrap.AutoAssignOrgID) == "" {

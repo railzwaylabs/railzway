@@ -7,6 +7,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	auditdomain "github.com/railzwaylabs/railzway/internal/audit/domain"
+	"github.com/railzwaylabs/railzway/internal/bootstrap"
 	"github.com/railzwaylabs/railzway/internal/events"
 	ledgerdomain "github.com/railzwaylabs/railzway/internal/ledger/domain"
 	obsmetrics "github.com/railzwaylabs/railzway/internal/observability/metrics"
@@ -24,6 +25,7 @@ type Params struct {
 	AuditSvc   auditdomain.Service
 	Outbox     *events.Outbox      `optional:"true"`
 	ObsMetrics *obsmetrics.Metrics `optional:"true"`
+	OrgGate    bootstrap.OrgGate   `optional:"true"`
 }
 
 type Service struct {
@@ -33,6 +35,7 @@ type Service struct {
 	auditSvc   auditdomain.Service
 	outbox     *events.Outbox
 	obsMetrics *obsmetrics.Metrics
+	orgGate    bootstrap.OrgGate
 }
 
 func NewService(p Params) ledgerdomain.Service {
@@ -43,6 +46,7 @@ func NewService(p Params) ledgerdomain.Service {
 		auditSvc:   p.AuditSvc,
 		outbox:     p.Outbox,
 		obsMetrics: p.ObsMetrics,
+		orgGate:    p.OrgGate,
 	}
 }
 
@@ -57,6 +61,11 @@ func (s *Service) CreateEntry(
 ) error {
 	if orgID == 0 {
 		return ledgerdomain.ErrInvalidOrganization
+	}
+	if s.orgGate != nil {
+		if err := s.orgGate.MustBeActive(ctx, orgID); err != nil {
+			return err
+		}
 	}
 
 	sourceType = strings.TrimSpace(sourceType)

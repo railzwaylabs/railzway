@@ -92,7 +92,7 @@ func (w *Worker) processBatch(ctx context.Context, limit int) (int, error) {
 	}
 
 	processed := 0
-	now := w.clock.Now()
+	now := w.clock.Now(ctx)
 
 	for _, row := range rows {
 		rowCtx, cancel := context.WithTimeout(ctx, w.cfg.RowTimeout)
@@ -208,7 +208,7 @@ func (w *Worker) updateBacklogMetrics(ctx context.Context) {
 	for _, r := range rows {
 		snapshot.SetBacklog(r.Status, r.Count)
 		if r.OldestAt != nil {
-			age := w.clock.Now().Sub(*r.OldestAt)
+			age := w.clock.Now(ctx).Sub(*r.OldestAt)
 			snapshot.SetBacklogOldest(r.Status, age)
 		}
 	}

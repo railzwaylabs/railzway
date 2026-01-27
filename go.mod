@@ -25,6 +25,7 @@ require (
 	github.com/prometheus/prometheus v0.52.0
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/smallbiznis/go-genproto v0.0.0-20251215071939-e39a1fa0d65d
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/swag v1.16.6
@@ -91,6 +92,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hhrutter/lzw v1.0.0 // indirect
 	github.com/hhrutter/tiff v1.0.1 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect

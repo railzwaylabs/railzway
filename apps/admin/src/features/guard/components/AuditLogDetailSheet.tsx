@@ -45,6 +45,18 @@ const getMetadata = (log?: AuditLog) => {
   return {}
 }
 
+const readMetadataValue = (
+  metadata: Record<string, unknown>,
+  fields: string[]
+) => {
+  for (const field of fields) {
+    if (field in metadata) {
+      return metadata[field]
+    }
+  }
+  return undefined
+}
+
 interface AuditLogDetailSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -65,9 +77,30 @@ export function AuditLogDetailSheet({ open, onOpenChange, log }: AuditLogDetailS
   const targetID = String(readField(log, ["target_id", "TargetID"]) ?? "-")
 
   const metadata = getMetadata(log)
+  const fromStatus = readMetadataValue(metadata, ["from_status", "fromStatus", "previous_status", "prev_status"])
+  const toStatus = readMetadataValue(metadata, ["to_status", "toStatus", "next_status"])
+  const status = readMetadataValue(metadata, ["status", "current_status"])
+  const reason = readMetadataValue(metadata, ["reason", "failure_reason"])
+  const error = readMetadataValue(metadata, ["error", "error_message"])
+  const amount = readMetadataValue(metadata, ["amount", "amount_value"])
+  const currency = readMetadataValue(metadata, ["currency", "currency_code"])
+  const occurredAt = readMetadataValue(metadata, ["at", "occurred_at", "occurredAt", "timestamp"])
+
   const diffBefore = metadata.before ?? metadata.old_values
   const diffAfter = metadata.after ?? metadata.new_values
   const hasDiff = typeof diffBefore !== 'undefined' || typeof diffAfter !== 'undefined'
+  const statusLabel = (typeof fromStatus === "string" && typeof toStatus === "string" && fromStatus && toStatus)
+    ? `${fromStatus} → ${toStatus}`
+    : (typeof status === "string" && status.trim() ? status : undefined)
+
+  const detailRows = [
+    { label: "Status", value: statusLabel },
+    { label: "Reason", value: typeof reason === "string" ? reason : undefined },
+    { label: "Error", value: typeof error === "string" ? error : undefined },
+    { label: "Amount", value: typeof amount === "string" || typeof amount === "number" ? String(amount) : undefined },
+    { label: "Currency", value: typeof currency === "string" ? currency : undefined },
+    { label: "Occurred At", value: typeof occurredAt === "string" ? formatTimestamp(occurredAt) : undefined },
+  ].filter((row) => row.value)
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -129,6 +162,24 @@ export function AuditLogDetailSheet({ open, onOpenChange, log }: AuditLogDetailS
             </section>
 
             <Separator />
+
+            {detailRows.length > 0 && (
+              <section className="space-y-4">
+                <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-2">
+                  <IconActivity className="h-4 w-4" /> Event Details
+                </h3>
+                <div className="space-y-3">
+                  {detailRows.map((row) => (
+                    <div key={row.label} className="flex justify-between text-sm gap-6">
+                      <span className="text-text-muted">{row.label}</span>
+                      <span className="font-medium text-right break-all">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {detailRows.length > 0 && <Separator />}
 
             {/* State Change Diff */}
             {hasDiff && (

@@ -20,6 +20,7 @@ const (
 type BillingCycle struct {
 	ID                 snowflake.ID       `gorm:"primaryKey"`
 	OrgID              snowflake.ID       `gorm:"not null;index"`
+	TestClockID        *snowflake.ID      `gorm:"index"`
 	SubscriptionID     snowflake.ID       `gorm:"not null;index;uniqueIndex:ux_billing_cycle_period,priority:1"`
 	PeriodStart        time.Time          `gorm:"not null;uniqueIndex:ux_billing_cycle_period,priority:2"`
 	PeriodEnd          time.Time          `gorm:"not null;uniqueIndex:ux_billing_cycle_period,priority:3"`

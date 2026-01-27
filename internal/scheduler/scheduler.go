@@ -14,6 +14,7 @@ import (
 	billingcycledomain "github.com/railzwaylabs/railzway/internal/billingcycle/domain"
 	"github.com/railzwaylabs/railzway/internal/billingdashboard/rollup"
 	billingopsdomain "github.com/railzwaylabs/railzway/internal/billingoperations/domain"
+	"github.com/railzwaylabs/railzway/internal/bootstrap"
 	"github.com/railzwaylabs/railzway/internal/clock"
 	"github.com/railzwaylabs/railzway/internal/cloudmetrics"
 	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
@@ -23,6 +24,8 @@ import (
 	ratingdomain "github.com/railzwaylabs/railzway/internal/rating/domain"
 	"github.com/railzwaylabs/railzway/internal/scheduler/guard"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
+	testclockctx "github.com/railzwaylabs/railzway/internal/testclock/context"
+	testclockdomain "github.com/railzwaylabs/railzway/internal/testclock/domain"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -46,6 +49,7 @@ type Params struct {
 	Clock                clock.Clock
 	Config               Config                     `optional:"true"`
 	CloudMetrics         *cloudmetrics.CloudMetrics `optional:"true"`
+	OrgGate              bootstrap.OrgGate          `optional:"true"`
 }
 
 type Scheduler struct {
@@ -63,6 +67,7 @@ type Scheduler struct {
 	billingOperationsSvc billingopsdomain.Service
 	rollupSvc            *rollup.Service
 	cloudMetrics         *cloudmetrics.CloudMetrics
+	orgGate              bootstrap.OrgGate
 }
 
 type auditEvent struct {
@@ -95,6 +100,7 @@ func New(p Params) (*Scheduler, error) {
 		billingOperationsSvc: p.BillingOperationsSvc,
 		rollupSvc:            p.RollupSvc,
 		cloudMetrics:         p.CloudMetrics,
+		orgGate:              p.OrgGate,
 	}, nil
 }
 
@@ -105,7 +111,7 @@ func (s *Scheduler) runJob(
 	timeout time.Duration,
 	fn func(ctx context.Context) error,
 ) error {
-	start := s.clock.Now()
+	start := s.clock.Now(parent)
 	ctx, cancel := context.WithTimeout(parent, timeout)
 	defer cancel()
 
@@ -232,7 +238,7 @@ func (s *Scheduler) RunOnce(parent context.Context) error {
 func (s *Scheduler) RunForever(ctx context.Context) {
 	ticker := time.NewTicker(s.cfg.RunInterval)
 	defer ticker.Stop()
-	nextRun := s.clock.Now().Add(s.cfg.RunInterval)
+	nextRun := s.clock.Now(ctx).Add(s.cfg.RunInterval)
 	schedMetrics := obsmetrics.Scheduler()
 
 	for {
@@ -266,13 +272,20 @@ func (s *Scheduler) isJobEnabled(jobName string) bool {
 	return false
 }
 
+func (s *Scheduler) ensureOrgActive(ctx context.Context, orgID snowflake.ID) error {
+	if s.orgGate == nil {
+		return nil
+	}
+	return s.orgGate.MustBeActive(ctx, orgID)
+}
+
 func (s *Scheduler) EnsureBillingCyclesJob(ctx context.Context) error {
 	ctx, run, owner := s.ensureJobRun(ctx, "ensure_cycles", s.cfg.BatchSize)
 	if owner {
 		s.logJobStart(ctx, run)
 		defer s.logJobFinish(ctx, run)
 	}
-	now := s.clock.Now()
+	now := s.clock.Now(ctx)
 	var jobErr error
 
 	for {
@@ -299,7 +312,7 @@ func (s *Scheduler) CloseCyclesJob(ctx context.Context) error {
 		s.logJobStart(ctx, run)
 		defer s.logJobFinish(ctx, run)
 	}
-	now := s.clock.Now()
+	now := s.clock.Now(ctx)
 	fmt.Printf("CloseCycle: %v\n", now)
 	var jobErr error
 
@@ -315,6 +328,14 @@ func (s *Scheduler) CloseCyclesJob(ctx context.Context) error {
 
 		for _, cycle := range cycles {
 			s.logCycleClaimed(ctx, "close_cycles", cycle)
+			if err := s.ensureOrgActive(ctx, cycle.OrgID); err != nil {
+				jobErr = errors.Join(jobErr, err)
+				s.logSchedulerError(ctx, run, "scheduler.org.inactive", "close_cycles", cycle.OrgID, err,
+					zap.String("cycle_id", idString(cycle.ID)),
+					zap.String("subscription_id", idString(cycle.SubscriptionID)),
+				)
+				continue
+			}
 			if err := s.authorizeSystem(ctx, cycle.OrgID, authorization.ObjectBillingCycle, authorization.ActionBillingCycleStartClosing); err != nil {
 				jobErr = errors.Join(jobErr, err)
 				s.logSchedulerError(ctx, run, "scheduler.authorize.failed", "close_cycles", cycle.OrgID, err,
@@ -366,7 +387,7 @@ func (s *Scheduler) RatingJob(ctx context.Context) error {
 		s.logJobStart(ctx, run)
 		defer s.logJobFinish(ctx, run)
 	}
-	now := s.clock.Now()
+	now := s.clock.Now(ctx)
 	var jobErr error
 
 	for {
@@ -381,6 +402,14 @@ func (s *Scheduler) RatingJob(ctx context.Context) error {
 
 		for _, cycle := range cycles {
 			s.logCycleClaimed(ctx, "rating", cycle)
+			if err := s.ensureOrgActive(ctx, cycle.OrgID); err != nil {
+				jobErr = errors.Join(jobErr, err)
+				s.logSchedulerError(ctx, run, "scheduler.org.inactive", "rating", cycle.OrgID, err,
+					zap.String("cycle_id", idString(cycle.ID)),
+					zap.String("subscription_id", idString(cycle.SubscriptionID)),
+				)
+				continue
+			}
 			if err := s.authorizeSystem(ctx, cycle.OrgID, authorization.ObjectBillingCycle, authorization.ActionBillingCycleRate); err != nil {
 				jobErr = errors.Join(jobErr, err)
 				s.logSchedulerError(ctx, run, "scheduler.authorize.failed", "rating", cycle.OrgID, err,
@@ -473,7 +502,7 @@ func (s *Scheduler) CloseAfterRatingJob(ctx context.Context) error {
 		s.logJobStart(ctx, run)
 		defer s.logJobFinish(ctx, run)
 	}
-	now := s.clock.Now()
+	now := s.clock.Now(ctx)
 	var jobErr error
 
 	for {
@@ -488,6 +517,14 @@ func (s *Scheduler) CloseAfterRatingJob(ctx context.Context) error {
 
 		for _, cycle := range cycles {
 			s.logCycleClaimed(ctx, "close_after_rating", cycle)
+			if err := s.ensureOrgActive(ctx, cycle.OrgID); err != nil {
+				jobErr = errors.Join(jobErr, err)
+				s.logSchedulerError(ctx, run, "scheduler.org.inactive", "close_after_rating", cycle.OrgID, err,
+					zap.String("cycle_id", idString(cycle.ID)),
+					zap.String("subscription_id", idString(cycle.SubscriptionID)),
+				)
+				continue
+			}
 			if err := s.authorizeSystem(ctx, cycle.OrgID, authorization.ObjectBillingCycle, authorization.ActionBillingCycleClose); err != nil {
 				jobErr = errors.Join(jobErr, err)
 				s.logSchedulerError(ctx, run, "scheduler.authorize.failed", "close_after_rating", cycle.OrgID, err,
@@ -571,7 +608,7 @@ func (s *Scheduler) InvoiceJob(ctx context.Context) error {
 		defer s.logJobFinish(ctx, run)
 	}
 
-	now := s.clock.Now()
+	now := s.clock.Now(ctx)
 	var jobErr error
 	schedMetrics := obsmetrics.Scheduler()
 
@@ -587,6 +624,14 @@ func (s *Scheduler) InvoiceJob(ctx context.Context) error {
 
 		for _, cycle := range cycles {
 			s.logCycleClaimed(ctx, "invoice", cycle)
+			if err := s.ensureOrgActive(ctx, cycle.OrgID); err != nil {
+				jobErr = errors.Join(jobErr, err)
+				s.logSchedulerError(ctx, run, "scheduler.org.inactive", "invoice", cycle.OrgID, err,
+					zap.String("cycle_id", idString(cycle.ID)),
+					zap.String("subscription_id", idString(cycle.SubscriptionID)),
+				)
+				continue
+			}
 			if err := s.authorizeSystem(ctx, cycle.OrgID, authorization.ObjectInvoice, authorization.ActionInvoiceGenerate); err != nil {
 				jobErr = errors.Join(jobErr, err)
 				s.logSchedulerError(ctx, run, "scheduler.authorize.failed", "invoice", cycle.OrgID, err,
@@ -712,6 +757,14 @@ func (s *Scheduler) EndCanceledSubscriptionsJob(ctx context.Context) error {
 				continue
 			}
 
+			if err := s.ensureOrgActive(ctx, subscription.OrgID); err != nil {
+				jobErr = errors.Join(jobErr, err)
+				s.logSchedulerError(ctx, run, "scheduler.org.inactive", "end_canceled_subs", subscription.OrgID, err,
+					zap.String("subscription_id", idString(subscription.ID)),
+				)
+				continue
+			}
+
 			canEnd, err := s.canEndSubscription(ctx, subscription.OrgID, subscription.ID)
 			if err != nil {
 				jobErr = errors.Join(jobErr, err)
@@ -794,6 +847,14 @@ func (s *Scheduler) ensureBillingCyclesBatch(ctx context.Context, now time.Time,
 			batchErr = errors.Join(batchErr, ctx.Err())
 			schedMetrics.IncBatchDeferred(jobName, classifyEnsureCyclesDeferredReason(ctx.Err()))
 			break
+		}
+
+		if err := s.ensureOrgActive(ctx, sub.OrgID); err != nil {
+			batchErr = errors.Join(batchErr, err)
+			s.logSchedulerError(ctx, run, "scheduler.org.inactive", jobName, sub.OrgID, err,
+				zap.String("subscription_id", idString(sub.ID)),
+			)
+			continue
 		}
 
 		if err := s.authorizeSystem(ctx, sub.OrgID, authorization.ObjectBillingCycle, authorization.ActionBillingCycleOpen); err != nil {
@@ -1035,6 +1096,78 @@ func (s *Scheduler) FinOpsScoringJob(ctx context.Context) error {
 	if err := s.billingOperationsSvc.AggregateDailyPerformance(ctx); err != nil {
 		s.logSchedulerError(ctx, run, "finops.scoring.failed", "finops_scoring", 0, err)
 		return err
+	}
+
+	return nil
+}
+
+// TriggerSimulationStep runs the deterministic simulation pipeline for a specific Test Clock.
+// It executes key billing jobs synchronously using the simulated time from the context.
+func (s *Scheduler) TriggerSimulationStep(ctx context.Context, testClockID snowflake.ID, simulatedTime time.Time) error {
+	if err := s.ensureSimulationAdvance(ctx, testClockID, simulatedTime); err != nil {
+		return err
+	}
+
+	// 1. Create a derived context with the TestClockID and SimulatedTime
+	simCtx := testclockctx.WithTestClock(ctx, testClockID, simulatedTime)
+
+	s.log.Info("triggering simulation step",
+		zap.String("test_clock_id", testClockID.String()),
+		zap.Time("simulated_time", simulatedTime),
+	)
+
+	// 2. Run EnsureBillingCyclesJob
+	// This will create new billing cycles if needed, scoped to this TestClock.
+	if err := s.EnsureBillingCyclesJob(simCtx); err != nil {
+		s.log.Error("simulation step failed: ensure_cycles", zap.Error(err))
+		return err
+	}
+
+	// 3. Run InvoiceJob
+	// This will close cycles and generate invoices if needed, scoped to this TestClock.
+	if err := s.InvoiceJob(simCtx); err != nil {
+		s.log.Error("simulation step failed: invoice", zap.Error(err))
+		return err
+	}
+
+	// Add other jobs here if needed (e.g. Rating, Dunning) behavior for simulation
+
+	return nil
+}
+
+type testClockStateRow struct {
+	TestClockID snowflake.ID `gorm:"column:test_clock_id"`
+	OrgID       snowflake.ID `gorm:"column:org_id"`
+	CurrentTime time.Time    `gorm:"column:simulated_time"`
+	AdvancingTo *time.Time   `gorm:"column:advancing_to"`
+	Status      string       `gorm:"column:status"`
+}
+
+func (s *Scheduler) ensureSimulationAdvance(ctx context.Context, testClockID snowflake.ID, simulatedTime time.Time) error {
+	if testClockID == 0 {
+		return testclockdomain.ErrInvalidState
+	}
+
+	var state testClockStateRow
+	if err := s.db.WithContext(ctx).
+		Table("test_clock_state").
+		Where("test_clock_id = ?", testClockID).
+		First(&state).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return testclockdomain.ErrStateNotFound
+		}
+		return err
+	}
+
+	status := strings.ToLower(strings.TrimSpace(state.Status))
+	if status != string(testclockdomain.TestClockStateStatusAdvancing) {
+		return testclockdomain.ErrInvalidState
+	}
+	if state.AdvancingTo == nil {
+		return testclockdomain.ErrStateMismatch
+	}
+	if !state.AdvancingTo.UTC().Equal(simulatedTime.UTC()) {
+		return testclockdomain.ErrStateMismatch
 	}
 
 	return nil

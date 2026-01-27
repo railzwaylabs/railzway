@@ -1,7 +1,10 @@
 package clock
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type Clock interface {
-	Now() time.Time
+	Now(ctx context.Context) time.Time
 }

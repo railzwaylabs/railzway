@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/bwmarrin/snowflake"
+	"github.com/railzwaylabs/railzway/internal/bootstrap"
 	"github.com/railzwaylabs/railzway/internal/config"
 	"github.com/railzwaylabs/railzway/internal/observability"
 	"github.com/railzwaylabs/railzway/internal/payment"
@@ -19,6 +20,8 @@ func main() {
 		observability.Module,
 		fx.Provide(RegisterSnowflake),
 		db.Module,
+		bootstrap.Module,
+		fx.Invoke(bootstrap.EnforceSchemaGate),
 
 		// Invoice Service dependencies
 		publicinvoice.Module,

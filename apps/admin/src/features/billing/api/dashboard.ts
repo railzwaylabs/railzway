@@ -19,6 +19,24 @@ export interface ActivityGroup {
   activities: BillingActivity[];
 }
 
+export interface ReadinessIssue {
+  id: string;
+  status: "ready" | "not_ready" | "optional";
+  dependency_hint?: string;
+  action_href: string;
+  evidence?: Record<string, string>;
+}
+
+export interface ReadinessResponse {
+  system_state: "ready" | "not_ready";
+  issues: ReadinessIssue[];
+}
+
+export const getSystemReadiness = async (orgId: string) => {
+  const { data } = await admin.get<ReadinessResponse>(`/organizations/${orgId}/readiness`);
+  return data;
+};
+
 export const getBillingCycles = async () => {
   // TODO: Update URL when backend routing is confirmed
   const { data } = await admin.get<{ cycles: BillingCycleSummary[] }>("/billing/cycles");

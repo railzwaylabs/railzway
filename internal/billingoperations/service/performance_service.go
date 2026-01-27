@@ -199,7 +199,7 @@ func (s *Service) GetPerformanceHistory(ctx context.Context, userID string, limi
 }
 
 func (s *Service) AggregateDailyPerformance(ctx context.Context) error {
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 	start := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, time.UTC)
 	end := start.Add(24 * time.Hour)
 
@@ -265,7 +265,7 @@ func (s *Service) GetMyPerformance(ctx context.Context, userID string, req domai
 
 	start := req.From
 	end := req.To
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 
 	if end.IsZero() {
 		end = now
@@ -316,7 +316,7 @@ func (s *Service) GetTeamPerformance(ctx context.Context, req domain.GetPerforma
 
 	start := req.From
 	end := req.To
-	now := s.clock.Now().UTC()
+	now := s.clock.Now(ctx).UTC()
 
 	if end.IsZero() {
 		end = now

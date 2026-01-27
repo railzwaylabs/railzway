@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
+	"github.com/gosimple/slug"
 	authdomain "github.com/railzwaylabs/railzway/internal/auth/domain"
 	"github.com/railzwaylabs/railzway/internal/auth/password"
 	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
@@ -83,6 +84,24 @@ func EnsureMainOrgWithID(db *gorm.DB, orgID int64) error {
 
 // EnsureMainOrgAndAdmin seeds the default organization and admin user for OSS mode.
 func EnsureMainOrgAndAdmin(db *gorm.DB) error {
+	return EnsureOrgAndAdminWithOptions(db, OrgSeedOptions{})
+}
+
+// OrgSeedOptions allows customizing org identity for bootstrap.
+type OrgSeedOptions struct {
+	OrgID int64
+	Name  string
+	Slug  string
+	// AdminEmail and AdminPassword override the default admin credentials.
+	AdminEmail    string
+	AdminPassword string
+	// CreateAdminUser controls whether the admin user is created.
+	// Defaults to true when nil.
+	CreateAdminUser *bool
+}
+
+// EnsureOrgAndAdminWithOptions seeds a default organization and admin user using provided overrides.
+func EnsureOrgAndAdminWithOptions(db *gorm.DB, opts OrgSeedOptions) error {
 	if db == nil {
 		return errors.New("seed database handle is required")
 	}
@@ -93,59 +112,20 @@ func EnsureMainOrgAndAdmin(db *gorm.DB) error {
 	}
 
 	ctx := context.Background()
+	overrideID := resolveOrgID(opts.OrgID)
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		org, err := ensureMainOrgTx(ctx, tx, node, nil)
+		org, err := ensureOrgTx(ctx, tx, node, overrideID, opts.Name, opts.Slug)
 		if err != nil {
 			return err
 		}
 
-		var user authdomain.User
-		err = tx.WithContext(ctx).
-			Where("provider = ? AND external_id = ?", "local", defaultAdminEmail).
-			First(&user).Error
-		if err != nil {
-			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				return err
-			}
-			hashed, err := password.Hash(defaultAdminPassword)
+		if shouldCreateAdmin(opts.CreateAdminUser) {
+			adminEmail, adminPassword := resolveAdminCredentials(opts)
+			user, err := ensureAdminUser(ctx, tx, node, adminEmail, adminPassword)
 			if err != nil {
 				return err
 			}
-			now := time.Now().UTC()
-			user = authdomain.User{
-				ID:                  node.Generate(),
-				ExternalID:          defaultAdminEmail,
-				Provider:            "local",
-				DisplayName:         defaultAdminDisplay,
-				Email:               strings.ToLower(defaultAdminEmail),
-				PasswordHash:        &hashed,
-				LastPasswordChanged: nil,
-				IsDefault:           true,
-				CreatedAt:           now,
-				UpdatedAt:           now,
-			}
-			if err := tx.WithContext(ctx).Create(&user).Error; err != nil {
-				return err
-			}
-		}
-
-		var member organizationdomain.OrganizationMember
-		err = tx.WithContext(ctx).
-			Where("org_id = ? AND user_id = ?", org.ID, user.ID).
-			First(&member).Error
-		if err != nil {
-			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				return err
-			}
-			now := time.Now().UTC()
-			member = organizationdomain.OrganizationMember{
-				ID:        node.Generate(),
-				OrgID:     org.ID,
-				UserID:    user.ID,
-				Role:      organizationdomain.RoleOwner,
-				CreatedAt: now,
-			}
-			if err := tx.WithContext(ctx).Create(&member).Error; err != nil {
+			if err := ensureOrgMembership(ctx, tx, node, org.ID, user.ID); err != nil {
 				return err
 			}
 		}
@@ -160,7 +140,98 @@ func EnsureMainOrgAndAdmin(db *gorm.DB) error {
 	})
 }
 
+func resolveOrgID(raw int64) *snowflake.ID {
+	if raw == 0 {
+		return nil
+	}
+	id := snowflake.ID(raw)
+	return &id
+}
+
+func shouldCreateAdmin(flag *bool) bool {
+	if flag == nil {
+		return true
+	}
+	return *flag
+}
+
+func resolveAdminCredentials(opts OrgSeedOptions) (string, string) {
+	email := strings.TrimSpace(opts.AdminEmail)
+	if email == "" {
+		email = defaultAdminEmail
+	}
+	email = strings.ToLower(email)
+
+	password := opts.AdminPassword
+	if strings.TrimSpace(password) == "" {
+		password = defaultAdminPassword
+	}
+
+	return email, password
+}
+
+func ensureAdminUser(ctx context.Context, tx *gorm.DB, node *snowflake.Node, email string, passwordRaw string) (*authdomain.User, error) {
+	var user authdomain.User
+	err := tx.WithContext(ctx).
+		Where("provider = ? AND external_id = ?", "local", email).
+		First(&user).Error
+	if err == nil {
+		return &user, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	hashed, err := password.Hash(passwordRaw)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now().UTC()
+	user = authdomain.User{
+		ID:                  node.Generate(),
+		ExternalID:          email,
+		Provider:            "local",
+		DisplayName:         defaultAdminDisplay,
+		Email:               email,
+		PasswordHash:        &hashed,
+		LastPasswordChanged: nil,
+		IsDefault:           true,
+		CreatedAt:           now,
+		UpdatedAt:           now,
+	}
+	if err := tx.WithContext(ctx).Create(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func ensureOrgMembership(ctx context.Context, tx *gorm.DB, node *snowflake.Node, orgID snowflake.ID, userID snowflake.ID) error {
+	var member organizationdomain.OrganizationMember
+	err := tx.WithContext(ctx).
+		Where("org_id = ? AND user_id = ?", orgID, userID).
+		First(&member).Error
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	now := time.Now().UTC()
+	member = organizationdomain.OrganizationMember{
+		ID:        node.Generate(),
+		OrgID:     orgID,
+		UserID:    userID,
+		Role:      organizationdomain.RoleOwner,
+		CreatedAt: now,
+	}
+	return tx.WithContext(ctx).Create(&member).Error
+}
+
 func ensureMainOrgTx(ctx context.Context, tx *gorm.DB, node *snowflake.Node, orgID *snowflake.ID) (organizationdomain.Organization, error) {
+	return ensureOrgTx(ctx, tx, node, orgID, defaultOrgName, defaultOrgSlug)
+}
+
+func ensureOrgTx(ctx context.Context, tx *gorm.DB, node *snowflake.Node, orgID *snowflake.ID, name string, slugValue string) (organizationdomain.Organization, error) {
 	var org organizationdomain.Organization
 	if orgID != nil && *orgID != 0 {
 		if err := tx.WithContext(ctx).First(&org, "id = ?", *orgID).Error; err == nil {
@@ -169,7 +240,14 @@ func ensureMainOrgTx(ctx context.Context, tx *gorm.DB, node *snowflake.Node, org
 			return org, err
 		}
 	}
-	err := tx.WithContext(ctx).Where("slug = ?", defaultOrgSlug).First(&org).Error
+	if strings.TrimSpace(name) == "" {
+		name = defaultOrgName
+	}
+	if strings.TrimSpace(slugValue) == "" {
+		slugValue = slug.Make(name)
+	}
+
+	err := tx.WithContext(ctx).Where("slug = ?", slugValue).First(&org).Error
 	if err == nil {
 		if orgID != nil && *orgID != 0 && org.ID != *orgID {
 			return org, errors.New("default org id does not match existing org")
@@ -186,8 +264,8 @@ func ensureMainOrgTx(ctx context.Context, tx *gorm.DB, node *snowflake.Node, org
 	}
 	org = organizationdomain.Organization{
 		ID:        id,
-		Name:      defaultOrgName,
-		Slug:      defaultOrgSlug,
+		Name:      name,
+		Slug:      slugValue,
 		IsDefault: true,
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -232,9 +310,9 @@ func ensureInvoiceTemplateTx(ctx context.Context, tx *gorm.DB, node *snowflake.N
 	header := map[string]any{
 		"title":           "Invoice",
 		"logo_url":        "",
-		"company_name":    "{{org.name}}",
-		"company_email":   "{{org.email}}",
-		"company_address": "{{org.address}}",
+		"company_name":    "",
+		"company_email":   "",
+		"company_address": "",
 		"bill_to_label":   "Bill to",
 		"ship_to_label":   "Ship to",
 	}
