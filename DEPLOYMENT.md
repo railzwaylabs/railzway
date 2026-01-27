@@ -8,11 +8,10 @@ We publish the following images to GitHub Container Registry (GHCR):
 
 | Service | Image | Description |
 | :--- | :--- | :--- |
-| **Monolith** | `ghcr.io/smallbiznis/railzway/railzway` | All-in-one binary (Admin UI + API + Scheduler). Best for simple deployments. |
-| **Admin** | `ghcr.io/smallbiznis/railzway/railzway-admin` | Admin Dashboard (UI) + API. No background jobs. |
+| **Admin (Monolith)** | `ghcr.io/smallbiznis/railzway/railzway-admin` | Core Monolith. Serving Admin UI + API. |
+| **Invoice** | `ghcr.io/smallbiznis/railzway/railzway-invoice` | Customer-facing Invoice Checkout UI. |
 | **Scheduler** | `ghcr.io/smallbiznis/railzway/railzway-scheduler` | Background workers (Rating, Invoicing). No UI. |
-| **Invoice** | `ghcr.io/smallbiznis/railzway/railzway-invoice` | Public Invoice Rendering (customer-facing). |
-| **API** | `ghcr.io/smallbiznis/railzway/railzway-api` | Headless API service. |
+| **Migration** | `ghcr.io/smallbiznis/railzway/railzway-migration` | One-off container for running database migrations. |
 
 ## 🚀 Running with Docker Compose
 
@@ -39,23 +38,7 @@ services:
       - "6379:6379"
 
   # -----------------------------------------------------
-  # Option A: Monolith (All-in-One)
-  # -----------------------------------------------------
-  # railzway:
-  #   image: ghcr.io/smallbiznis/railzway/railzway:latest
-  #   ports:
-  #     - "8080:8080"
-  #   environment:
-  #     - DB_HOST=postgres
-  #     - DB_USER=railzway
-  #     - DB_PASSWORD=password
-  #     - REDIS_HOST=redis
-  #   depends_on:
-  #     - postgres
-  #     - redis
-
-  # -----------------------------------------------------
-  # Option B: Microservices (Recommended for Production)
+  # Core Services
   # -----------------------------------------------------
   
   # 1. Admin Dashboard (UI + API)
