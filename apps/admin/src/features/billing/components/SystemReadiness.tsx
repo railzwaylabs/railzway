@@ -48,12 +48,6 @@ const READINESS_CONFIG: Record<string, ReadinessItemConfig> = {
     href: "/meters",
     actionLabel: "View Meters",
   },
-  subscription_exists: {
-    title: "Subscriptions",
-    description: "Create a subscription to start billing a customer.",
-    href: "/subscriptions",
-    actionLabel: "Create Subscription",
-  },
   payment_provider_connected: {
     title: "Payment Provider",
     description: "Connect a payment provider to process payments.",

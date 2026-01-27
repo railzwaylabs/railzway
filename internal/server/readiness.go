@@ -9,7 +9,6 @@ import (
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
 	productdomain "github.com/railzwaylabs/railzway/internal/product/domain"
-	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
 	taxdomain "github.com/railzwaylabs/railzway/internal/tax/domain"
 )
 
@@ -54,7 +53,7 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list products"})
 		return
 	}
-	
+
 	activeProducts := 0
 	for _, p := range products {
 		if p.Active {
@@ -90,7 +89,7 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 	for _, p := range prices {
 		if p.Active {
 			activePrices++
-			if p.BillingMode == pricedomain.Metered { 
+			if p.BillingMode == pricedomain.Metered {
 				hasUsagePrice = true
 			}
 		}
@@ -99,11 +98,11 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 	if activePrices == 0 {
 		isSystemReady = false
 		issues = append(issues, ReadinessIssue{
-			ID:         "price_exists_for_product",
-			Status:     ReadinessStateNotReady,
-			ActionHref: "/prices",
+			ID:             "price_exists_for_product",
+			Status:         ReadinessStateNotReady,
+			ActionHref:     "/prices",
 			DependencyHint: ptr("product_exists"),
-			Evidence:   map[string]string{"active_prices": "0"},
+			Evidence:       map[string]string{"active_prices": "0"},
 		})
 	} else {
 		issues = append(issues, ReadinessIssue{
@@ -146,37 +145,12 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 	} else {
 		issues = append(issues, ReadinessIssue{
 			ID:         "meter_exists_if_usage_price",
-			Status:     ReadinessStateReady, 
+			Status:     ReadinessStateReady,
 			ActionHref: "/meters",
 		})
 	}
 
-	// 4. Check Subscription Exists
-	subsResp, err := s.subscriptionSvc.List(ctx, subscriptiondomain.ListSubscriptionRequest{
-		PageSize: 1,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list subscriptions"})
-		return
-	}
-
-	if len(subsResp.Subscriptions) == 0 {
-		isSystemReady = false
-		issues = append(issues, ReadinessIssue{
-			ID:         "subscription_exists",
-			Status:     ReadinessStateNotReady,
-			ActionHref: "/subscriptions",
-			Evidence:   map[string]string{"count": "0"},
-		})
-	} else {
-		issues = append(issues, ReadinessIssue{
-			ID:         "subscription_exists",
-			Status:     ReadinessStateReady,
-			ActionHref: "/subscriptions",
-		})
-	}
-
-	// 5. Check Payment Provider Connected
+	// 4. Check Payment Provider Connected
 	providers, err := s.paymentProviderSvc.ListConfigs(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list payment providers"})
@@ -207,7 +181,7 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 		})
 	}
 
-	// 6. Check Payment Configuration (Methods)
+	// 5. Check Payment Configuration (Methods)
 	pmConfigs, err := s.paymentMethodConfigSvc.ListPaymentMethodConfigs(ctx, orgID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list payment method configs"})
@@ -225,11 +199,11 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 	if !hasActiveMethod {
 		isSystemReady = false
 		issues = append(issues, ReadinessIssue{
-			ID:         "payment_configuration_complete",
-			Status:     ReadinessStateNotReady,
-			ActionHref: "/payment-method-configs",
+			ID:             "payment_configuration_complete",
+			Status:         ReadinessStateNotReady,
+			ActionHref:     "/payment-method-configs",
 			DependencyHint: ptr("payment_provider_connected"),
-			Evidence:   map[string]string{"active_methods": "0"},
+			Evidence:       map[string]string{"active_methods": "0"},
 		})
 	} else {
 		issues = append(issues, ReadinessIssue{
@@ -241,7 +215,7 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 
 	// --- RECOMMENDED CHECKS (Does not affect SystemState) ---
 
-	// 7. Invoice Template Customized (Optional)
+	// 6. Invoice Template Customized (Optional)
 	templates, err := s.invoiceTemplateSvc.List(ctx, invoicetemplatedomain.ListRequest{})
 	if err == nil && len(templates) > 0 {
 		issues = append(issues, ReadinessIssue{
@@ -252,12 +226,12 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 	} else {
 		issues = append(issues, ReadinessIssue{
 			ID:         "invoice_template_customized",
-			Status:     ReadinessStateOptional, 
+			Status:     ReadinessStateOptional,
 			ActionHref: "/invoice-templates",
 		})
 	}
 
-	// 8. Tax Configuration (Optional)
+	// 7. Tax Configuration (Optional)
 	taxDefs, err := s.taxSvc.List(ctx, taxdomain.ListRequest{IsEnabled: ptrBool(true)})
 	if err == nil && len(taxDefs) > 0 {
 		issues = append(issues, ReadinessIssue{
@@ -273,7 +247,7 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 		})
 	}
 
-	// 9. Secondary Admin Present (Optional)
+	// 8. Secondary Admin Present (Optional)
 	members, err := s.organizationSvc.ListMembers(ctx, orgIDStr)
 	if err == nil && len(members) > 1 {
 		issues = append(issues, ReadinessIssue{
@@ -289,7 +263,7 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 		})
 	}
 
-	// 10. API Keys Created (Optional/Recommended)
+	// 9. API Keys Created (Optional/Recommended)
 	// API keys are needed to integrate the backend.
 	apiKeys, err := s.apiKeySvc.List(ctx)
 	if err == nil && len(apiKeys) > 0 {
@@ -306,13 +280,13 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 		})
 	}
 
-	// 11. Webhooks (Optional)
+	// 10. Webhooks (Optional)
 	issues = append(issues, ReadinessIssue{
 		ID:         "webhooks_configured",
 		Status:     ReadinessStateOptional,
 		ActionHref: "/settings/webhooks",
 	})
-	
+
 	state := ReadinessStateReady
 	if !isSystemReady {
 		state = ReadinessStateNotReady
