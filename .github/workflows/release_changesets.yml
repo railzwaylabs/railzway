@@ -1,54 +1,39 @@
-name: Release Changesets
+name: Semantic Release
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/workflows/ci-*'
+      - '.github/workflows/infra-*'
   workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   release:
-    name: Release
+    name: Semantic Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
       issues: write
-      id-token: write
-
+      pull-requests: write
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          run_install: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'pnpm'
-
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Create Release Pull Request or Publish to NPM/Tags
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          # This executes pnpm changeset version to bump versions & update changelogs
-          # And creates a PR for it.
-          # When that PR is merged, it can push tags if configured (custom publish script needed for tags only without npm)
-          publish: pnpm changeset tag
-          commit: "chore: update versions"
-          title: "chore: update versions"
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Output
+        if: steps.semantic.outputs.new_release_published == 'true'
+        run: |
+          echo "🎉 New release published: v${{ steps.semantic.outputs.new_release_version }}"
