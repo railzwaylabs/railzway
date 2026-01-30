@@ -44,7 +44,7 @@ jobs:
         with:
           # Full history ensures deterministic tag resolution for release notes.
           fetch-depth: 0
-          ref: ${{ env.RELEASE_TAG }}
+          ref: refs/tags/${{ env.RELEASE_TAG }}
 
       - name: Resolve release metadata
         id: resolve
