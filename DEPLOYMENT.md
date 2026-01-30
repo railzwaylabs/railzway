@@ -2,7 +2,7 @@
 
 This guide explains how to **run** Railzway services using Docker Compose and Docker.
 
-## � Quick Start (Docker Compose)
+## 🚀 Quick Start (Docker Compose)
 
 The easiest way to run Railzway locally is using the included `docker-compose.yml`.
 
@@ -97,3 +97,14 @@ docker build --target railzway-scheduler -t railzway-scheduler .
 # Migration Image
 docker build --target railzway-migration -t railzway-migration .
 ```
+
+---
+
+## 🌐 Orchestration (K8s, Nomad, Helm)
+
+For deploying to **Kubernetes** or **Nomad**, please refer to the [Orchestration Guide](docs/ORCHESTRATION.md).
+
+It includes:
+- Kubernetes Manifests (Deployment, Service, Job)
+- Nomad Job Specification (`.hcl`)
+- Helm Chart guidance
