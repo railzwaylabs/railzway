@@ -204,7 +204,7 @@ func (s *PaymentMethodServiceImpl) GetDefaultPaymentMethod(
 	if err := s.db.Where("customer_id = ? AND is_default = true", customerID).
 		First(&pm).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, domain.ErrPaymentMethodNotFound
 		}
 		return nil, err
 	}

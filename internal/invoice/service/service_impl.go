@@ -23,9 +23,11 @@ import (
 	ledgerdomain "github.com/railzwaylabs/railzway/internal/ledger/domain"
 	meterdomain "github.com/railzwaylabs/railzway/internal/meter/domain"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
 	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
 	priceamountdomain "github.com/railzwaylabs/railzway/internal/priceamount/domain"
 	"github.com/railzwaylabs/railzway/internal/providers/email"
+	paymentproviderdomain "github.com/railzwaylabs/railzway/internal/providers/payment/domain"
 	"github.com/railzwaylabs/railzway/internal/providers/pdf"
 	publicinvoicedomain "github.com/railzwaylabs/railzway/internal/publicinvoice/domain"
 	ratingdomain "github.com/railzwaylabs/railzway/internal/rating/domain"
@@ -99,37 +101,41 @@ type ledgerEntryLineRow struct {
 type ServiceParam struct {
 	fx.In
 
-	DB             *gorm.DB
-	Log            *zap.Logger
-	GenID          *snowflake.Node
-	AuditSvc       auditdomain.Service
-	TemplateRepo   templatedomain.Repository
-	Renderer       render.Renderer
-	PublicTokenSvc publicinvoicedomain.PublicInvoiceTokenService
-	TaxResolver    taxdomain.TaxResolver
-	LedgerSvc      ledgerdomain.Service
-	Outbox         *events.Outbox `optional:"true"`
-	EmailProvider  email.Provider
-	PDFProvider    pdf.Provider
-	OrgGate        bootstrap.OrgGate `optional:"true"`
+	DB                 *gorm.DB
+	Log                *zap.Logger
+	GenID              *snowflake.Node
+	AuditSvc           auditdomain.Service
+	TemplateRepo       templatedomain.Repository
+	Renderer           render.Renderer
+	PublicTokenSvc     publicinvoicedomain.PublicInvoiceTokenService
+	TaxResolver        taxdomain.TaxResolver
+	LedgerSvc          ledgerdomain.Service
+	Outbox             *events.Outbox `optional:"true"`
+	EmailProvider      email.Provider
+	PDFProvider        pdf.Provider
+	OrgGate            bootstrap.OrgGate                  `optional:"true"`
+	PaymentMethodSvc   paymentdomain.PaymentMethodService `optional:"true"`
+	PaymentProviderSvc paymentproviderdomain.Service      `optional:"true"`
 }
 
 type Service struct {
 	db  *gorm.DB
 	log *zap.Logger
 
-	genID          *snowflake.Node
-	invoicerepo    repository.Repository[invoicedomain.Invoice]
-	auditSvc       auditdomain.Service
-	templateRepo   templatedomain.Repository
-	renderer       render.Renderer
-	publicTokenSvc publicinvoicedomain.PublicInvoiceTokenService
-	taxResolver    taxdomain.TaxResolver
-	ledgerSvc      ledgerdomain.Service
-	outbox         *events.Outbox
-	emailProvider  email.Provider
-	pdfProvider    pdf.Provider
-	orgGate        bootstrap.OrgGate
+	genID              *snowflake.Node
+	invoicerepo        repository.Repository[invoicedomain.Invoice]
+	auditSvc           auditdomain.Service
+	templateRepo       templatedomain.Repository
+	renderer           render.Renderer
+	publicTokenSvc     publicinvoicedomain.PublicInvoiceTokenService
+	taxResolver        taxdomain.TaxResolver
+	ledgerSvc          ledgerdomain.Service
+	outbox             *events.Outbox
+	emailProvider      email.Provider
+	pdfProvider        pdf.Provider
+	orgGate            bootstrap.OrgGate
+	paymentMethodSvc   paymentdomain.PaymentMethodService
+	paymentProviderSvc paymentproviderdomain.Service
 }
 
 func NewService(p ServiceParam) invoicedomain.Service {
@@ -138,17 +144,19 @@ func NewService(p ServiceParam) invoicedomain.Service {
 		log:   p.Log.Named("invoice.service"),
 		genID: p.GenID,
 
-		invoicerepo:    repository.ProvideStore[invoicedomain.Invoice](p.DB),
-		auditSvc:       p.AuditSvc,
-		templateRepo:   p.TemplateRepo,
-		renderer:       p.Renderer,
-		publicTokenSvc: p.PublicTokenSvc,
-		taxResolver:    p.TaxResolver,
-		ledgerSvc:      p.LedgerSvc,
-		outbox:         p.Outbox,
-		emailProvider:  p.EmailProvider,
-		pdfProvider:    p.PDFProvider,
-		orgGate:        p.OrgGate,
+		invoicerepo:        repository.ProvideStore[invoicedomain.Invoice](p.DB),
+		auditSvc:           p.AuditSvc,
+		templateRepo:       p.TemplateRepo,
+		renderer:           p.Renderer,
+		publicTokenSvc:     p.PublicTokenSvc,
+		taxResolver:        p.TaxResolver,
+		ledgerSvc:          p.LedgerSvc,
+		outbox:             p.Outbox,
+		emailProvider:      p.EmailProvider,
+		pdfProvider:        p.PDFProvider,
+		orgGate:            p.OrgGate,
+		paymentMethodSvc:   p.PaymentMethodSvc,
+		paymentProviderSvc: p.PaymentProviderSvc,
 	}
 }
 
@@ -850,6 +858,8 @@ func (s *Service) FinalizeInvoice(ctx context.Context, invoiceID string) error {
 				s.log.Error("failed to send invoice notification", zap.Error(err), zap.String("invoice_id", inv.ID.String()))
 			}
 		}(finalizedInvoice, publicToken.TokenHash)
+
+		s.triggerAutoCharge(finalizedInvoice)
 	}
 	return nil
 }
@@ -1297,6 +1307,10 @@ var currencyDecimals = map[string]int{
 	"SGD": 2,
 	"CNY": 2,
 	"IDR": 0,
+	"PHP": 2,
+	"THB": 2,
+	"MYR": 2,
+	"VND": 0,
 }
 
 func formatMoney(amount int64, currency string) string {
