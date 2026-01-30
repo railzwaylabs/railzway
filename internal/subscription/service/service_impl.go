@@ -275,13 +275,16 @@ func (s *Service) Create(ctx context.Context, req subscriptiondomain.CreateSubsc
 	// Validate payment method if charging automatically
 	if collectionMode == subscriptiondomain.ChargeAutomatically {
 		// Check for default payment method
-		_, err := s.paymentMethodSvc.GetDefaultPaymentMethod(ctx, customerID)
+		pm, err := s.paymentMethodSvc.GetDefaultPaymentMethod(ctx, customerID)
 		if err != nil {
 			// Determine if it is a not found error
 			if errors.Is(err, paymentdomain.ErrPaymentMethodNotFound) {
 				return subscriptiondomain.CreateSubscriptionResponse{}, subscriptiondomain.ErrMissingPaymentMethod
 			}
 			return subscriptiondomain.CreateSubscriptionResponse{}, err
+		}
+		if pm == nil {
+			return subscriptiondomain.CreateSubscriptionResponse{}, subscriptiondomain.ErrMissingPaymentMethod
 		}
 	}
 
