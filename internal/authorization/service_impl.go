@@ -65,8 +65,8 @@ const (
 	ActionAPIKeyRotate = "api_key.rotate"
 	ActionAPIKeyRevoke = "api_key.revoke"
 
-	ActionAuditLogView       = "audit_log.view"
-	ActionAuditLogExport     = "audit_log.export"
+	ActionAuditLogView   = "audit_log.view"
+	ActionAuditLogExport = "audit_log.export"
 
 	ActionBillingChangeRequestView    = "billing_change_request.view"
 	ActionBillingChangeRequestCreate  = "billing_change_request.create"
@@ -121,6 +121,7 @@ const (
 	ActionInvoiceDelete = "invoice.delete"
 
 	ActionUsageIngest = "usage.ingest"
+	ActionUsageView   = "usage.view"
 
 	ActionOrganizationView   = "organization.view"
 	ActionOrganizationUpdate = "organization.update"
@@ -482,6 +483,7 @@ func seedPolicies(enforcer *casbin.SyncedEnforcer) error {
 		{"role:system", ObjectInvoice, ActionInvoiceDelete},
 
 		{"role:system", ObjectUsage, ActionUsageIngest},
+		{"role:system", ObjectUsage, ActionUsageView},
 		{"role:system", ObjectOrganization, ActionOrganizationView},
 	}
 

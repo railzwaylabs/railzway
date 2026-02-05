@@ -16,6 +16,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/payment/adapters"
 	disputedomain "github.com/railzwaylabs/railzway/internal/payment/dispute/domain"
 	disputeservice "github.com/railzwaylabs/railzway/internal/payment/dispute/service"
+	"github.com/railzwaylabs/railzway/internal/payment/domain"
 	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
 	paymentservice "github.com/railzwaylabs/railzway/internal/payment/service"
 	paymentproviderdomain "github.com/railzwaylabs/railzway/internal/providers/payment/domain"
@@ -30,8 +31,9 @@ type Params struct {
 
 	DB         *gorm.DB
 	Log        *zap.Logger
-	PaymentSvc *paymentservice.Service
-	DisputeSvc *disputeservice.Service
+	PaymentSvc  *paymentservice.Service
+	CheckoutSvc domain.CheckoutService
+	DisputeSvc  *disputeservice.Service
 	Adapters   *adapters.Registry
 	Cfg        config.Config
 }
@@ -39,8 +41,9 @@ type Params struct {
 type Service struct {
 	db         *gorm.DB
 	log        *zap.Logger
-	paymentSvc *paymentservice.Service
-	disputeSvc *disputeservice.Service
+	paymentSvc  *paymentservice.Service
+	checkoutSvc domain.CheckoutService
+	disputeSvc  *disputeservice.Service
 	adapters   *adapters.Registry
 	encKey     []byte
 }
@@ -67,8 +70,9 @@ func NewService(p Params) paymentdomain.Service {
 	return &Service{
 		db:         p.DB,
 		log:        p.Log.Named("payment.webhook"),
-		paymentSvc: p.PaymentSvc,
-		disputeSvc: p.DisputeSvc,
+		paymentSvc:  p.PaymentSvc,
+		checkoutSvc: p.CheckoutSvc,
+		disputeSvc:  p.DisputeSvc,
 		adapters:   p.Adapters,
 		encKey:     key,
 	}
@@ -94,14 +98,27 @@ func (s *Service) IngestWebhook(ctx context.Context, provider string, payload []
 		return paymentdomain.ErrProviderNotFound
 	}
 
+	// Log incoming webhook for debugging
+	s.log.Info("processing webhook",
+		zap.String("provider", provider),
+		zap.Int("payload_size", len(payload)),
+		zap.Int("config_count", len(configs)))
+
 	_, paymentEvent, disputeEvent, err := s.matchAdapter(ctx, provider, payload, headers, configs)
 	if err != nil {
 		if errors.Is(err, paymentdomain.ErrEventIgnored) {
+			s.log.Debug("webhook event ignored",
+				zap.String("provider", provider))
 			return nil
 		}
 		if errors.Is(err, paymentdomain.ErrInvalidCustomer) {
 			s.log.Warn("payment webhook missing customer mapping", zap.String("provider", provider))
 		}
+		// Log error with more context
+		s.log.Error("webhook processing failed",
+			zap.String("provider", provider),
+			zap.Error(err),
+			zap.Int("payload_size", len(payload)))
 		return err
 	}
 
@@ -126,6 +143,29 @@ func (s *Service) IngestWebhook(ctx context.Context, provider string, payload []
 	}
 	
 	masked := maskPayload(payload)
+	
+	// Try to complete checkout session if applicable
+	// We do this speculatively for relevant event types
+	if paymentEvent.Type == paymentdomain.EventTypeCheckoutSessionCompleted || 
+	   paymentEvent.Type == paymentdomain.EventTypePaymentSucceeded {
+		
+		if s.checkoutSvc != nil {
+			// Use ProviderPaymentID as session ID (mapped in adapters)
+			_, err := s.checkoutSvc.CompleteSession(ctx, provider, paymentEvent.ProviderPaymentID)
+			if err != nil && !errors.Is(err, paymentdomain.ErrCheckoutSessionNotFound) {
+				// Log error but don't fail the webhook processing itself, 
+				// as the main payment processing might still need to succeed?
+				// Actually if session completion fails (e.g. DB error), we might accept it to be safe 
+				// or retry.
+				// For now log error.
+				s.log.Error("failed to complete checkout session", 
+					zap.String("provider", provider),
+					zap.String("provider_session_id", paymentEvent.ProviderPaymentID),
+					zap.Error(err))
+			}
+		}
+	}
+
 	return s.paymentSvc.ProcessEvent(ctx, paymentEvent, masked)
 }
 

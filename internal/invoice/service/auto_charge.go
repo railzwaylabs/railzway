@@ -229,7 +229,7 @@ func (s *Service) autoChargeInvoice(ctx context.Context, invoice *invoicedomain.
 	if err != nil {
 		return err
 	}
-	if mode != subscriptiondomain.ChargeAutomatically {
+	if mode != subscriptiondomain.SubscriptionCollectionModeChargeAutomatically {
 		return nil
 	}
 

@@ -27,7 +27,8 @@ func setupConfigTestDB(t *testing.T) *gorm.DB {
 func TestGetAvailablePaymentMethods(t *testing.T) {
 	db := setupConfigTestDB(t)
 	node, _ := snowflake.NewNode(1)
-	svc := NewPaymentMethodConfigService(db)
+	// Pass nil for providerService as these tests check availability logic, not provider config fetching
+	svc := NewPaymentMethodConfigService(db, nil)
 
 	orgID := node.Generate()
 

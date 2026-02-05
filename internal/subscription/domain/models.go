@@ -21,9 +21,9 @@ const (
 
 type SubscriptionCollectionMode string
 
-var (
-	SendInvoice         SubscriptionCollectionMode = "SEND_INVOICE"
-	ChargeAutomatically SubscriptionCollectionMode = "CHARGE_AUTOMATICALLY"
+const (
+	SubscriptionCollectionModeSendInvoice         SubscriptionCollectionMode = "SEND_INVOICE"
+	SubscriptionCollectionModeChargeAutomatically SubscriptionCollectionMode = "CHARGE_AUTOMATICALLY"
 )
 
 // Subscription captures a customer's billing agreement.

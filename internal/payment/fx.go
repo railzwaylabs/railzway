@@ -17,6 +17,7 @@ import (
 var Module = fx.Module("payment.service",
 	fx.Provide(repository.Provide),
 	fx.Provide(disputerepo.Provide),
+	fx.Provide(repository.NewCheckoutSessionRepository),
 	fx.Provide(func() *adapters.Registry {
 		return adapters.NewRegistry(
 			stripe.NewFactory(),
@@ -30,4 +31,5 @@ var Module = fx.Module("payment.service",
 	fx.Provide(webhook.NewService),
 	fx.Provide(paymentservice.NewPaymentMethodService),
 	fx.Provide(paymentservice.NewPaymentMethodConfigService),
+	fx.Provide(paymentservice.NewCheckoutService),
 )

@@ -113,6 +113,139 @@ func (a *Adapter) GetPaymentMethod(ctx context.Context, paymentMethodID string) 
 	return nil, errors.New("not implemented")
 }
 
+// CreateCheckoutSession creates a new checkout session (invoice)
+func (a *Adapter) CreateCheckoutSession(ctx context.Context, input paymentdomain.CheckoutSessionInput) (*paymentdomain.ProviderCheckoutSession, error) {
+	if a.apiKey == "" {
+		return nil, errors.New("xendit api key not configured")
+	}
+
+	// Call Xendit API: POST /v2/invoices
+	url := "https://api.xendit.co/v2/invoices"
+
+	// Create request body
+	reqBody := map[string]interface{}{
+		"external_id":          fmt.Sprintf("checkout-%s-%d", input.CustomerID, time.Now().UnixNano()),
+		"amount":               input.Amount,
+		"currency":             input.Currency,
+		"success_redirect_url": input.SuccessURL,
+		"failure_redirect_url": input.CancelURL,
+		"description":          "Payment", // Generic description
+	}
+
+	// Use metadata or specific input if available for email later
+	if input.Metadata != nil {
+		if email, ok := input.Metadata["email"]; ok {
+			reqBody["payer_email"] = email
+		}
+	}
+
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", url, strings.NewReader(string(jsonBody)))
+	if err != nil {
+		return nil, err
+	}
+
+	// Basic Auth with API Key as username
+	req.SetBasicAuth(a.apiKey, "")
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("xendit api error: %d", resp.StatusCode)
+	}
+
+	var invoice struct {
+		ID         string `json:"id"`
+		InvoiceURL string `json:"invoice_url"`
+		Status     string `json:"status"`
+		ExpiryDate string `json:"expiry_date"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&invoice); err != nil {
+		return nil, err
+	}
+
+	status := paymentdomain.CheckoutSessionStatusOpen
+	if invoice.Status == "PAID" || invoice.Status == "SETTLED" {
+		status = paymentdomain.CheckoutSessionStatusComplete
+	} else if invoice.Status == "EXPIRED" {
+		status = paymentdomain.CheckoutSessionStatusExpired
+	}
+
+	expiresAt, _ := time.Parse(time.RFC3339, invoice.ExpiryDate)
+
+	return &paymentdomain.ProviderCheckoutSession{
+		ID:        invoice.ID,
+		Provider:  "xendit",
+		URL:       invoice.InvoiceURL,
+		Status:    status,
+		ExpiresAt: expiresAt,
+	}, nil
+}
+
+// RetrieveCheckoutSession retrieves a checkout session (invoice) from Xendit
+func (a *Adapter) RetrieveCheckoutSession(ctx context.Context, providerSessionID string) (*paymentdomain.ProviderCheckoutSession, error) {
+	if a.apiKey == "" {
+		return nil, errors.New("xendit api key not configured")
+	}
+
+	// Call Xendit API: GET /v2/invoices/{id}
+	url := fmt.Sprintf("https://api.xendit.co/v2/invoices/%s", providerSessionID)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.SetBasicAuth(a.apiKey, "")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("xendit api error: %d", resp.StatusCode)
+	}
+
+	var invoice struct {
+		ID         string `json:"id"`
+		InvoiceURL string `json:"invoice_url"`
+		Status     string `json:"status"`
+		ExpiryDate string `json:"expiry_date"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&invoice); err != nil {
+		return nil, err
+	}
+
+	status := paymentdomain.CheckoutSessionStatusOpen
+	if invoice.Status == "PAID" || invoice.Status == "SETTLED" {
+		status = paymentdomain.CheckoutSessionStatusComplete
+	} else if invoice.Status == "EXPIRED" {
+		status = paymentdomain.CheckoutSessionStatusExpired
+	}
+
+	expiresAt, _ := time.Parse(time.RFC3339, invoice.ExpiryDate)
+
+	return &paymentdomain.ProviderCheckoutSession{
+		ID:        invoice.ID,
+		Provider:  "xendit",
+		URL:       invoice.InvoiceURL,
+		Status:    status,
+		ExpiresAt: expiresAt,
+	}, nil
+}
+
 // ListPaymentMethods lists customer payment methods
 func (a *Adapter) ListPaymentMethods(ctx context.Context, customerProviderID string) ([]*paymentdomain.PaymentMethodDetails, error) {
 	// Xendit doesn't have a native list API for tokens
@@ -122,14 +255,14 @@ func (a *Adapter) ListPaymentMethods(ctx context.Context, customerProviderID str
 
 // xenditEvent represents a Xendit webhook event
 type xenditEvent struct {
-	ID        string          `json:"id"`
-	Event     string          `json:"event"`
-	Created   string          `json:"created"`
-	Data      json.RawMessage `json:"data"`
-	ExternalID string         `json:"external_id"`
-	Amount    float64         `json:"amount"`
-	Currency  string          `json:"currency"`
-	Status    string          `json:"status"`
+	ID         string          `json:"id"`
+	Event      string          `json:"event"`
+	Created    string          `json:"created"`
+	Data       json.RawMessage `json:"data"`
+	ExternalID string          `json:"external_id"`
+	Amount     float64         `json:"amount"`
+	Currency   string          `json:"currency"`
+	Status     string          `json:"status"`
 }
 
 func (a *Adapter) parsePaymentSucceeded(event xenditEvent, payload []byte) (*paymentdomain.PaymentEvent, error) {

@@ -17,6 +17,10 @@ type PaymentAdapter interface {
 	DetachPaymentMethod(ctx context.Context, paymentMethodID string) error
 	GetPaymentMethod(ctx context.Context, paymentMethodID string) (*PaymentMethodDetails, error)
 	ListPaymentMethods(ctx context.Context, customerProviderID string) ([]*PaymentMethodDetails, error)
+
+	// Checkout Session
+	CreateCheckoutSession(ctx context.Context, input CheckoutSessionInput) (*ProviderCheckoutSession, error)
+	RetrieveCheckoutSession(ctx context.Context, providerSessionID string) (*ProviderCheckoutSession, error)
 }
 
 type AdapterConfig struct {
