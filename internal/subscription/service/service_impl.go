@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"time"
 
@@ -270,22 +269,6 @@ func (s *Service) Create(ctx context.Context, req subscriptiondomain.CreateSubsc
 	collectionMode, err := parseCollectionMode(string(req.CollectionMode))
 	if err != nil {
 		return subscriptiondomain.CreateSubscriptionResponse{}, err
-	}
-
-	// Validate payment method if charging automatically
-	if collectionMode == subscriptiondomain.ChargeAutomatically {
-		// Check for default payment method
-		pm, err := s.paymentMethodSvc.GetDefaultPaymentMethod(ctx, customerID)
-		if err != nil {
-			// Determine if it is a not found error
-			if errors.Is(err, paymentdomain.ErrPaymentMethodNotFound) {
-				return subscriptiondomain.CreateSubscriptionResponse{}, subscriptiondomain.ErrMissingPaymentMethod
-			}
-			return subscriptiondomain.CreateSubscriptionResponse{}, err
-		}
-		if pm == nil {
-			return subscriptiondomain.CreateSubscriptionResponse{}, subscriptiondomain.ErrMissingPaymentMethod
-		}
 	}
 
 	now := s.clock.Now(ctx)
@@ -795,9 +778,10 @@ func parseCollectionMode(value string) (subscriptiondomain.SubscriptionCollectio
 		return "", subscriptiondomain.ErrInvalidCollectionMode
 	}
 
+	mode = strings.ToUpper(mode)
 	switch subscriptiondomain.SubscriptionCollectionMode(mode) {
-	case subscriptiondomain.SendInvoice,
-		subscriptiondomain.ChargeAutomatically:
+	case subscriptiondomain.SubscriptionCollectionModeSendInvoice,
+		subscriptiondomain.SubscriptionCollectionModeChargeAutomatically:
 		return subscriptiondomain.SubscriptionCollectionMode(mode), nil
 	default:
 		return "", subscriptiondomain.ErrInvalidCollectionMode

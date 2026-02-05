@@ -7,15 +7,20 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/railzwaylabs/railzway/internal/payment/domain"
+	providerservice "github.com/railzwaylabs/railzway/internal/providers/payment/domain"
 	"gorm.io/gorm"
 )
 
 type PaymentMethodConfigServiceImpl struct {
-	db *gorm.DB
+	db              *gorm.DB
+	providerService providerservice.Service
 }
 
-func NewPaymentMethodConfigService(db *gorm.DB) domain.PaymentMethodConfigService {
-	return &PaymentMethodConfigServiceImpl{db: db}
+func NewPaymentMethodConfigService(db *gorm.DB, providerService providerservice.Service) domain.PaymentMethodConfigService {
+	return &PaymentMethodConfigServiceImpl{
+		db:              db,
+		providerService: providerService,
+	}
 }
 
 func (s *PaymentMethodConfigServiceImpl) GetAvailablePaymentMethods(
@@ -36,6 +41,22 @@ func (s *PaymentMethodConfigServiceImpl) GetAvailablePaymentMethods(
 	available := []*domain.PaymentMethodConfig{}
 	for _, config := range configs {
 		if s.isAvailable(config, country, currency) {
+			// Populate transient PublicKey from provider config
+			if s.providerService != nil {
+				// We need to fetch the provider config (which is cached or fast hopefully)
+				// Note: Ideally this is batched or cached, but for now N+1 is acceptable for low N configs
+				providerCfg, err := s.providerService.GetActiveProviderConfig(ctx, orgID, config.Provider)
+				if err == nil && providerCfg != nil {
+					var cfgMap map[string]any
+					if err := json.Unmarshal(providerCfg.Config, &cfgMap); err == nil {
+						if pk, ok := cfgMap["public_key"].(string); ok {
+							config.PublicKey = pk
+						} else if pk, ok := cfgMap["publishable_key"].(string); ok {
+							config.PublicKey = pk
+						}
+					}
+				}
+			}
 			available = append(available, config)
 		}
 	}

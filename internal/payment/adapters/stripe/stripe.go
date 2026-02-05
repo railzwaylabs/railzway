@@ -8,7 +8,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -91,6 +93,9 @@ func (a *Adapter) Parse(ctx context.Context, payload []byte) (*paymentdomain.Pay
 		return nil, paymentdomain.ErrInvalidEvent
 	}
 
+	// Log event type for debugging
+	fmt.Printf("[STRIPE] Processing event: type=%s, id=%s\n", event.Type, event.ID)
+
 	switch strings.TrimSpace(event.Type) {
 	case "payment_intent.succeeded":
 		return a.parsePaymentIntent(event, payload)
@@ -98,9 +103,12 @@ func (a *Adapter) Parse(ctx context.Context, payload []byte) (*paymentdomain.Pay
 		return a.parsePaymentIntentFailed(event, payload)
 	case "charge.succeeded":
 		return a.parseCharge(event, payload, paymentdomain.EventTypePaymentSucceeded)
+	case "checkout.session.completed":
+		return a.parseCheckoutSessionCompleted(event, payload)
 	case "charge.refunded":
 		return a.parseCharge(event, payload, paymentdomain.EventTypeRefunded)
 	default:
+		fmt.Printf("[STRIPE] Unhandled event type: %s (event_id=%s)\n", event.Type, event.ID)
 		return nil, paymentdomain.ErrEventIgnored
 	}
 }
@@ -162,6 +170,19 @@ type stripeEvent struct {
 	Type    string          `json:"type"`
 	Created int64           `json:"created"`
 	Data    stripeEventData `json:"data"`
+}
+
+type stripeCheckoutSession struct {
+	ID                string         `json:"id"`
+	ClientReferenceID string         `json:"client_reference_id"`
+	PaymentIntent     any            `json:"payment_intent"` // Can be string ID or expanded object
+	Status            string         `json:"status"`
+	PaymentStatus     string         `json:"payment_status"`
+	AmountTotal       int64          `json:"amount_total"`
+	Currency          string         `json:"currency"`
+	Created           int64          `json:"created"`
+	ExpiresAt         int64          `json:"expires_at"`
+	Metadata          map[string]any `json:"metadata"`
 }
 
 type stripeEventData struct {
@@ -287,6 +308,51 @@ func (a *Adapter) parseCharge(event stripeEvent, payload []byte, eventType strin
 	}, nil
 }
 
+func (a *Adapter) parseCheckoutSessionCompleted(event stripeEvent, payload []byte) (*paymentdomain.PaymentEvent, error) {
+	var session stripeCheckoutSession
+	if err := json.Unmarshal(event.Data.Object, &session); err != nil {
+		return nil, paymentdomain.ErrInvalidPayload
+	}
+
+	customerIDStr := session.ClientReferenceID
+	if customerIDStr == "" {
+		// Fallback to metadata if available
+		customerIDStr = readMetadataValue(session.Metadata, "customer_id")
+	}
+
+	var customerID snowflake.ID
+	var err error
+	if customerIDStr != "" {
+		customerID, err = snowflake.ParseString(customerIDStr)
+		if err != nil {
+			fmt.Printf("[STRIPE] Invalid customer_id format in checkout session: %s\n", customerIDStr)
+			return nil, paymentdomain.ErrInvalidCustomer
+		}
+	} else {
+		// Log session details for debugging
+		fmt.Printf("[STRIPE] Missing customer_id in checkout session: client_reference_id=%s, metadata=%+v, session_id=%s\n",
+			session.ClientReferenceID, session.Metadata, session.ID)
+		return nil, paymentdomain.ErrInvalidCustomer
+	}
+
+	occurredAt := timestamp(session.Created, event.Created)
+
+	return &paymentdomain.PaymentEvent{
+		Provider:            "stripe",
+		ProviderEventID:     event.ID,
+		ProviderPaymentID:   session.ID, // Use Session ID as ProviderPaymentID for this event type
+		ProviderPaymentType: "checkout_session",
+		Type:                paymentdomain.EventTypeCheckoutSessionCompleted,
+		OrgID:               a.orgID,
+		CustomerID:          customerID,
+		Amount:              session.AmountTotal,
+		Currency:            strings.ToUpper(strings.TrimSpace(session.Currency)),
+		OccurredAt:          occurredAt,
+		RawPayload:          payload,
+		InvoiceID:           nil, // Not an invoice event
+	}, nil
+}
+
 func parseStripeSignature(header string) (string, []string, error) {
 	parts := strings.Split(header, ",")
 	var timestamp string
@@ -329,10 +395,13 @@ func timestamp(primary int64, fallback int64) time.Time {
 func parseMetadataIDs(metadata map[string]any) (snowflake.ID, *snowflake.ID, error) {
 	customerRaw := readMetadataValue(metadata, "customer_id")
 	if customerRaw == "" {
+		// Log metadata for debugging
+		fmt.Printf("[STRIPE] Missing customer_id in metadata: %+v\n", metadata)
 		return 0, nil, paymentdomain.ErrInvalidCustomer
 	}
 	customerID, err := snowflake.ParseString(customerRaw)
 	if err != nil {
+		fmt.Printf("[STRIPE] Invalid customer_id format: %s\n", customerRaw)
 		return 0, nil, paymentdomain.ErrInvalidCustomer
 	}
 
@@ -380,8 +449,12 @@ func (a *Adapter) AttachPaymentMethod(ctx context.Context, customerProviderID, t
 	}
 
 	// Call Stripe API: POST /v1/payment_methods/{token}/attach
-	url := fmt.Sprintf("https://api.stripe.com/v1/payment_methods/%s/attach", token)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, strings.NewReader(fmt.Sprintf("customer=%s", customerProviderID)))
+	endpoint := fmt.Sprintf("https://api.stripe.com/v1/payment_methods/%s/attach", token)
+
+	data := url.Values{}
+	data.Set("customer", customerProviderID)
+
+	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, err
 	}
@@ -397,7 +470,15 @@ func (a *Adapter) AttachPaymentMethod(ctx context.Context, customerProviderID, t
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("stripe api error: %d", resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyStr := string(bodyBytes)
+
+		// If already attached, just retrieve it
+		if strings.Contains(bodyStr, "already attached to a customer") {
+			return a.retrievePaymentMethod(ctx, token)
+		}
+
+		return nil, fmt.Errorf("stripe api error: %d body: %s", resp.StatusCode, bodyStr)
 	}
 
 	var pm stripePaymentMethod
@@ -405,6 +486,39 @@ func (a *Adapter) AttachPaymentMethod(ctx context.Context, customerProviderID, t
 		return nil, err
 	}
 
+	return &paymentdomain.PaymentMethodDetails{
+		ID:       pm.ID,
+		Type:     pm.Type,
+		Last4:    pm.Card.Last4,
+		Brand:    pm.Card.Brand,
+		ExpMonth: pm.Card.ExpMonth,
+		ExpYear:  pm.Card.ExpYear,
+	}, nil
+}
+
+func (a *Adapter) retrievePaymentMethod(ctx context.Context, id string) (*paymentdomain.PaymentMethodDetails, error) {
+	if a.apiKey == "" {
+		return nil, errors.New("stripe api key not configured")
+	}
+	endpoint := fmt.Sprintf("https://api.stripe.com/v1/payment_methods/%s", id)
+	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+a.apiKey)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("stripe api error retrieving pm: %d", resp.StatusCode)
+	}
+	var pm stripePaymentMethod
+	if err := json.NewDecoder(resp.Body).Decode(&pm); err != nil {
+		return nil, err
+	}
 	return &paymentdomain.PaymentMethodDetails{
 		ID:       pm.ID,
 		Type:     pm.Type,
@@ -442,6 +556,164 @@ func (a *Adapter) DetachPaymentMethod(ctx context.Context, paymentMethodID strin
 	}
 
 	return nil
+}
+
+// CreateCheckoutSession creates a new checkout session
+func (a *Adapter) CreateCheckoutSession(ctx context.Context, input paymentdomain.CheckoutSessionInput) (*paymentdomain.ProviderCheckoutSession, error) {
+	if a.apiKey == "" {
+		return nil, errors.New("stripe api key not configured")
+	}
+
+	// Call Stripe API: POST /v1/checkout/sessions
+	endpoint := "https://api.stripe.com/v1/checkout/sessions"
+
+	data := url.Values{}
+	data.Set("mode", "payment")
+	data.Set("success_url", input.SuccessURL)
+	data.Set("cancel_url", input.CancelURL)
+	data.Set("line_items[0][price_data][currency]", strings.ToLower(input.Currency))
+	data.Set("line_items[0][price_data][product_data][name]", "Payment") // Generic name for now
+	data.Set("line_items[0][price_data][unit_amount]", strconv.FormatInt(input.Amount, 10))
+	data.Set("line_items[0][quantity]", "1")
+	data.Set("payment_intent_data[setup_future_usage]", "off_session")
+
+	if input.CustomerID != 0 {
+		data.Set("client_reference_id", input.CustomerID.String())
+	}
+
+	if input.ProviderCustomerID != "" {
+		data.Set("customer", input.ProviderCustomerID)
+	}
+
+	if input.AllowPromotionCodes {
+		data.Set("allow_promotion_codes", "true")
+	}
+
+	// Force add internal customer ID to metadata for robust webhook handling
+	if input.CustomerID != 0 {
+		data.Set("metadata[customer_id]", input.CustomerID.String())
+		// Also set in payment_intent_data so payment_intent.succeeded webhook has customer_id
+		data.Set("payment_intent_data[metadata][customer_id]", input.CustomerID.String())
+	}
+
+	for k, v := range input.Metadata {
+		data.Set("metadata["+k+"]", v)
+		// Also copy to payment_intent_data metadata
+		data.Set("payment_intent_data[metadata]["+k+"]", v)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+a.apiKey)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("stripe api error: %d body: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var session struct {
+		ID        string `json:"id"`
+		URL       string `json:"url"`
+		Status    string `json:"status"`
+		ExpiresAt int64  `json:"expires_at"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&session); err != nil {
+		return nil, err
+	}
+
+	status := paymentdomain.CheckoutSessionStatusOpen
+	switch session.Status {
+	case "complete":
+		status = paymentdomain.CheckoutSessionStatusComplete
+	case "expired":
+		status = paymentdomain.CheckoutSessionStatusExpired
+	}
+
+	return &paymentdomain.ProviderCheckoutSession{
+		ID:        session.ID,
+		Provider:  "stripe",
+		URL:       session.URL,
+		Status:    status,
+		ExpiresAt: time.Unix(session.ExpiresAt, 0),
+	}, nil
+}
+
+// RetrieveCheckoutSession retrieves a checkout session from Stripe
+func (a *Adapter) RetrieveCheckoutSession(ctx context.Context, providerSessionID string) (*paymentdomain.ProviderCheckoutSession, error) {
+	if a.apiKey == "" {
+		return nil, errors.New("stripe api key not configured")
+	}
+
+	// Call Stripe API: GET /v1/checkout/sessions/{id}?expand[]=payment_intent
+	url := fmt.Sprintf("https://api.stripe.com/v1/checkout/sessions/%s?expand[]=payment_intent", providerSessionID)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+a.apiKey)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("stripe api error: %d", resp.StatusCode)
+	}
+
+	var session stripeCheckoutSession
+	if err := json.NewDecoder(resp.Body).Decode(&session); err != nil {
+		return nil, err
+	}
+
+	status := paymentdomain.CheckoutSessionStatusOpen
+	switch session.Status {
+	case "complete":
+		status = paymentdomain.CheckoutSessionStatusComplete
+	case "expired":
+		status = paymentdomain.CheckoutSessionStatusExpired
+	}
+
+	paymentMethodID := ""
+	paymentIntentID := ""
+
+	// Extract PaymentIntent ID and PaymentMethod ID from expanded object
+	if session.PaymentIntent != nil {
+		switch pi := session.PaymentIntent.(type) {
+		case string:
+			paymentIntentID = pi
+		case map[string]any:
+			if id, ok := pi["id"].(string); ok {
+				paymentIntentID = id
+			}
+			if pm, ok := pi["payment_method"].(string); ok {
+				paymentMethodID = pm
+			}
+		}
+	}
+
+	return &paymentdomain.ProviderCheckoutSession{
+		ID:              session.ID,
+		Provider:        "stripe",
+		Status:          status,
+		ExpiresAt:       time.Unix(session.ExpiresAt, 0),
+		PaymentMethodID: paymentMethodID,
+		PaymentIntentID: paymentIntentID,
+	}, nil
 }
 
 // GetPaymentMethod retrieves payment method details

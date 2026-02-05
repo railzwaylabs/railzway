@@ -115,6 +115,13 @@ const providerFields: Record<string, ProviderField[]> = {
       type: "password",
     },
     {
+      key: "public_key",
+      label: "Public key",
+      placeholder: "xnd_public_...",
+      type: "text",
+      helper: "Used by the frontend to tokenize cards safely.",
+    },
+    {
       key: "webhook_secret",
       label: "Webhook secret",
       placeholder: "Webhook callback token",

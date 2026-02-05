@@ -194,7 +194,7 @@ func seedRollupData(t *testing.T, dbConn *gorm.DB, node *snowflake.Node) rollupS
 		OrgID:            orgID,
 		CustomerID:       customerID,
 		Status:           subscriptiondomain.SubscriptionStatusActive,
-		CollectionMode:   subscriptiondomain.SendInvoice,
+		CollectionMode:   subscriptiondomain.SubscriptionCollectionModeSendInvoice,
 		StartAt:          start,
 		BillingCycleType: "monthly",
 		CreatedAt:        time.Now().UTC(),

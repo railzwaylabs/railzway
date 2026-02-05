@@ -22,9 +22,10 @@ type EventRecord struct {
 func (EventRecord) TableName() string { return "payment_events" }
 
 const (
-	EventTypePaymentSucceeded = "payment_succeeded"
-	EventTypePaymentFailed    = "payment_failed"
-	EventTypeRefunded         = "refunded"
+	EventTypePaymentSucceeded      = "payment_succeeded"
+	EventTypePaymentFailed         = "payment_failed"
+	EventTypeRefunded              = "refunded"
+	EventTypeCheckoutSessionCompleted = "checkout_session_completed"
 )
 
 // PaymentEvent is the canonical payment event parsed by adapters.
@@ -67,6 +68,7 @@ type PaymentMethodConfig struct {
 	IsActive           bool              `json:"is_active" gorm:"default:true"`                        // Enabled/disabled
 	CreatedAt          time.Time         `json:"created_at" gorm:"not null"`
 	UpdatedAt          time.Time         `json:"updated_at" gorm:"not null"`
+	PublicKey          string            `json:"public_key,omitempty" gorm:"-"`                        // Transient field from provider config
 }
 
 func (PaymentMethodConfig) TableName() string { return "payment_method_configs" }
@@ -98,3 +100,7 @@ type PaymentMethodDetails struct {
 	ExpMonth int    // Expiry month (if applicable)
 	ExpYear  int    // Expiry year (if applicable)
 }
+
+
+
+

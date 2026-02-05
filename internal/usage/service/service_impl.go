@@ -606,3 +606,39 @@ func buildUsageListResponse(items []*usagedomain.UsageEvent, pageSize int32) (us
 
 	return resp, nil
 }
+
+func (s *Service) GetUsageSummary(ctx context.Context, req usagedomain.UsageSummaryRequest) (map[string]float64, error) {
+	orgID, ok := orgcontext.OrgIDFromContext(ctx)
+	if !ok || orgID == 0 {
+		return nil, usagedomain.ErrInvalidOrganization
+	}
+
+	customerID, err := s.parseID(req.CustomerID, usagedomain.ErrInvalidCustomer)
+	if err != nil {
+		return nil, err
+	}
+
+	// Aggregate usage by meter_code
+	var results []struct {
+		MeterCode string
+		Total     float64
+	}
+
+	err = s.db.WithContext(ctx).Table("usage_events").
+		Select("meter_code, SUM(value) as total").
+		Where("org_id = ? AND customer_id = ?", orgID, customerID).
+		Where("created_at >= ? AND created_at <= ?", req.Start, req.End).
+		Group("meter_code").
+		Scan(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	summary := make(map[string]float64)
+	for _, res := range results {
+		summary[res.MeterCode] = res.Total
+	}
+
+	return summary, nil
+}

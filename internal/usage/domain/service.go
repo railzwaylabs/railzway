@@ -39,6 +39,13 @@ type ListUsageResponse struct {
 type Service interface {
 	Ingest(context.Context, CreateIngestRequest) (*UsageEvent, error)
 	List(context.Context, ListUsageRequest) (ListUsageResponse, error)
+	GetUsageSummary(context.Context, UsageSummaryRequest) (map[string]float64, error)
+}
+
+type UsageSummaryRequest struct {
+	CustomerID string    `json:"customer_id"`
+	Start      time.Time `json:"start"`
+	End        time.Time `json:"end"`
 }
 
 var (

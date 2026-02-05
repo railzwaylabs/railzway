@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -24,6 +25,8 @@ func (s *Server) HandlePaymentWebhook(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"status": "ok"})
 			return
 		}
+		// DEBUG LOGGING
+		fmt.Printf("[WEBHOOK ERROR] Provider: %s, Error: %v\n", provider, err)
 		AbortWithError(c, err)
 		return
 	}

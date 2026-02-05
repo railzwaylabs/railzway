@@ -212,6 +212,15 @@ func (a *Adapter) ListPaymentMethods(ctx context.Context, customerProviderID str
 	return nil, paymentdomain.ErrInvalidProvider
 }
 
+// CreateCheckoutSession (stub - not implemented for Braintree yet)
+func (a *Adapter) CreateCheckoutSession(ctx context.Context, input paymentdomain.CheckoutSessionInput) (*paymentdomain.ProviderCheckoutSession, error) {
+	return nil, paymentdomain.ErrInvalidProvider
+}
+
+func (a *Adapter) RetrieveCheckoutSession(ctx context.Context, providerSessionID string) (*paymentdomain.ProviderCheckoutSession, error) {
+	return nil, paymentdomain.ErrInvalidProvider
+}
+
 func readString(config map[string]any, key string) (string, bool) {
 	val, ok := config[key]
 	if !ok {

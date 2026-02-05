@@ -240,6 +240,7 @@ type Server struct {
 	publicPaymentMethodsCache   *paymentMethodsCache
 	paymentMethodSvc            paymentdomain.PaymentMethodService
 	paymentMethodConfigSvc      paymentdomain.PaymentMethodConfigService
+	checkoutSvc                 paymentdomain.CheckoutService
 	testClockSvc                testclockdomain.Service
 
 	licenseSvc *license.Service
@@ -289,6 +290,7 @@ type ServerParams struct {
 	UsageLimiter           *ratelimit.UsageIngestLimiter   `optional:"true"`
 	PaymentMethodSvc       paymentdomain.PaymentMethodService
 	PaymentMethodConfigSvc paymentdomain.PaymentMethodConfigService
+	CheckoutSvc            paymentdomain.CheckoutService
 	TestClockSvc           testclockdomain.Service `optional:"true"`
 
 	LicenseSvc *license.Service
@@ -306,7 +308,7 @@ func NewServer(p ServerParams) *Server {
 		sessions:                    p.Sessions,
 		genID:                       p.GenID,
 		apiKeySvc:                   p.APIKeySvc,
-		apiKeyLimiter:               newRateLimiter(100, 10*time.Minute),
+		apiKeyLimiter:               newRateLimiter(1000, 10*time.Minute),
 		authzSvc:                    p.AuthzSvc,
 		auditSvc:                    p.AuditSvc,
 		auditExportSvc:              p.AuditExportSvc,
@@ -342,6 +344,7 @@ func NewServer(p ServerParams) *Server {
 		publicPaymentMethodsCache:   newPaymentMethodsCache(2 * time.Minute),
 		paymentMethodSvc:            p.PaymentMethodSvc,
 		paymentMethodConfigSvc:      p.PaymentMethodConfigSvc,
+		checkoutSvc:                 p.CheckoutSvc,
 		testClockSvc:                p.TestClockSvc,
 		licenseSvc:                  p.LicenseSvc,
 		scheduler:                   p.Scheduler,
@@ -470,7 +473,12 @@ func (s *Server) RegisterAPIRoutes() {
 	api.DELETE("/customers/:id/payment-methods/:pm_id", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectCustomer, authorization.ActionCustomerUpdate), s.DetachPaymentMethod)
 	api.POST("/customers/:id/payment-methods/:pm_id/default", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectCustomer, authorization.ActionCustomerUpdate), s.SetDefaultPaymentMethod)
 
+	// -------- Checkout Sessions --------
+	api.POST("/checkout/sessions", s.APIKeyRequired(), s.CreateCheckoutSession)
+	api.GET("/checkout/sessions/:session_id/verify", s.APIKeyRequired(), s.VerifyCheckoutSession)
+
 	api.POST("/usage", s.APIKeyRequired(), s.UsageIngestRateLimit(), s.authorizeOrgAction(authorization.ObjectUsage, authorization.ActionUsageIngest), s.IngestUsage)
+	api.GET("/usage/summary", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectUsage, authorization.ActionUsageView), s.GetUsageSummary)
 
 	if s.cfg.Environment != "production" {
 		api.POST("/test/cleanup", s.TestCleanup)
