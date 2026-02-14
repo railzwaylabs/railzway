@@ -248,6 +248,9 @@ func (s *subscriptionStub) ValidateUsageEntitlement(ctx context.Context, subID, 
 func (s *subscriptionStub) List(context.Context, subscriptiondomain.ListSubscriptionRequest) (subscriptiondomain.ListSubscriptionResponse, error) {
 	return subscriptiondomain.ListSubscriptionResponse{}, nil
 }
+func (s *subscriptionStub) ListEntitlements(context.Context, subscriptiondomain.ListEntitlementsRequest) (subscriptiondomain.ListEntitlementsResponse, error) {
+	return subscriptiondomain.ListEntitlementsResponse{}, nil
+}
 func (s *subscriptionStub) Create(context.Context, subscriptiondomain.CreateSubscriptionRequest) (subscriptiondomain.CreateSubscriptionResponse, error) {
 	return subscriptiondomain.CreateSubscriptionResponse{}, nil
 }

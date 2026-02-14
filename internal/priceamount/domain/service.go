@@ -6,12 +6,21 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 type ListPriceAmountRequest struct {
 	PriceID       string     `url:"price_id" form:"price_id"`
+	Currency      string     `url:"currency" form:"currency"`
 	EffectiveFrom *time.Time `url:"effective_from" form:"effective_from"`
 	EffectiveTo   *time.Time `url:"effective_to" form:"effective_to"`
+	PageToken     string     `url:"page_token" form:"page_token"`
+	PageSize      int32      `url:"page_size" form:"page_size"`
+}
+
+type ListPriceAmountResponse struct {
+	PageInfo pagination.PageInfo `json:"page_info"`
+	Amounts  []Response          `json:"amounts"`
 }
 
 type GetPriceAmountByID struct {
@@ -20,7 +29,7 @@ type GetPriceAmountByID struct {
 
 type Service interface {
 	Create(ctx context.Context, req CreateRequest) (*Response, error)
-	List(ctx context.Context, req ListPriceAmountRequest) ([]Response, error)
+	List(ctx context.Context, req ListPriceAmountRequest) (ListPriceAmountResponse, error)
 	Get(ctx context.Context, req GetPriceAmountByID) (*Response, error)
 }
 
@@ -34,6 +43,7 @@ type CreateRequest struct {
 	EffectiveFrom      *time.Time     `json:"effective_from,omitempty"`
 	EffectiveTo        *time.Time     `json:"effective_to,omitempty"`
 	Metadata           map[string]any `json:"metadata"`
+	IdempotencyKey     string         `json:"-"`
 }
 
 type Response struct {

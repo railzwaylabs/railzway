@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -57,6 +58,8 @@ type ServiceParam struct {
 	QuotaSvc           quotadomain.Service
 	PaymentMethodSvc   paymentdomain.PaymentMethodService
 }
+
+const defaultCurrency = "USD"
 
 func NewService(p ServiceParam) subscriptiondomain.Service {
 	return &Service{
@@ -241,10 +244,105 @@ func (s *Service) List(ctx context.Context, req subscriptiondomain.ListSubscript
 	return resp, nil
 }
 
+func (s *Service) ListEntitlements(ctx context.Context, req subscriptiondomain.ListEntitlementsRequest) (subscriptiondomain.ListEntitlementsResponse, error) {
+	orgID, ok := orgcontext.OrgIDFromContext(ctx)
+	if !ok || orgID == 0 {
+		return subscriptiondomain.ListEntitlementsResponse{}, subscriptiondomain.ErrInvalidOrganization
+	}
+
+	subscriptionID, err := s.parseID(req.SubscriptionID, subscriptiondomain.ErrInvalidSubscription)
+	if err != nil {
+		return subscriptiondomain.ListEntitlementsResponse{}, err
+	}
+
+	subscription, err := s.repo.FindByID(ctx, s.db, orgID, subscriptionID)
+	if err != nil {
+		return subscriptiondomain.ListEntitlementsResponse{}, err
+	}
+	if subscription == nil {
+		return subscriptiondomain.ListEntitlementsResponse{}, subscriptiondomain.ErrSubscriptionNotFound
+	}
+
+	pageSize := req.PageSize
+	if pageSize < 0 {
+		pageSize = 0
+	} else if pageSize == 0 {
+		pageSize = 50
+	}
+
+	items, err := s.repo.ListEntitlements(ctx, s.db, subscriptionID, req.EffectiveAt, pagination.Pagination{
+		PageToken: req.PageToken,
+		PageSize:  int(pageSize),
+	})
+	if err != nil {
+		return subscriptiondomain.ListEntitlementsResponse{}, err
+	}
+
+	var pageInfo *pagination.PageInfo
+	if pageSize > 0 {
+		pageInfo = pagination.BuildCursorPageInfo(items, pageSize, func(item *subscriptiondomain.SubscriptionEntitlement) string {
+			token, err := pagination.EncodeCursor(pagination.Cursor{
+				ID:        item.ID.String(),
+				CreatedAt: item.CreatedAt.Format(time.RFC3339),
+			})
+			if err != nil {
+				return ""
+			}
+			return token
+		})
+		if pageInfo != nil && pageInfo.HasMore && len(items) > int(pageSize) {
+			items = items[:pageSize]
+		}
+	}
+
+	entitlements := make([]subscriptiondomain.EntitlementResponse, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		entitlements = append(entitlements, subscriptiondomain.EntitlementResponse{
+			ID:             item.ID,
+			SubscriptionID: item.SubscriptionID,
+			ProductID:      item.ProductID,
+			FeatureCode:    item.FeatureCode,
+			FeatureName:    item.FeatureName,
+			FeatureType:    item.FeatureType,
+			MeterID:        item.MeterID,
+			EffectiveFrom:  item.EffectiveFrom,
+			EffectiveTo:    item.EffectiveTo,
+			CreatedAt:      item.CreatedAt,
+		})
+	}
+
+	resp := subscriptiondomain.ListEntitlementsResponse{
+		Entitlements: entitlements,
+	}
+	if pageInfo != nil {
+		resp.PageInfo = *pageInfo
+	}
+
+	return resp, nil
+}
+
 func (s *Service) Create(ctx context.Context, req subscriptiondomain.CreateSubscriptionRequest) (subscriptiondomain.CreateSubscriptionResponse, error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
 		return subscriptiondomain.CreateSubscriptionResponse{}, subscriptiondomain.ErrInvalidOrganization
+	}
+
+	idempotencyKey := strings.TrimSpace(req.IdempotencyKey)
+	if idempotencyKey != "" {
+		existing, err := s.repo.FindByIdempotencyKey(ctx, s.db, orgID, idempotencyKey)
+		if err != nil {
+			return subscriptiondomain.CreateSubscriptionResponse{}, err
+		}
+		if existing != nil {
+			items, err := s.repo.ListItemsBySubscriptionID(ctx, s.db, orgID, existing.ID)
+			if err != nil {
+				return subscriptiondomain.CreateSubscriptionResponse{}, err
+			}
+			return s.toCreateResponse(existing, items), nil
+		}
 	}
 
 	customerID, err := s.parseID(req.CustomerID, subscriptiondomain.ErrInvalidCustomer)
@@ -272,6 +370,10 @@ func (s *Service) Create(ctx context.Context, req subscriptiondomain.CreateSubsc
 	}
 
 	now := s.clock.Now(ctx)
+	currency, err := s.resolveSubscriptionCurrency(ctx, s.db, orgID, customerID, nil)
+	if err != nil {
+		return subscriptiondomain.CreateSubscriptionResponse{}, err
+	}
 	subscription := subscriptiondomain.Subscription{
 		ID:               s.genID.Generate(),
 		OrgID:            orgID,
@@ -280,14 +382,18 @@ func (s *Service) Create(ctx context.Context, req subscriptiondomain.CreateSubsc
 		CollectionMode:   collectionMode,
 		StartAt:          now,
 		BillingCycleType: billingCycleType,
+		DefaultCurrency:  &currency,
 		CreatedAt:        now,
 		UpdatedAt:        now,
+	}
+	if idempotencyKey != "" {
+		subscription.IdempotencyKey = &idempotencyKey
 	}
 	if req.Metadata != nil {
 		subscription.Metadata = datatypes.JSONMap(req.Metadata)
 	}
 
-	subscriptionItems, productIDs, err := s.buildSubscriptionItems(ctx, orgID, subscription.ID, req.Items, billingCycleType, now)
+	subscriptionItems, productIDs, err := s.buildSubscriptionItems(ctx, orgID, subscription.ID, req.Items, billingCycleType, currency, now)
 	if err != nil {
 		return subscriptiondomain.CreateSubscriptionResponse{}, err
 	}
@@ -315,6 +421,19 @@ func (s *Service) Create(ctx context.Context, req subscriptiondomain.CreateSubsc
 		}
 		return nil
 	}); err != nil {
+		if idempotencyKey != "" && errors.Is(err, gorm.ErrDuplicatedKey) {
+			existing, findErr := s.repo.FindByIdempotencyKey(ctx, s.db, orgID, idempotencyKey)
+			if findErr != nil {
+				return subscriptiondomain.CreateSubscriptionResponse{}, findErr
+			}
+			if existing != nil {
+				items, itemErr := s.repo.ListItemsBySubscriptionID(ctx, s.db, orgID, existing.ID)
+				if itemErr != nil {
+					return subscriptiondomain.CreateSubscriptionResponse{}, itemErr
+				}
+				return s.toCreateResponse(existing, items), nil
+			}
+		}
 		return subscriptiondomain.CreateSubscriptionResponse{}, err
 	}
 
@@ -348,7 +467,11 @@ func (s *Service) ReplaceItems(ctx context.Context, req subscriptiondomain.Repla
 	}
 
 	now := time.Now().UTC()
-	subscriptionItems, productIDs, err := s.buildSubscriptionItems(ctx, orgID, subscriptionID, req.Items, subscription.BillingCycleType, now)
+	currency, err := s.resolveSubscriptionCurrency(ctx, s.db, orgID, subscription.CustomerID, subscription.DefaultCurrency)
+	if err != nil {
+		return subscriptiondomain.CreateSubscriptionResponse{}, err
+	}
+	subscriptionItems, productIDs, err := s.buildSubscriptionItems(ctx, orgID, subscriptionID, req.Items, subscription.BillingCycleType, currency, now)
 	if err != nil {
 		return subscriptiondomain.CreateSubscriptionResponse{}, err
 	}
@@ -808,6 +931,7 @@ func (s *Service) buildSubscriptionItems(
 	subscriptionID snowflake.ID,
 	items []subscriptiondomain.CreateSubscriptionItemRequest,
 	expectedCycleType string,
+	currency string,
 	now time.Time,
 ) ([]subscriptiondomain.SubscriptionItem, []snowflake.ID, error) {
 	priceCache := make(map[string]*pricedomain.Response, len(items))
@@ -819,6 +943,10 @@ func (s *Service) buildSubscriptionItems(
 	expectedCycleType = strings.ToLower(strings.TrimSpace(expectedCycleType))
 	if expectedCycleType == "" {
 		return nil, nil, subscriptiondomain.ErrInvalidBillingCycleType
+	}
+	currency = strings.ToUpper(strings.TrimSpace(currency))
+	if currency == "" {
+		return nil, nil, subscriptiondomain.ErrInvalidCurrency
 	}
 
 	for _, item := range items {
@@ -857,26 +985,36 @@ func (s *Service) buildSubscriptionItems(
 			meterID   *snowflake.ID
 			meterCode *string
 		)
+		priceAmounts, err := s.loadPriceAmount(ctx, price.ID.String(), currency)
+		if err != nil {
+			return nil, nil, err
+		}
+		if len(priceAmounts) == 0 {
+			return nil, nil, subscriptiondomain.ErrMissingPricing
+		}
+
 		if price.PricingModel != pricedomain.Flat {
-			priceAmounts, err := s.loadPriceAmount(ctx, price.ID.String())
+			if priceAmounts[0].MeterID == nil {
+				return nil, nil, subscriptiondomain.ErrInvalidMeterID
+			}
+			meterID, meterCode, err = s.resolvePriceMeter(
+				ctx,
+				orgID,
+				parsedPriceID,
+				priceAmounts[0].MeterID,
+			)
 			if err != nil {
 				return nil, nil, err
 			}
+		}
 
-			if priceAmounts[0].MeterID == nil {
-				// Flat price → no meter
-				meterID = nil
-				meterCode = nil
-			} else {
-				meterID, meterCode, err = s.resolvePriceMeter(
-					ctx,
-					orgID,
-					parsedPriceID,
-					priceAmounts[0].MeterID,
-				)
-				if err != nil {
-					return nil, nil, err
-				}
+		if price.PricingModel == pricedomain.TieredVolume || price.PricingModel == pricedomain.TieredGraduated {
+			hasTiers, err := s.priceHasTiers(ctx, orgID, parsedPriceID)
+			if err != nil {
+				return nil, nil, err
+			}
+			if !hasTiers {
+				return nil, nil, subscriptiondomain.ErrMissingPricing
 			}
 		}
 
@@ -998,12 +1136,85 @@ func (s *Service) buildSubscriptionEntitlements(
 	return entitlements, nil
 }
 
-func (s *Service) loadPriceAmount(ctx context.Context, priceID string) ([]priceamount.Response, error) {
+func (s *Service) loadPriceAmount(ctx context.Context, priceID string, currency string) ([]priceamount.Response, error) {
 	now := s.clock.Now(ctx)
-	return s.priceamountsvc.List(ctx, priceamount.ListPriceAmountRequest{
+	resp, err := s.priceamountsvc.List(ctx, priceamount.ListPriceAmountRequest{
 		PriceID:       priceID,
+		Currency:      currency,
 		EffectiveFrom: &now,
+		PageSize:      -1,
 	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Amounts, nil
+}
+
+func (s *Service) resolveSubscriptionCurrency(ctx context.Context, tx *gorm.DB, orgID, customerID snowflake.ID, explicit *string) (string, error) {
+	if explicit != nil {
+		if currency := strings.ToUpper(strings.TrimSpace(*explicit)); currency != "" {
+			return currency, nil
+		}
+	}
+
+	customerCurrency, err := s.loadCustomerCurrency(ctx, tx, orgID, customerID)
+	if err != nil {
+		return "", err
+	}
+	if customerCurrency != "" {
+		return customerCurrency, nil
+	}
+
+	orgCurrency, err := s.loadOrgCurrency(ctx, tx, orgID)
+	if err != nil {
+		return "", err
+	}
+	if orgCurrency == "" {
+		orgCurrency = defaultCurrency
+	}
+	return orgCurrency, nil
+}
+
+func (s *Service) loadCustomerCurrency(ctx context.Context, tx *gorm.DB, orgID, customerID snowflake.ID) (string, error) {
+	if customerID == 0 {
+		return "", nil
+	}
+	var row struct {
+		Currency string `gorm:"column:currency"`
+	}
+	if err := tx.WithContext(ctx).Raw(
+		`SELECT currency FROM customers WHERE org_id = ? AND id = ? LIMIT 1`,
+		orgID,
+		customerID,
+	).Scan(&row).Error; err != nil {
+		return "", err
+	}
+	return strings.ToUpper(strings.TrimSpace(row.Currency)), nil
+}
+
+func (s *Service) loadOrgCurrency(ctx context.Context, tx *gorm.DB, orgID snowflake.ID) (string, error) {
+	var row struct {
+		Currency string `gorm:"column:currency"`
+	}
+	if err := tx.WithContext(ctx).Raw(
+		`SELECT currency FROM organization_billing_preferences WHERE org_id = ? LIMIT 1`,
+		orgID,
+	).Scan(&row).Error; err != nil {
+		return "", err
+	}
+	return strings.ToUpper(strings.TrimSpace(row.Currency)), nil
+}
+
+func (s *Service) priceHasTiers(ctx context.Context, orgID, priceID snowflake.ID) (bool, error) {
+	var count int64
+	if err := s.db.WithContext(ctx).Raw(
+		`SELECT COUNT(1) FROM price_tiers WHERE org_id = ? AND price_id = ?`,
+		orgID,
+		priceID,
+	).Scan(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func validateSubscriptionPricingModel(price *pricedomain.Response, flatCount *int) error {

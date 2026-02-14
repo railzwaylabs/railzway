@@ -45,7 +45,7 @@ const READINESS_CONFIG: Record<string, ReadinessItemConfig> = {
   meter_exists_if_usage_price: {
     title: "Usage Meters",
     description: "Usage events are ignored until a meter is defined.",
-    href: "/meters",
+    href: "/meter",
     actionLabel: "View Meters",
   },
   payment_provider_connected: {
@@ -55,10 +55,10 @@ const READINESS_CONFIG: Record<string, ReadinessItemConfig> = {
     actionLabel: "Connect Provider",
   },
   payment_configuration_complete: {
-    title: "Payment Methods",
-    description: "Enable payment methods for checkout.",
-    href: "/payment-method-configs",
-    actionLabel: "Manage Methods",
+    title: "Checkout Options",
+    description: "Enable payment methods for customer checkout.",
+    href: "/checkout-options",
+    actionLabel: "Manage Options",
   },
 
   // --- RECOMMENDED ---
@@ -72,7 +72,7 @@ const READINESS_CONFIG: Record<string, ReadinessItemConfig> = {
   tax_configuration_explicit: {
     title: "Tax Configuration",
     description: "Ensure tax rates are defined or providers connected.",
-    href: "/tax-definitions",
+    href: "/products/tax-definitions",
     actionLabel: "Configure Tax",
     icon: ShieldCheck,
   },
@@ -93,7 +93,7 @@ const READINESS_CONFIG: Record<string, ReadinessItemConfig> = {
   webhooks_configured: {
     title: "Webhooks",
     description: "Listen for billing events in your application.",
-    href: "/settings/webhooks",
+    href: "/payment-providers",
     actionLabel: "Setup Webhooks",
     icon: Webhook,
   },

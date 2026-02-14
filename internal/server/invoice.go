@@ -29,7 +29,7 @@ import (
 // @Param        total_max        query     int     false  "Total Max"
 // @Param        page_token       query     string  false  "Page Token"
 // @Param        page_size        query     int     false  "Page Size"
-// @Success      200  {object}  []invoicedomain.Invoice
+// @Success      200  {object}  ListResponse
 // @Router       /invoices [get]
 func (s *Server) ListInvoices(c *gin.Context) {
 	var query struct {
@@ -133,10 +133,7 @@ func (s *Server) ListInvoices(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data":      resp.Invoices,
-		"page_info": resp.PageInfo,
-	})
+	respondList(c, resp.Invoices, &resp.PageInfo)
 }
 
 // @Summary      Get Invoice
@@ -146,7 +143,7 @@ func (s *Server) ListInvoices(c *gin.Context) {
 // @Produce      json
 // @Security     ApiKeyAuth
 // @Param        id   path      string  true  "Invoice ID"
-// @Success      200  {object}  invoicedomain.Invoice
+// @Success      200  {object}  DataResponse
 // @Router       /invoices/{id} [get]
 func (s *Server) GetInvoiceByID(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
@@ -161,7 +158,7 @@ func (s *Server) GetInvoiceByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": item})
+	respondData(c, item)
 }
 
 // @Summary      Render Invoice

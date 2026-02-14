@@ -27,6 +27,7 @@ import (
 	productdomain "github.com/railzwaylabs/railzway/internal/product/domain"
 	productfeaturedomain "github.com/railzwaylabs/railzway/internal/productfeature/domain"
 	paymentproviderdomain "github.com/railzwaylabs/railzway/internal/providers/payment/domain"
+	quotadomain "github.com/railzwaylabs/railzway/internal/quota/domain"
 	ratingdomain "github.com/railzwaylabs/railzway/internal/rating/domain"
 	signupdomain "github.com/railzwaylabs/railzway/internal/signup/domain"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
@@ -167,6 +168,13 @@ func mapError(err error) (int, errorPayload) {
 			Type:    "rate_limited",
 			Message: "rate limited",
 		}
+	case errors.Is(err, quotadomain.ErrOrgCustomerQuotaExceeded),
+		errors.Is(err, quotadomain.ErrOrgSubscriptionQuotaExceeded),
+		errors.Is(err, quotadomain.ErrOrgUsageQuotaExceeded):
+		return http.StatusPaymentRequired, errorPayload{
+			Type:    "quota_exceeded",
+			Message: "quota exceeded",
+		}
 	case errors.Is(err, organizationdomain.ErrForbidden):
 		return http.StatusForbidden, errorPayload{
 			Type:    "forbidden",
@@ -282,7 +290,8 @@ func isUsageValidationError(err error) bool {
 		usagedomain.ErrInvalidMeterCode,
 		usagedomain.ErrInvalidValue,
 		usagedomain.ErrInvalidRecordedAt,
-		usagedomain.ErrInvalidIdempotencyKey:
+		usagedomain.ErrInvalidIdempotencyKey,
+		usagedomain.ErrFeatureNotEntitled:
 		return true
 	default:
 		return false

@@ -15,6 +15,7 @@ var (
 	ErrBillingCycleNotClosing = errors.New("billing_cycle_not_closing")
 	ErrMissingUsage           = errors.New("missing_usage")
 	ErrMissingPriceAmount     = errors.New("missing_price_amount")
+	ErrMissingPriceTier       = errors.New("missing_price_tier")
 	ErrMissingMeter           = errors.New("missing_meter")
 	ErrInvalidQuantity        = errors.New("invalid_quantity")
 	ErrNoSubscriptionItems    = errors.New("no_subscription_items")

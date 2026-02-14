@@ -62,7 +62,7 @@ func (s *Server) ListAvailablePaymentMethods(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"payment_methods": configs})
+	respondList(c, configs, nil)
 }
 
 // AttachPaymentMethod attaches a tokenized payment method to a customer
@@ -87,7 +87,7 @@ func (s *Server) AttachPaymentMethod(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"payment_method": pm})
+	respondData(c, pm)
 }
 
 // ListCustomerPaymentMethods lists all payment methods for a customer
@@ -106,7 +106,7 @@ func (s *Server) ListCustomerPaymentMethods(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"payment_methods": pms})
+	respondList(c, pms, nil)
 }
 
 // DetachPaymentMethod removes a payment method from a customer
@@ -131,7 +131,7 @@ func (s *Server) DetachPaymentMethod(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	respondData(c, gin.H{"status": "ok"})
 }
 
 // SetDefaultPaymentMethod sets a payment method as default for a customer
@@ -156,7 +156,7 @@ func (s *Server) SetDefaultPaymentMethod(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	respondData(c, gin.H{"status": "ok"})
 }
 
 // --- Admin API Handlers ---
@@ -176,7 +176,7 @@ func (s *Server) ListPaymentMethodConfigs(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"configs": configs})
+	respondList(c, configs, nil)
 }
 
 // UpsertPaymentMethodConfig (Admin)

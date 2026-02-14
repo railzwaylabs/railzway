@@ -1,7 +1,6 @@
 package server
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +21,7 @@ func (s *Server) ListProductFeatures(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondList(c, resp, nil)
 }
 
 func (s *Server) ReplaceProductFeatures(c *gin.Context) {
@@ -51,5 +50,5 @@ func (s *Server) ReplaceProductFeatures(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }

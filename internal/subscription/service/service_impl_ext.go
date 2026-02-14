@@ -67,7 +67,11 @@ func (s *Service) ChangePlan(ctx context.Context, req subscriptiondomain.ChangeP
 		}
 
 		// buildSubscriptionItems does not take tx, uses service db/cache, which is safe for read-only static data (prices/meters)
-		subscriptionItems, _, err := s.buildSubscriptionItems(ctx, orgID, subscriptionID, itemReqs, cycleType, now)
+		currency, err := s.resolveSubscriptionCurrency(ctx, s.db, orgID, sub.CustomerID, sub.DefaultCurrency)
+		if err != nil {
+			return err
+		}
+		subscriptionItems, _, err := s.buildSubscriptionItems(ctx, orgID, subscriptionID, itemReqs, cycleType, currency, now)
 		if err != nil {
 			return err
 		}
@@ -127,7 +131,7 @@ func (s *Service) resolveProductPrice(ctx context.Context, orgID, productID snow
 	}
 
 	var candidates []pricedomain.Response
-	for _, p := range allPrices {
+	for _, p := range allPrices.Prices {
 		if p.ProductID == productID && p.Active && p.RetiredAt == nil {
 			candidates = append(candidates, p)
 		}
@@ -164,9 +168,7 @@ func (s *Service) ValidateUsageEntitlement(ctx context.Context, subscriptionID, 
 		return err
 	}
 	if entitlement == nil {
-		// Strict entitlement check disabled by request.
-		// If no entitlement found, we assume it's allowed (or will be rated as flat/pay-as-you-go).
-		return nil
+		return subscriptiondomain.ErrFeatureNotEntitled
 	}
 
 	// Check feature type (must be metered for usage)

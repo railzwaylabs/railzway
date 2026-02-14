@@ -1,5 +1,5 @@
 import * as React from "react"
-import { NavLink, useLocation, useParams } from "react-router-dom"
+import { Link, NavLink, useLocation, useParams } from "react-router-dom"
 
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -16,15 +16,26 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { BarChart3, Copy, CreditCard, Gauge, History, Home, Key, Package, Receipt, RefreshCcw, Settings, Tag, Users, Wallet, Zap } from "lucide-react"
+import { BarChart3, Copy, Gauge, History, Home, Key, LayoutGrid, Package, Receipt, RefreshCcw, Settings, Tag, Users, Wallet, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const location = useLocation()
   const { orgId } = useParams()
+  const { pathname } = useLocation()
   const role = useOrgStore((state) => state.currentOrg?.role)
   const canAccessAdmin = canManageBilling(role)
   const orgBasePath = orgId ? `/orgs/${orgId}` : "/orgs"
+  const matchPrefix = (base: string) => (pathname: string) =>
+    pathname === base || pathname.startsWith(`${base}/`)
+  const normalizePath = (value: string) => {
+    const trimmed = value.replace(/\/+$/, "")
+    return trimmed.length ? trimmed : "/"
+  }
+  const currentPath = normalizePath(pathname)
+  const isPathActive = (target: string) => {
+    const normalized = normalizePath(target)
+    return currentPath === normalized || currentPath.startsWith(`${normalized}/`)
+  }
 
   const navMain = [
     {
@@ -42,11 +53,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Pricing",
       url: `${orgBasePath}/prices`,
       icon: Tag,
+      isActive: (pathname: string) =>
+        pathname === `${orgBasePath}/prices` ||
+        pathname.startsWith(`${orgBasePath}/prices/`) ||
+        pathname.startsWith(`${orgBasePath}/pricings`) ||
+        pathname.startsWith(`${orgBasePath}/price-amounts`) ||
+        pathname.startsWith(`${orgBasePath}/price-tiers`),
     },
     {
       title: "Meters",
       url: `${orgBasePath}/meter`,
       icon: Gauge,
+    },
+    {
+      title: "Marketplace",
+      url: `${orgBasePath}/integrations`,
+      icon: LayoutGrid,
+      isActive: (pathname: string) =>
+        matchPrefix(`${orgBasePath}/integrations`)(pathname) &&
+        !matchPrefix(`${orgBasePath}/integrations/connections`)(pathname),
     },
   ].filter(() => canAccessAdmin)
 
@@ -75,9 +100,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Subscriptions",
       url: `${orgBasePath}/subscriptions`,
       icon: RefreshCcw,
+      isActive: (path: string) =>
+        path === normalizePath(`${orgBasePath}/subscriptions`) ||
+        path.startsWith(`${normalizePath(`${orgBasePath}/subscriptions`)}/`) ||
+        path === normalizePath(`${orgBasePath}/test-clocks`) ||
+        path.startsWith(`${normalizePath(`${orgBasePath}/test-clocks`)}/`),
     },
     {
-      title: "Invoice templates",
+      title: "Invoice Templates",
       url: `${orgBasePath}/invoice-templates`,
       icon: Copy,
     },
@@ -90,13 +120,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: Key,
     },
     {
-      title: "Payment providers",
-      url: `${orgBasePath}/payment-providers`,
-      icon: CreditCard,
+      title: "Integrations",
+      url: `${orgBasePath}/integrations/connections`,
+      icon: RefreshCcw,
     },
     {
-      title: "Payment methods",
-      url: `${orgBasePath}/payment-method-configs`,
+      title: "Checkout Options",
+      url: `${orgBasePath}/checkout-options`,
       icon: Wallet,
     },
     {
@@ -119,13 +149,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
+              className="data-[slot=sidebar-menu-button]:!p-1.5 transition-all duration-300 hover:bg-transparent"
             >
               <NavLink to={`${orgBasePath}/home`}>
-                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-600 text-white text-xs font-bold shadow-sm">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white text-sm font-black shadow-[0_0_15px_rgba(79,70,229,0.3)]">
                   R
                 </span>
-                <span className="text-base font-semibold">Railzway</span>
+                <span className="text-base font-bold tracking-tight text-text-primary">Railzway</span>
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -135,24 +165,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={navMain} />
         {billingNav.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel>Billing</SidebarGroupLabel>
+            <SidebarGroupLabel className="px-3">Billing</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {billingNav.map((item) => {
-                  const isActive = location.pathname.replace(/\/$/, "") === item.url.replace(/\/$/, "")
+                  const isActive = item.isActive
+                    ? item.isActive(currentPath)
+                    : isPathActive(item.url)
                   return (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild tooltip={item.title}>
-                        <NavLink
-                          to={item.url}
-                          className={cn(
-                            "flex w-full items-center gap-2",
-                            isActive && "bg-bg-subtle text-accent-primary font-medium"
-                          )}
-                        >
-                          <item.icon />
-                          <span>{item.title}</span>
-                        </NavLink>
+                      <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
+                        <Link to={item.url} aria-current={isActive ? "page" : undefined}>
+                          <item.icon className={cn("transition-colors", isActive ? "text-accent-primary" : "text-text-muted")} />
+                          <span className={cn("transition-colors", isActive ? "text-accent-primary font-bold" : "text-text-primary")}>
+                            {item.title}
+                          </span>
+                        </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )

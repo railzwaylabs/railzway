@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	"github.com/railzwaylabs/railzway/internal/product/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
@@ -39,10 +41,10 @@ func New(p Params) domain.Service {
 	}
 }
 
-func (s *Service) List(ctx context.Context, req domain.ListRequest) ([]domain.Response, error) {
+func (s *Service) List(ctx context.Context, req domain.ListRequest) (domain.ListResponse, error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
-		return nil, domain.ErrInvalidOrganization
+		return domain.ListResponse{}, domain.ErrInvalidOrganization
 	}
 	orgIDValue := int64(orgID)
 
@@ -51,19 +53,56 @@ func (s *Service) List(ctx context.Context, req domain.ListRequest) ([]domain.Re
 		Active:  req.Active,
 		SortBy:  strings.TrimSpace(req.SortBy),
 		OrderBy: strings.TrimSpace(req.OrderBy),
+		PageToken: req.PageToken,
+		PageSize:  req.PageSize,
 	}
 
-	items, err := s.repo.List(ctx, s.db, orgIDValue, filter)
+	pageSize := req.PageSize
+	if pageSize < 0 {
+		pageSize = 0
+	} else if pageSize == 0 {
+		pageSize = 50
+	}
+
+	items, err := s.repo.List(ctx, s.db, orgIDValue, filter, pagination.Pagination{
+		PageToken: req.PageToken,
+		PageSize:  int(pageSize),
+	})
 	if err != nil {
-		return nil, err
+		return domain.ListResponse{}, err
+	}
+
+	var pageInfo *pagination.PageInfo
+	if pageSize > 0 {
+		pageInfo = pagination.BuildCursorPageInfo(items, pageSize, func(item *domain.Product) string {
+			token, err := pagination.EncodeCursor(pagination.Cursor{
+				ID:        snowflake.ID(item.ID).String(),
+				CreatedAt: item.CreatedAt.Format(time.RFC3339),
+			})
+			if err != nil {
+				return ""
+			}
+			return token
+		})
+		if pageInfo != nil && pageInfo.HasMore && len(items) > int(pageSize) {
+			items = items[:pageSize]
+		}
 	}
 
 	resp := make([]domain.Response, 0, len(items))
 	for _, item := range items {
-		resp = append(resp, s.toResponse(&item))
+		if item == nil {
+			continue
+		}
+		resp = append(resp, s.toResponse(item))
 	}
 
-	return resp, nil
+	out := domain.ListResponse{Products: resp}
+	if pageInfo != nil {
+		out.PageInfo = *pageInfo
+	}
+
+	return out, nil
 }
 
 func (s *Service) Create(ctx context.Context, req domain.CreateRequest) (*domain.Response, error) {
@@ -72,6 +111,18 @@ func (s *Service) Create(ctx context.Context, req domain.CreateRequest) (*domain
 		return nil, domain.ErrInvalidOrganization
 	}
 	orgIDValue := int64(orgID)
+
+	idempotencyKey := strings.TrimSpace(req.IdempotencyKey)
+	if idempotencyKey != "" {
+		existing, err := s.repo.FindByIdempotencyKey(ctx, s.db, orgIDValue, idempotencyKey)
+		if err != nil {
+			return nil, err
+		}
+		if existing != nil {
+			resp := s.toResponse(existing)
+			return &resp, nil
+		}
+	}
 
 	code := strings.TrimSpace(req.Code)
 	if code == "" {
@@ -105,10 +156,23 @@ func (s *Service) Create(ctx context.Context, req domain.CreateRequest) (*domain
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
+	if idempotencyKey != "" {
+		p.IdempotencyKey = &idempotencyKey
+	}
 	if req.Metadata != nil {
 		p.Metadata = datatypes.JSONMap(req.Metadata)
 	}
 	if err := s.repo.Create(ctx, s.db, p); err != nil {
+		if idempotencyKey != "" && errors.Is(err, gorm.ErrDuplicatedKey) {
+			existing, findErr := s.repo.FindByIdempotencyKey(ctx, s.db, orgIDValue, idempotencyKey)
+			if findErr != nil {
+				return nil, findErr
+			}
+			if existing != nil {
+				resp := s.toResponse(existing)
+				return &resp, nil
+			}
+		}
 		return nil, err
 	}
 	resp := s.toResponse(p)

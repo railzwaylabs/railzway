@@ -5,6 +5,8 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	pricetierdomain "github.com/railzwaylabs/railzway/internal/pricetier/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/option"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"gorm.io/gorm"
 )
 
@@ -18,8 +20,8 @@ func (r *repo) Insert(ctx context.Context, db *gorm.DB, tier *pricetierdomain.Pr
 	return db.WithContext(ctx).Exec(
 		`INSERT INTO price_tiers (
 			id, org_id, price_id, tier_mode, start_quantity, end_quantity, unit_amount_cents,
-			flat_amount_cents, unit, metadata, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			flat_amount_cents, unit, idempotency_key, metadata, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		tier.ID,
 		tier.OrgID,
 		tier.PriceID,
@@ -29,6 +31,7 @@ func (r *repo) Insert(ctx context.Context, db *gorm.DB, tier *pricetierdomain.Pr
 		tier.UnitAmountCents,
 		tier.FlatAmountCents,
 		tier.Unit,
+		tier.IdempotencyKey,
 		tier.Metadata,
 		tier.CreatedAt,
 		tier.UpdatedAt,
@@ -39,7 +42,7 @@ func (r *repo) FindByID(ctx context.Context, db *gorm.DB, orgID, id snowflake.ID
 	var tier pricetierdomain.PriceTier
 	err := db.WithContext(ctx).Raw(
 		`SELECT id, org_id, price_id, tier_mode, start_quantity, end_quantity, unit_amount_cents,
-		 flat_amount_cents, unit, metadata, created_at, updated_at
+		 flat_amount_cents, unit, idempotency_key, metadata, created_at, updated_at
 		 FROM price_tiers WHERE org_id = ? AND id = ?`,
 		orgID,
 		id,
@@ -53,14 +56,38 @@ func (r *repo) FindByID(ctx context.Context, db *gorm.DB, orgID, id snowflake.ID
 	return &tier, nil
 }
 
-func (r *repo) List(ctx context.Context, db *gorm.DB, orgID snowflake.ID) ([]pricetierdomain.PriceTier, error) {
-	var items []pricetierdomain.PriceTier
+func (r *repo) FindByIdempotencyKey(ctx context.Context, db *gorm.DB, orgID snowflake.ID, key string) (*pricetierdomain.PriceTier, error) {
+	var tier pricetierdomain.PriceTier
 	err := db.WithContext(ctx).Raw(
 		`SELECT id, org_id, price_id, tier_mode, start_quantity, end_quantity, unit_amount_cents,
-		 flat_amount_cents, unit, metadata, created_at, updated_at
-		 FROM price_tiers WHERE org_id = ? ORDER BY created_at ASC`,
+		 flat_amount_cents, unit, idempotency_key, metadata, created_at, updated_at
+		 FROM price_tiers WHERE org_id = ? AND idempotency_key = ? LIMIT 1`,
 		orgID,
-	).Scan(&items).Error
+		key,
+	).Scan(&tier).Error
+	if err != nil {
+		return nil, err
+	}
+	if tier.ID == 0 {
+		return nil, nil
+	}
+	return &tier, nil
+}
+
+func (r *repo) List(ctx context.Context, db *gorm.DB, orgID snowflake.ID, page pagination.Pagination) ([]*pricetierdomain.PriceTier, error) {
+	var items []*pricetierdomain.PriceTier
+	stmt := db.WithContext(ctx).
+		Model(&pricetierdomain.PriceTier{}).
+		Where("org_id = ?", orgID)
+
+	stmt = option.ApplyPagination(page).Apply(stmt)
+	if page.PageToken != "" || page.PageSize > 0 {
+		stmt = stmt.Order("created_at desc, id desc")
+	} else {
+		stmt = stmt.Order("created_at ASC")
+	}
+
+	err := stmt.Find(&items).Error
 	if err != nil {
 		return nil, err
 	}

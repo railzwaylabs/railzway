@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import { Zap, BarChart3 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -18,11 +18,33 @@ import { ExposureAnalysisTab } from "../components/ExposureAnalysisTab"
 
 export default function OrgBillingOperationsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const activeTab = searchParams.get("tab") || "inbox"
+  const rawTab = searchParams.get("tab")
   const [showPerformance, setShowPerformance] = useState(false)
 
   const role = useOrgStore((state) => state.currentOrg?.role)
   const isManager = canManageBilling(role)
+
+  const allowedTabs = useMemo(() => {
+    const baseTabs = ["inbox", "my-work", "recently-resolved"]
+    return isManager ? [...baseTabs, "team", "exposure"] : baseTabs
+  }, [isManager])
+
+  const activeTab =
+    rawTab && allowedTabs.includes(rawTab) ? rawTab : "inbox"
+
+  useEffect(() => {
+    if (!rawTab) return
+    if (rawTab === "inbox") {
+      const next = new URLSearchParams(searchParams)
+      next.delete("tab")
+      setSearchParams(next, { replace: true })
+      return
+    }
+    if (allowedTabs.includes(rawTab)) return
+    const next = new URLSearchParams(searchParams)
+    next.delete("tab")
+    setSearchParams(next, { replace: true })
+  }, [allowedTabs, rawTab, searchParams, setSearchParams])
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value }, { replace: true })

@@ -2,10 +2,6 @@ package webhook
 
 import (
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -20,6 +16,7 @@ import (
 	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
 	paymentservice "github.com/railzwaylabs/railzway/internal/payment/service"
 	paymentproviderdomain "github.com/railzwaylabs/railzway/internal/providers/payment/domain"
+	"github.com/railzwaylabs/railzway/internal/security/vault"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
@@ -29,29 +26,24 @@ import (
 type Params struct {
 	fx.In
 
-	DB         *gorm.DB
-	Log        *zap.Logger
+	DB          *gorm.DB
+	Log         *zap.Logger
 	PaymentSvc  *paymentservice.Service
 	CheckoutSvc domain.CheckoutService
 	DisputeSvc  *disputeservice.Service
-	Adapters   *adapters.Registry
-	Cfg        config.Config
+	Adapters    *adapters.Registry
+	Cfg         config.Config
+	Vault       vault.Provider
 }
 
 type Service struct {
-	db         *gorm.DB
-	log        *zap.Logger
+	db          *gorm.DB
+	log         *zap.Logger
 	paymentSvc  *paymentservice.Service
 	checkoutSvc domain.CheckoutService
 	disputeSvc  *disputeservice.Service
-	adapters   *adapters.Registry
-	encKey     []byte
-}
-
-type encryptedPayload struct {
-	Version    int    `json:"version"`
-	Nonce      string `json:"nonce"`
-	Ciphertext string `json:"ciphertext"`
+	adapters    *adapters.Registry
+	vault       vault.Provider
 }
 
 type providerConfigRow struct {
@@ -60,21 +52,14 @@ type providerConfigRow struct {
 }
 
 func NewService(p Params) paymentdomain.Service {
-	secret := strings.TrimSpace(p.Cfg.PaymentProviderConfigSecret)
-	var key []byte
-	if secret != "" {
-		sum := sha256.Sum256([]byte(secret))
-		key = sum[:]
-	}
-
 	return &Service{
-		db:         p.DB,
-		log:        p.Log.Named("payment.webhook"),
+		db:          p.DB,
+		log:         p.Log.Named("payment.webhook"),
 		paymentSvc:  p.PaymentSvc,
 		checkoutSvc: p.CheckoutSvc,
 		disputeSvc:  p.DisputeSvc,
-		adapters:   p.Adapters,
-		encKey:     key,
+		adapters:    p.Adapters,
+		vault:       p.Vault,
 	}
 }
 
@@ -141,24 +126,24 @@ func (s *Service) IngestWebhook(ctx context.Context, provider string, payload []
 	if paymentEvent.RawPayload == nil {
 		paymentEvent.RawPayload = payload
 	}
-	
+
 	masked := maskPayload(payload)
-	
+
 	// Try to complete checkout session if applicable
 	// We do this speculatively for relevant event types
-	if paymentEvent.Type == paymentdomain.EventTypeCheckoutSessionCompleted || 
-	   paymentEvent.Type == paymentdomain.EventTypePaymentSucceeded {
-		
+	if paymentEvent.Type == paymentdomain.EventTypeCheckoutSessionCompleted ||
+		paymentEvent.Type == paymentdomain.EventTypePaymentSucceeded {
+
 		if s.checkoutSvc != nil {
 			// Use ProviderPaymentID as session ID (mapped in adapters)
 			_, err := s.checkoutSvc.CompleteSession(ctx, provider, paymentEvent.ProviderPaymentID)
 			if err != nil && !errors.Is(err, paymentdomain.ErrCheckoutSessionNotFound) {
-				// Log error but don't fail the webhook processing itself, 
+				// Log error but don't fail the webhook processing itself,
 				// as the main payment processing might still need to succeed?
-				// Actually if session completion fails (e.g. DB error), we might accept it to be safe 
+				// Actually if session completion fails (e.g. DB error), we might accept it to be safe
 				// or retry.
 				// For now log error.
-				s.log.Error("failed to complete checkout session", 
+				s.log.Error("failed to complete checkout session",
 					zap.String("provider", provider),
 					zap.String("provider_session_id", paymentEvent.ProviderPaymentID),
 					zap.Error(err))
@@ -249,45 +234,20 @@ func (s *Service) matchAdapter(
 }
 
 func (s *Service) decryptConfig(encrypted datatypes.JSON) (map[string]any, error) {
-	if len(s.encKey) == 0 {
+	if s.vault == nil {
 		return nil, paymentproviderdomain.ErrEncryptionKeyMissing
 	}
 	if len(encrypted) == 0 {
 		return nil, paymentdomain.ErrInvalidConfig
 	}
 
-	var payload encryptedPayload
-	if err := json.Unmarshal(encrypted, &payload); err != nil {
-		return nil, paymentdomain.ErrInvalidConfig
-	}
-	if payload.Version != 1 {
-		return nil, paymentdomain.ErrInvalidConfig
-	}
-
-	nonce, err := base64.RawStdEncoding.DecodeString(payload.Nonce)
-	if err != nil {
-		return nil, paymentdomain.ErrInvalidConfig
-	}
-	ciphertext, err := base64.RawStdEncoding.DecodeString(payload.Ciphertext)
-	if err != nil {
-		return nil, paymentdomain.ErrInvalidConfig
-	}
-
-	block, err := aes.NewCipher(s.encKey)
-	if err != nil {
-		return nil, err
-	}
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-	plain, err := gcm.Open(nil, nonce, ciphertext, nil)
+	decrypted, err := s.vault.Decrypt(encrypted)
 	if err != nil {
 		return nil, paymentdomain.ErrInvalidConfig
 	}
 
 	var out map[string]any
-	if err := json.Unmarshal(plain, &out); err != nil {
+	if err := json.Unmarshal(decrypted, &out); err != nil {
 		return nil, paymentdomain.ErrInvalidConfig
 	}
 	if len(out) == 0 {

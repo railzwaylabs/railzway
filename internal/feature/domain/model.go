@@ -25,6 +25,7 @@ type Feature struct {
 	MeterID     *snowflake.ID     `gorm:"column:meter_id"`
 	Active      bool              `gorm:"not null;default:true"`
 	Metadata    datatypes.JSONMap `gorm:"type:jsonb"`
+	IdempotencyKey *string        `gorm:"column:idempotency_key" json:"-"`
 
 	CreatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP"`
 	UpdatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP"`

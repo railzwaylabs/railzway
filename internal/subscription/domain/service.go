@@ -23,9 +23,33 @@ type ListSubscriptionResponse struct {
 	Subscriptions []Subscription `json:"subscriptions"`
 }
 
+type ListEntitlementsRequest struct {
+	SubscriptionID string
+	EffectiveAt    *time.Time
+	PageToken      string
+	PageSize       int32
+}
+
+type EntitlementResponse struct {
+	ID             snowflake.ID  `json:"id"`
+	SubscriptionID snowflake.ID  `json:"subscription_id"`
+	ProductID      snowflake.ID  `json:"product_id"`
+	FeatureCode    string        `json:"feature_code"`
+	FeatureName    string        `json:"feature_name"`
+	FeatureType    string        `json:"feature_type"`
+	MeterID        *snowflake.ID `json:"meter_id,omitempty"`
+	EffectiveFrom  time.Time     `json:"effective_from"`
+	EffectiveTo    *time.Time    `json:"effective_to,omitempty"`
+	CreatedAt      time.Time     `json:"created_at"`
+}
+
+type ListEntitlementsResponse struct {
+	pagination.PageInfo
+	Entitlements []EntitlementResponse `json:"entitlements"`
+}
+
 type CreateSubscriptionItemRequest struct {
 	PriceID  string `json:"price_id"`
-	MeterID  string `json:"meter_id"`
 	Quantity int8   `json:"quantity,omitempty"`
 }
 
@@ -36,6 +60,7 @@ type CreateSubscriptionRequest struct {
 	Items            []CreateSubscriptionItemRequest `json:"items"`
 	TrialDays        *int                            `json:"trial_days,omitempty"`
 	Metadata         map[string]any                  `json:"metadata,omitempty"`
+	IdempotencyKey   string                          `json:"-"`
 }
 
 type ReplaceSubscriptionItemsRequest struct {
@@ -58,6 +83,7 @@ type TransitionReason string
 //go:generate mockgen -source=service.go -destination=./mocks/mock_service.go -package=mocks
 type Service interface {
 	List(context.Context, ListSubscriptionRequest) (ListSubscriptionResponse, error)
+	ListEntitlements(context.Context, ListEntitlementsRequest) (ListEntitlementsResponse, error)
 	Create(context.Context, CreateSubscriptionRequest) (CreateSubscriptionResponse, error)
 	ReplaceItems(context.Context, ReplaceSubscriptionItemsRequest) (CreateSubscriptionResponse, error)
 	GetByID(context.Context, string) (Subscription, error)
@@ -116,6 +142,7 @@ var (
 	ErrInvoicesNotFinalized      = errors.New("invoices_not_finalized")
 	ErrInvalidCollectionMode     = errors.New("invalid_collection_mode")
 	ErrInvalidBillingCycleType   = errors.New("invalid_billing_cycle_type")
+	ErrInvalidCurrency           = errors.New("invalid_currency")
 	ErrInvalidStartAt            = errors.New("invalid_start_at")
 	ErrInvalidPeriod             = errors.New("invalid_period")
 	ErrInvalidItems              = errors.New("invalid_items")

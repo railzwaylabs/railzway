@@ -9,12 +9,11 @@ import (
 	"github.com/glebarez/sqlite"
 	billingcycledomain "github.com/railzwaylabs/railzway/internal/billingcycle/domain"
 	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
+	pricerepository "github.com/railzwaylabs/railzway/internal/price/repository"
 	priceamountdomain "github.com/railzwaylabs/railzway/internal/priceamount/domain"
 	ratingdomain "github.com/railzwaylabs/railzway/internal/rating/domain"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
 	usagedomain "github.com/railzwaylabs/railzway/internal/usage/domain"
-	"github.com/railzwaylabs/railzway/pkg/db/option"
-	"github.com/railzwaylabs/railzway/pkg/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -44,8 +43,7 @@ func TestProration_MidCycleSubscriptionStart(t *testing.T) {
 
 	// Seed data
 	priceAmountStub := svc.(*Service).priceAmountRepo.(*priceAmountStub)
-	priceRepoStub := svc.(*Service).priceRepo.(*priceRepoStub)
-	seedProrationData(t, db, node, priceAmountStub, priceRepoStub, orgID, subID, cycleID, productID, priceID, cycleStart, cycleEnd, subStart, nil, 10000) // $100.00
+	seedProrationData(t, db, node, priceAmountStub, orgID, subID, cycleID, productID, priceID, cycleStart, cycleEnd, subStart, nil, 10000) // $100.00
 
 	// Run rating
 	err := svc.RunRating(context.Background(), cycleID.String())
@@ -110,8 +108,7 @@ func TestProration_MidCycleSubscriptionEnd(t *testing.T) {
 	expectedFactor := 15.0 / 31.0
 
 	priceAmountStub := svc.(*Service).priceAmountRepo.(*priceAmountStub)
-	priceRepoStub := svc.(*Service).priceRepo.(*priceRepoStub)
-	seedProrationData(t, db, node, priceAmountStub, priceRepoStub, orgID, subID, cycleID, productID, priceID, cycleStart, cycleEnd, cycleStart, &subEnd, 10000)
+	seedProrationData(t, db, node, priceAmountStub, orgID, subID, cycleID, productID, priceID, cycleStart, cycleEnd, cycleStart, &subEnd, 10000)
 
 	err := svc.RunRating(context.Background(), cycleID.String())
 	require.NoError(t, err)
@@ -158,12 +155,14 @@ func TestProration_PlanChangeMidCycle(t *testing.T) {
 	})
 
 	// Subscription (full month)
+	currency := "USD"
 	db.Create(&subscriptiondomain.Subscription{
-		ID:         subID,
-		OrgID:      orgID,
-		CustomerID: node.Generate(),
-		Status:     subscriptiondomain.SubscriptionStatusActive,
-		StartAt:    cycleStart,
+		ID:              subID,
+		OrgID:           orgID,
+		CustomerID:      node.Generate(),
+		Status:          subscriptiondomain.SubscriptionStatusActive,
+		StartAt:         cycleStart,
+		DefaultCurrency: &currency,
 	})
 
 	// TWO subscription items (representing plan change)
@@ -209,17 +208,6 @@ func TestProration_PlanChangeMidCycle(t *testing.T) {
 		PriceID:         priceB,
 		UnitAmountCents: 15000, // $150
 		Currency:        "USD",
-	}
-
-	// Configure price repo stub
-	priceRepoStub := svc.(*Service).priceRepo.(*priceRepoStub)
-	priceRepoStub.Prices[priceA.String()] = pricedomain.Price{
-		ID:        priceA,
-		ProductID: productA,
-	}
-	priceRepoStub.Prices[priceB.String()] = pricedomain.Price{
-		ID:        priceB,
-		ProductID: productB,
 	}
 
 	// TWO entitlements with different validity periods (PLAN CHANGE)
@@ -304,12 +292,14 @@ func TestProration_MeteredUsageWithWindow(t *testing.T) {
 		Status:         billingcycledomain.BillingCycleStatusClosing,
 	})
 
+	currency := "USD"
 	db.Create(&subscriptiondomain.Subscription{
-		ID:         subID,
-		OrgID:      orgID,
-		CustomerID: node.Generate(),
-		Status:     subscriptiondomain.SubscriptionStatusActive,
-		StartAt:    subStart,
+		ID:              subID,
+		OrgID:           orgID,
+		CustomerID:      node.Generate(),
+		Status:          subscriptiondomain.SubscriptionStatusActive,
+		StartAt:         subStart,
+		DefaultCurrency: &currency,
 	})
 
 	db.Create(&subscriptiondomain.SubscriptionItem{
@@ -403,64 +393,17 @@ func setupProrationTest(t *testing.T) (*gorm.DB, ratingdomain.Service, *snowflak
 		Amounts: make(map[string]priceamountdomain.PriceAmount),
 	}
 
-	priceRepoStub := &priceRepoStub{
-		Prices: make(map[string]pricedomain.Price),
-	}
+	priceRepo := pricerepository.Provide()
 
-	svc := &Service{
-		db:              db,
-		log:             logger,
-		genID:           node,
-		priceAmountRepo: priceAmountStub,
-		priceRepo:       priceRepoStub,
-		ratingrepo:      nil, // Not used in tests
-	}
+	svc := NewService(ServiceParam{
+		DB:              db,
+		Log:             logger,
+		GenID:           node,
+		PriceRepo:       priceRepo,
+		PriceAmountRepo: priceAmountStub,
+	})
 
 	return db, svc, node
-}
-
-// Price repo stub
-type priceRepoStub struct {
-	Prices map[string]pricedomain.Price
-}
-
-func (s *priceRepoStub) WithTrx(tx *gorm.DB) repository.Repository[pricedomain.Price] {
-	return s
-}
-
-func (s *priceRepoStub) Find(ctx context.Context, query *pricedomain.Price, opts ...option.QueryOption) ([]*pricedomain.Price, error) {
-	return nil, nil
-}
-
-func (s *priceRepoStub) FindOne(ctx context.Context, query *pricedomain.Price, opts ...option.QueryOption) (*pricedomain.Price, error) {
-	if p, ok := s.Prices[query.ID.String()]; ok {
-		return &p, nil
-	}
-	return nil, nil
-}
-
-func (s *priceRepoStub) Create(ctx context.Context, entity *pricedomain.Price) error {
-	return nil
-}
-
-func (s *priceRepoStub) Update(ctx context.Context, resourceID string, resource any) error {
-	return nil
-}
-
-func (s *priceRepoStub) Delete(ctx context.Context, resourceID string) error {
-	return nil
-}
-
-func (s *priceRepoStub) BatchCreate(ctx context.Context, entities []*pricedomain.Price) error {
-	return nil
-}
-
-func (s *priceRepoStub) BatchUpdate(ctx context.Context, entities []*pricedomain.Price) error {
-	return nil
-}
-
-func (s *priceRepoStub) Count(ctx context.Context, query *pricedomain.Price) (int64, error) {
-	return 0, nil
 }
 
 // Price amount stub (existing)
@@ -470,7 +413,6 @@ func seedProrationData(
 	db *gorm.DB,
 	node *snowflake.Node,
 	priceAmountStub *priceAmountStub,
-	priceRepoStub *priceRepoStub,
 	orgID, subID, cycleID, productID, priceID snowflake.ID,
 	cycleStart, cycleEnd, subStart time.Time,
 	subEnd *time.Time,
@@ -485,12 +427,14 @@ func seedProrationData(
 		Status:         billingcycledomain.BillingCycleStatusClosing,
 	})
 
+	currency := "USD"
 	sub := &subscriptiondomain.Subscription{
-		ID:         subID,
-		OrgID:      orgID,
-		CustomerID: node.Generate(),
-		Status:     subscriptiondomain.SubscriptionStatusActive,
-		StartAt:    subStart,
+		ID:              subID,
+		OrgID:           orgID,
+		CustomerID:      node.Generate(),
+		Status:          subscriptiondomain.SubscriptionStatusActive,
+		StartAt:         subStart,
+		DefaultCurrency: &currency,
 	}
 	if subEnd != nil {
 		sub.EndedAt = subEnd
@@ -512,12 +456,6 @@ func seedProrationData(
 		Code:      "test_price",
 		Active:    true,
 	})
-
-	// Configure price repo stub
-	priceRepoStub.Prices[priceID.String()] = pricedomain.Price{
-		ID:        priceID,
-		ProductID: productID,
-	}
 
 	// Configure price amount stub
 	priceAmountStub.Amounts[priceID.String()] = priceamountdomain.PriceAmount{

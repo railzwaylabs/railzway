@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"gorm.io/gorm"
 )
 
@@ -15,6 +16,9 @@ type Repository interface {
 	ReplaceItems(ctx context.Context, db *gorm.DB, orgID, subscriptionID snowflake.ID, items []SubscriptionItem) error
 	FindByID(ctx context.Context, db *gorm.DB, orgID, id snowflake.ID) (*Subscription, error)
 	FindByIDForUpdate(ctx context.Context, db *gorm.DB, orgID, id snowflake.ID) (*Subscription, error)
+	FindByIdempotencyKey(ctx context.Context, db *gorm.DB, orgID snowflake.ID, key string) (*Subscription, error)
+	ListItemsBySubscriptionID(ctx context.Context, db *gorm.DB, orgID, subscriptionID snowflake.ID) ([]SubscriptionItem, error)
+	ListEntitlements(ctx context.Context, db *gorm.DB, subscriptionID snowflake.ID, activeAt *time.Time, page pagination.Pagination) ([]*SubscriptionEntitlement, error)
 	List(ctx context.Context, db *gorm.DB, orgID snowflake.ID) ([]Subscription, error)
 	FindActiveByCustomerID(ctx context.Context, db *gorm.DB, orgID, customerID snowflake.ID, statuses []SubscriptionStatus) (*Subscription, error)
 	FindActiveByCustomerIDAt(ctx context.Context, db *gorm.DB, orgID, customerID snowflake.ID, at time.Time) (*Subscription, error)

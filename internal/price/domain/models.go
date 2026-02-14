@@ -78,6 +78,7 @@ type Price struct {
 	Code                 string            `json:"code" gorm:"type:text;not null"`
 	Name                 string            `json:"name,omitempty" gorm:"type:text"`
 	Description          string            `json:"description,omitempty" gorm:"type:text"`
+	IdempotencyKey       *string           `json:"-" gorm:"column:idempotency_key"`
 	PricingModel         PricingModel      `json:"pricing_model" gorm:"type:text;not null;default:0"`
 	BillingMode          BillingMode       `json:"billing_mode" gorm:"type:text;not null;default:0"`
 	BillingInterval      BillingInterval   `json:"billing_interval" gorm:"type:text;not null;default:0"`

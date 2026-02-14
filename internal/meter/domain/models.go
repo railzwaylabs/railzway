@@ -15,6 +15,7 @@ type Meter struct {
 	Aggregation string       `json:"aggregation" gorm:"type:text;not null"`
 	Unit        string       `json:"unit" gorm:"type:text;not null"`
 	Active      bool         `json:"active" gorm:"not null;default:true"`
+	IdempotencyKey *string   `json:"-" gorm:"column:idempotency_key"`
 	CreatedAt   time.Time    `json:"created_at" gorm:"not null;default:CURRENT_TIMESTAMP"`
 	UpdatedAt   time.Time    `json:"updated_at" gorm:"not null;default:CURRENT_TIMESTAMP"`
 }

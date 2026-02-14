@@ -50,6 +50,7 @@ type Subscription struct {
 	DefaultPaymentTermDays *int                       `gorm:""`
 	DefaultCurrency        *string                    `gorm:"type:text"`
 	DefaultTaxBehavior     *string                    `gorm:"type:text"`
+	IdempotencyKey         *string                    `gorm:"column:idempotency_key"`
 	Metadata               datatypes.JSONMap          `gorm:"type:jsonb"`
 	CreatedAt              time.Time                  `gorm:"not null;default:CURRENT_TIMESTAMP"`
 	UpdatedAt              time.Time                  `gorm:"not null;default:CURRENT_TIMESTAMP"`

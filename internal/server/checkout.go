@@ -1,23 +1,21 @@
 package server
 
 import (
-	"net/http"
-
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
 	"github.com/railzwaylabs/railzway/internal/payment/domain"
 )
 
 type createCheckoutSessionRequest struct {
-	Provider            string                       `json:"provider"`
-	Customer            string                       `json:"customer" binding:"required"`
-	Currency            string                       `json:"currency" binding:"required,len=3"`
-	LineItems           []domain.LineItemInput       `json:"line_items" binding:"required,min=1,dive"`
-	SuccessURL          string                       `json:"success_url" binding:"required"`
-	CancelURL           string                       `json:"cancel_url" binding:"required"`
-	ClientReferenceID   string                       `json:"client_reference_id,omitempty"`
-	Metadata            map[string]string            `json:"metadata"`
-	AllowPromotionCodes bool                         `json:"allow_promotion_codes"`
+	Provider            string                 `json:"provider"`
+	Customer            string                 `json:"customer" binding:"required"`
+	Currency            string                 `json:"currency" binding:"required,len=3"`
+	LineItems           []domain.LineItemInput `json:"line_items" binding:"required,min=1,dive"`
+	SuccessURL          string                 `json:"success_url" binding:"required"`
+	CancelURL           string                 `json:"cancel_url" binding:"required"`
+	ClientReferenceID   string                 `json:"client_reference_id,omitempty"`
+	Metadata            map[string]string      `json:"metadata"`
+	AllowPromotionCodes bool                   `json:"allow_promotion_codes"`
 }
 
 // CreateCheckoutSession
@@ -60,7 +58,7 @@ func (s *Server) CreateCheckoutSession(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"session": session})
+	respondData(c, session)
 }
 
 // GetCheckoutSession
@@ -85,7 +83,7 @@ func (s *Server) GetCheckoutSession(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"session": session})
+	respondData(c, session)
 }
 
 // GetCheckoutSessionLineItems
@@ -110,11 +108,7 @@ func (s *Server) GetCheckoutSessionLineItems(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"object":   "list",
-		"data":     lineItems,
-		"has_more": false,
-	})
+	respondList(c, lineItems, nil)
 }
 
 // ExpireCheckoutSession
@@ -139,7 +133,7 @@ func (s *Server) ExpireCheckoutSession(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"session": session})
+	respondData(c, session)
 }
 
 // VerifyCheckoutSession
@@ -163,5 +157,5 @@ func (s *Server) VerifyCheckoutSession(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"session": session})
+	respondData(c, session)
 }

@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 type Service interface {
 	Create(ctx context.Context, req CreateRequest) (*Response, error)
-	List(ctx context.Context, req ListRequest) ([]Response, error)
+	List(ctx context.Context, req ListRequest) (ListResponse, error)
 	GetByID(ctx context.Context, id string) (*Response, error)
 	GetByCode(ctx context.Context, code string) (*Response, error)
 	Update(ctx context.Context, req UpdateRequest) (*Response, error)
@@ -23,6 +24,13 @@ type ListRequest struct {
 	Active  *bool
 	SortBy  string
 	OrderBy string
+	PageToken string
+	PageSize  int32
+}
+
+type ListResponse struct {
+	PageInfo pagination.PageInfo `json:"page_info"`
+	Meters   []Response          `json:"meters"`
 }
 
 type CreateRequest struct {
@@ -31,6 +39,7 @@ type CreateRequest struct {
 	Aggregation string `json:"aggregation_type"`
 	Unit        string `json:"unit"`
 	Active      *bool  `json:"active"`
+	IdempotencyKey string `json:"-"`
 }
 
 type UpdateRequest struct {

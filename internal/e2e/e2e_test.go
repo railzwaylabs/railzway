@@ -696,7 +696,7 @@ func createBillingFixture(t *testing.T, client *http.Client, orgID string) billi
 		"collection_mode":    "SEND_INVOICE",
 		"billing_cycle_type": "MONTHLY",
 		"items": []map[string]any{
-			{"price_id": priceResp.Data.ID, "meter_id": meterResp.Data.ID, "quantity": 1},
+			{"price_id": priceResp.Data.ID, "quantity": 1},
 		},
 	}
 	resp, body = doJSON(t, client, http.MethodPost, env.baseURL+"/admin/subscriptions", subscriptionReq, headers)

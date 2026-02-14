@@ -48,7 +48,8 @@ export default function OrgInvoicesPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [isCustomerForbidden, setIsCustomerForbidden] = useState(false)
-  const statusParam = searchParams.get("status") ?? "ALL"
+  const rawStatus = searchParams.get("status")
+  const statusParam = rawStatus ?? "ALL"
   const statusFilter = statusTabs.some((tab) => tab.value === statusParam)
     ? statusParam
     : "ALL"
@@ -76,6 +77,20 @@ export default function OrgInvoicesPage() {
     totalMax
   )
   const hasAdvancedDateFilters = Boolean(dueFrom || dueTo || finalizedFrom || finalizedTo)
+
+  useEffect(() => {
+    if (!rawStatus) return
+    if (rawStatus === "ALL") {
+      const next = new URLSearchParams(searchParams)
+      next.delete("status")
+      setSearchParams(next, { replace: true })
+      return
+    }
+    if (statusTabs.some((tab) => tab.value === rawStatus)) return
+    const next = new URLSearchParams(searchParams)
+    next.delete("status")
+    setSearchParams(next, { replace: true })
+  }, [rawStatus, searchParams, setSearchParams])
 
   const fetchInvoices = useCallback(
     async (cursor: string | null) => {

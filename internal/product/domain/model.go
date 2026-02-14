@@ -13,6 +13,7 @@ type Product struct {
 	Name        string            `json:"name" gorm:"type:text;not null"`
 	Description *string           `json:"description,omitempty" gorm:"type:text"`
 	Active      bool              `json:"active" gorm:"not null;default:true"`
+	IdempotencyKey *string        `json:"-" gorm:"column:idempotency_key"`
 	Metadata    datatypes.JSONMap `json:"metadata,omitempty" gorm:"type:jsonb"`
 	CreatedAt   time.Time         `json:"created_at" gorm:"not null;default:CURRENT_TIMESTAMP"`
 	UpdatedAt   time.Time         `json:"updated_at" gorm:"not null;default:CURRENT_TIMESTAMP"`

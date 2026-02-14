@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { useOrgStore } from "@/stores/orgStore"
-import { Loader2, CheckCircle2, ChevronRight, XCircle, AlertCircle, Mail } from "lucide-react"
+import { CheckCircle2, ChevronRight, XCircle, AlertCircle, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -23,6 +23,7 @@ import { ResolveDialog } from "./ResolveDialog"
 import { FollowUpEmailDialog } from "./FollowUpEmailDialog"
 import { toast } from "sonner"
 import { formatCurrency, formatAssignmentAge, formatTimeRemaining } from "../utils/formatting"
+import { TableSkeleton } from "@/components/loading-skeletons"
 import { cn } from "@/lib/utils"
 
 
@@ -42,11 +43,7 @@ export function MyWorkTab() {
   const [followUpTarget, setFollowUpTarget] = useState<any | null>(null)
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <TableSkeleton columnTemplate="grid-cols-[2fr_1fr_1fr_1fr_1fr_auto]" />
   }
 
   if (error) {

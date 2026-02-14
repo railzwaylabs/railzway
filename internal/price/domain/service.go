@@ -6,12 +6,18 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 type Service interface {
 	Create(ctx context.Context, req CreateRequest) (*Response, error)
-	List(ctx context.Context, opts ListOptions) ([]Response, error)
+	List(ctx context.Context, opts ListOptions) (ListResponse, error)
 	Get(ctx context.Context, id string) (*Response, error)
+}
+
+type ListResponse struct {
+	PageInfo pagination.PageInfo `json:"page_info"`
+	Prices   []Response          `json:"prices"`
 }
 
 type CreateRequest struct {
@@ -34,6 +40,7 @@ type CreateRequest struct {
 	Active               *bool           `json:"active"`
 	RetiredAt            *time.Time      `json:"retired_at"`
 	Metadata             map[string]any  `json:"metadata"`
+	IdempotencyKey       string          `json:"-"`
 }
 
 type Response struct {

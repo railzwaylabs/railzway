@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
 	priceamountdomain "github.com/railzwaylabs/railzway/internal/priceamount/domain"
 	"github.com/railzwaylabs/railzway/pkg/db/option"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
@@ -59,6 +61,17 @@ func (s *Service) Create(ctx context.Context, req priceamountdomain.CreateReques
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
 		return nil, priceamountdomain.ErrInvalidOrganization
+	}
+
+	idempotencyKey := strings.TrimSpace(req.IdempotencyKey)
+	if idempotencyKey != "" {
+		existing, err := s.repo.FindByIdempotencyKey(ctx, s.db, orgID, idempotencyKey)
+		if err != nil {
+			return nil, err
+		}
+		if existing != nil {
+			return s.toResponse(ctx, existing), nil
+		}
 	}
 
 	// 2. Parse and validate request identifiers
@@ -163,7 +176,40 @@ func (s *Service) Create(ctx context.Context, req priceamountdomain.CreateReques
 			return priceamountdomain.ErrUpcomingAlreadyExists
 		}
 
-		// 10. Insert new price amount (append-only)
+		// 10. Final Safety Check: Ensure no overlaps exist
+		// This acts as a hard guardrail against any logic gaps above
+		checkEnd := effectiveTo
+		if checkEnd == nil {
+			maxTime := time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC)
+			checkEnd = &maxTime
+		}
+
+		overlaps, err := s.repo.ListOverlapping(
+			ctx, tx,
+			orgID,
+			priceID,
+			meterID,
+			currency,
+			effectiveFrom,
+			*checkEnd,
+		)
+		if err != nil {
+			return err
+		}
+
+		if len(overlaps) > 0 {
+			// If we found overlaps, it means our "close current" or "align next" logic failed
+			// or there are complex existing overlaps we can't resolve automatically.
+			s.log.Error("overlapping price amounts detected during creation",
+				zap.String("price_id", priceID.String()),
+				zap.String("currency", currency),
+				zap.Time("effective_from", effectiveFrom),
+				zap.Int("overlap_count", len(overlaps)),
+			)
+			return priceamountdomain.ErrEffectiveOverlap
+		}
+
+		// 11. Insert new price amount (append-only)
 		now := s.clock.Now(ctx)
 		entity = &priceamountdomain.PriceAmount{
 			ID:                 s.genID.Generate(),
@@ -179,12 +225,24 @@ func (s *Service) Create(ctx context.Context, req priceamountdomain.CreateReques
 			CreatedAt:          now,
 			UpdatedAt:          now,
 		}
+		if idempotencyKey != "" {
+			entity.IdempotencyKey = &idempotencyKey
+		}
 		if req.Metadata != nil {
 			entity.Metadata = datatypes.JSONMap(req.Metadata)
 		}
 
 		return s.repo.Insert(ctx, tx, entity)
 	}); err != nil {
+		if idempotencyKey != "" && errors.Is(err, gorm.ErrDuplicatedKey) {
+			existing, findErr := s.repo.FindByIdempotencyKey(ctx, s.db, orgID, idempotencyKey)
+			if findErr != nil {
+				return nil, findErr
+			}
+			if existing != nil {
+				return s.toResponse(ctx, existing), nil
+			}
+		}
 		return nil, err
 	}
 
@@ -335,6 +393,7 @@ func (s *Service) parseAmountIdentifiers(req priceamountdomain.CreateRequest) (s
 	if currency == "" {
 		return 0, nil, "", priceamountdomain.ErrInvalidCurrency
 	}
+	currency = strings.ToUpper(currency)
 
 	return priceID, meterID, currency, nil
 }
@@ -385,12 +444,12 @@ func (s *Service) toResponse(ctx context.Context, a *priceamountdomain.PriceAmou
 	}
 }
 
-func (s *Service) List(ctx context.Context, req priceamountdomain.ListPriceAmountRequest) ([]priceamountdomain.Response, error) {
+func (s *Service) List(ctx context.Context, req priceamountdomain.ListPriceAmountRequest) (priceamountdomain.ListPriceAmountResponse, error) {
 	filter := priceamountdomain.PriceAmount{}
 
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
-		return nil, priceamountdomain.ErrInvalidOrganization
+		return priceamountdomain.ListPriceAmountResponse{}, priceamountdomain.ErrInvalidOrganization
 	}
 	filter.OrgID = orgID
 
@@ -399,12 +458,19 @@ func (s *Service) List(ctx context.Context, req priceamountdomain.ListPriceAmoun
 		var err error
 		priceID, err = parseID(req.PriceID)
 		if err != nil {
-			return nil, priceamountdomain.ErrInvalidPrice
+			return priceamountdomain.ListPriceAmountResponse{}, priceamountdomain.ErrInvalidPrice
 		}
 		filter.PriceID = priceID
 	}
 
 	opts := []option.QueryOption{}
+
+	if currency := strings.ToUpper(strings.TrimSpace(req.Currency)); currency != "" {
+		opts = append(opts, whereOption{
+			query: "UPPER(currency) = ?",
+			args:  []any{currency},
+		})
+	}
 
 	// Apply effective date filters
 	if req.EffectiveFrom != nil {
@@ -421,6 +487,19 @@ func (s *Service) List(ctx context.Context, req priceamountdomain.ListPriceAmoun
 			Field:    "effective_to",
 			Operator: option.LTE,
 			Value:    *req.EffectiveTo,
+		}))
+	}
+
+	pageSize := req.PageSize
+	if pageSize < 0 {
+		pageSize = 0
+	} else if pageSize == 0 {
+		pageSize = 50
+	}
+	if req.PageToken != "" || pageSize > 0 {
+		opts = append(opts, option.ApplyPagination(pagination.Pagination{
+			PageToken: req.PageToken,
+			PageSize:  int(pageSize),
 		}))
 	}
 
@@ -441,15 +520,40 @@ func (s *Service) List(ctx context.Context, req priceamountdomain.ListPriceAmoun
 
 	items, err := s.repo.List(ctx, s.db, filter, opts...)
 	if err != nil {
-		return nil, err
+		return priceamountdomain.ListPriceAmountResponse{}, err
+	}
+
+	var pageInfo *pagination.PageInfo
+	if pageSize > 0 {
+		pageInfo = pagination.BuildCursorPageInfo(items, pageSize, func(item *priceamountdomain.PriceAmount) string {
+			token, err := pagination.EncodeCursor(pagination.Cursor{
+				ID:        item.ID.String(),
+				CreatedAt: item.CreatedAt.Format(time.RFC3339),
+			})
+			if err != nil {
+				return ""
+			}
+			return token
+		})
+		if pageInfo != nil && pageInfo.HasMore && len(items) > int(pageSize) {
+			items = items[:pageSize]
+		}
 	}
 
 	resp := make([]priceamountdomain.Response, 0, len(items))
-	for i := range items {
-		resp = append(resp, *s.toResponse(ctx, &items[i]))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		resp = append(resp, *s.toResponse(ctx, item))
 	}
 
-	return resp, nil
+	out := priceamountdomain.ListPriceAmountResponse{Amounts: resp}
+	if pageInfo != nil {
+		out.PageInfo = *pageInfo
+	}
+
+	return out, nil
 }
 
 func (s *Service) Get(ctx context.Context, req priceamountdomain.GetPriceAmountByID) (*priceamountdomain.Response, error) {

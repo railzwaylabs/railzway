@@ -1,11 +1,11 @@
 package server
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	productdomain "github.com/railzwaylabs/railzway/internal/product/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 type createProductRequest struct {
@@ -29,8 +29,9 @@ type updateProductRequest struct {
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
+// @Param        Idempotency-Key  header  string  false  "Idempotency Key"
 // @Param        request body createProductRequest true "Create Product Request"
-// @Success      200  {object}  productdomain.Product
+// @Success      200  {object}  DataResponse
 // @Router       /products [post]
 func (s *Server) CreateProduct(c *gin.Context) {
 	var req createProductRequest
@@ -40,11 +41,12 @@ func (s *Server) CreateProduct(c *gin.Context) {
 	}
 
 	resp, err := s.productSvc.Create(c.Request.Context(), productdomain.CreateRequest{
-		Code:        strings.TrimSpace(req.Code),
-		Name:        strings.TrimSpace(req.Name),
-		Description: req.Description,
-		Active:      req.Active,
-		Metadata:    req.Metadata,
+		Code:           strings.TrimSpace(req.Code),
+		Name:           strings.TrimSpace(req.Name),
+		Description:    req.Description,
+		Active:         req.Active,
+		Metadata:       req.Metadata,
+		IdempotencyKey: idempotencyKeyFromHeader(c),
 	})
 	if err != nil {
 		AbortWithError(c, err)
@@ -61,7 +63,7 @@ func (s *Server) CreateProduct(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 // @Summary      List Products
@@ -74,10 +76,13 @@ func (s *Server) CreateProduct(c *gin.Context) {
 // @Param        active   query     bool    false  "Active"
 // @Param        sort_by  query     string  false  "Sort By"
 // @Param        order_by query     string  false  "Order By"
-// @Success      200  {object}  []productdomain.Product
+// @Param        page_token  query  string  false  "Page Token"
+// @Param        page_size   query  int     false  "Page Size"
+// @Success      200  {object}  ListResponse
 // @Router       /products [get]
 func (s *Server) ListProducts(c *gin.Context) {
 	var query struct {
+		pagination.Pagination
 		Name    string `form:"name"`
 		Active  string `form:"active"`
 		SortBy  string `form:"sort_by"`
@@ -95,17 +100,19 @@ func (s *Server) ListProducts(c *gin.Context) {
 	}
 
 	resp, err := s.productSvc.List(c.Request.Context(), productdomain.ListRequest{
-		Name:    strings.TrimSpace(query.Name),
-		Active:  active,
-		SortBy:  strings.TrimSpace(query.SortBy),
-		OrderBy: strings.TrimSpace(query.OrderBy),
+		Name:      strings.TrimSpace(query.Name),
+		Active:    active,
+		SortBy:    strings.TrimSpace(query.SortBy),
+		OrderBy:   strings.TrimSpace(query.OrderBy),
+		PageToken: query.PageToken,
+		PageSize:  int32(query.PageSize),
 	})
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondList(c, resp.Products, &resp.PageInfo)
 }
 
 // @Summary      Get Product
@@ -115,7 +122,7 @@ func (s *Server) ListProducts(c *gin.Context) {
 // @Produce      json
 // @Security     ApiKeyAuth
 // @Param        id   path      string  true  "Product ID"
-// @Success      200  {object}  productdomain.Product
+// @Success      200  {object}  DataResponse
 // @Router       /products/{id} [get]
 func (s *Server) GetProductByID(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
@@ -125,7 +132,7 @@ func (s *Server) GetProductByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 // @Summary      Update Product
@@ -136,7 +143,7 @@ func (s *Server) GetProductByID(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Param        id       path      string                true  "Product ID"
 // @Param        request  body      updateProductRequest  true  "Update Product Request"
-// @Success      200  {object}  productdomain.Product
+// @Success      200  {object}  DataResponse
 // @Router       /products/{id} [patch]
 func (s *Server) UpdateProduct(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
@@ -169,7 +176,7 @@ func (s *Server) UpdateProduct(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 // @Summary      Archive Product
@@ -179,7 +186,7 @@ func (s *Server) UpdateProduct(c *gin.Context) {
 // @Produce      json
 // @Security     ApiKeyAuth
 // @Param        id   path      string  true  "Product ID"
-// @Success      200  {object}  productdomain.Product
+// @Success      200  {object}  DataResponse
 // @Router       /products/{id}/archive [post]
 func (s *Server) ArchiveProduct(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
@@ -198,7 +205,7 @@ func (s *Server) ArchiveProduct(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 func isProductValidationError(err error) bool {

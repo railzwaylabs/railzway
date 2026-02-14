@@ -1,4 +1,5 @@
-import { Loader2, Users, Briefcase, Clock, AlertTriangle, CheckCircle } from "lucide-react"
+import { Users, Briefcase, Clock, AlertTriangle, CheckCircle } from "lucide-react"
+import { TableSkeleton, DashboardStatsSkeleton } from "@/components/loading-skeletons"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -16,8 +17,9 @@ export function TeamViewTab() {
 
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="space-y-8">
+        <DashboardStatsSkeleton cards={4} />
+        <TableSkeleton />
       </div>
     )
   }

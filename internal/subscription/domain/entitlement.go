@@ -19,3 +19,5 @@ type SubscriptionEntitlement struct {
 	EffectiveTo    *time.Time
 	CreatedAt      time.Time
 }
+
+func (SubscriptionEntitlement) TableName() string { return "subscription_entitlements" }

@@ -150,7 +150,6 @@ func (s *Service) Ingest(
 		go s.metrics.IncUsageLateEvent(orgID.String(), meterCode)
 	}
 
-
 	// Entitlement Check: Validate that this usage is allowed.
 	meterID, err := snowflake.ParseString(meter.ID)
 	if err != nil {
@@ -161,8 +160,7 @@ func (s *Service) Ingest(
 		if err := s.subSvc.ValidateUsageEntitlement(ctx, sub.ID, meterID, recordedAt); err != nil {
 			// If feature not entitled, we must reject.
 			if errors.Is(err, subscriptiondomain.ErrFeatureNotEntitled) {
-				// Map to a new usage domain error or return explicitly
-				return nil, errors.New("usage_rejected_feature_not_entitled")
+				return nil, usagedomain.ErrFeatureNotEntitled
 			}
 			// For other errors (db issues), return them?
 			// Strict gating -> if we can't validate, we shouldn't accept.
@@ -239,6 +237,7 @@ func (s *Service) List(ctx context.Context, req usagedomain.ListUsageRequest) (u
 			PageToken: req.PageToken,
 			PageSize:  int(pageSize),
 		}),
+		option.WithTimeRange("recorded_at", req.RecordedFrom, req.RecordedTo),
 		option.WithSortBy(option.QuerySortBy{Allow: map[string]bool{"created_at": true}}),
 	)
 	if err != nil {
@@ -505,18 +504,35 @@ func buildIdempotencyConflictClause(db *gorm.DB) clause.OnConflict {
 }
 
 func validateUsageEvent(req usagedomain.CreateIngestRequest) error {
+	// Check for NaN and Inf
 	if math.IsNaN(req.Value) || math.IsInf(req.Value, 0) {
 		return usagedomain.ErrInvalidValue
 	}
+
+	// Reject negative values
+	if req.Value < 0 {
+		return usagedomain.ErrInvalidValue
+	}
+
+	// Validate recorded_at
 	if req.RecordedAt.IsZero() {
 		return usagedomain.ErrInvalidRecordedAt
 	}
+
+	// Reject timestamps too far in the future (allow 5 min clock skew)
+	now := time.Now().UTC()
+	if req.RecordedAt.After(now.Add(5 * time.Minute)) {
+		return usagedomain.ErrInvalidRecordedAt
+	}
+
+	// Validate idempotency key
 	if req.IdempotencyKey == "" {
 		return usagedomain.ErrInvalidIdempotencyKey
 	}
 	if strings.TrimSpace(req.IdempotencyKey) == "" {
 		return usagedomain.ErrInvalidIdempotencyKey
 	}
+
 	return nil
 }
 
@@ -564,6 +580,14 @@ func (s *Service) buildUsageFilter(ctx context.Context, req usagedomain.ListUsag
 			return nil, 0, err
 		}
 		filter.MeterID = meterID
+	}
+
+	if meterCode := strings.TrimSpace(req.MeterCode); meterCode != "" {
+		filter.MeterCode = meterCode
+	}
+
+	if status := strings.TrimSpace(req.Status); status != "" {
+		filter.Status = strings.ToLower(status)
 	}
 
 	pageSize := req.PageSize

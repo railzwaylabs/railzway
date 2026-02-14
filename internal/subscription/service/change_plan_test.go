@@ -13,6 +13,7 @@ import (
 	priceamountdomain "github.com/railzwaylabs/railzway/internal/priceamount/domain"
 	productfeaturedomain "github.com/railzwaylabs/railzway/internal/productfeature/domain"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -94,6 +95,15 @@ func (m *mockRepository) FindByIDForUpdate(ctx context.Context, db *gorm.DB, org
 	if s, ok := m.subscriptions[id.String()]; ok {
 		return s, nil
 	}
+	return nil, nil
+}
+func (m *mockRepository) FindByIdempotencyKey(ctx context.Context, db *gorm.DB, orgID snowflake.ID, key string) (*subscriptiondomain.Subscription, error) {
+	return nil, nil
+}
+func (m *mockRepository) ListItemsBySubscriptionID(ctx context.Context, db *gorm.DB, orgID, subscriptionID snowflake.ID) ([]subscriptiondomain.SubscriptionItem, error) {
+	return nil, nil
+}
+func (m *mockRepository) ListEntitlements(ctx context.Context, db *gorm.DB, subscriptionID snowflake.ID, activeAt *time.Time, page pagination.Pagination) ([]*subscriptiondomain.SubscriptionEntitlement, error) {
 	return nil, nil
 }
 func (m *mockRepository) List(ctx context.Context, db *gorm.DB, orgID snowflake.ID) ([]subscriptiondomain.Subscription, error) {
@@ -203,19 +213,21 @@ func TestChangePlan(t *testing.T) {
 		Pricesvc:           priceSvc,
 		ProductFeatureRepo: pfRepo,
 		// PriceAmountsvc needed for loadPriceAmount if pricing model not flat
-		PriceAmountsvc: &mockPriceAmountService{},
-        PaymentMethodSvc: &mockPaymentMethodService{},
+		PriceAmountsvc:   &mockPriceAmountService{},
+		PaymentMethodSvc: &mockPaymentMethodService{},
 	})
 
 	// Create active subscription
 	subID := node.Generate()
 	now := time.Now().UTC()
+	currency := "USD"
 	sub := &subscriptiondomain.Subscription{
 		ID:               subID,
 		OrgID:            orgID,
 		CustomerID:       customerID,
 		Status:           subscriptiondomain.SubscriptionStatusActive,
 		BillingCycleType: "monthly",
+		DefaultCurrency:  &currency,
 		CreatedAt:        now,
 		UpdatedAt:        now,
 	}
@@ -297,8 +309,17 @@ type mockPriceAmountService struct{}
 func (m *mockPriceAmountService) Create(ctx context.Context, req priceamountdomain.CreateRequest) (*priceamountdomain.Response, error) {
 	return &priceamountdomain.Response{}, nil
 }
-func (m *mockPriceAmountService) List(ctx context.Context, req priceamountdomain.ListPriceAmountRequest) ([]priceamountdomain.Response, error) {
-	return nil, nil
+func (m *mockPriceAmountService) List(ctx context.Context, req priceamountdomain.ListPriceAmountRequest) (priceamountdomain.ListPriceAmountResponse, error) {
+	return priceamountdomain.ListPriceAmountResponse{
+		Amounts: []priceamountdomain.Response{
+			{
+				ID:              1,
+				PriceID:         1,
+				Currency:        "USD",
+				UnitAmountCents: 1000,
+			},
+		},
+	}, nil
 }
 func (m *mockPriceAmountService) Get(ctx context.Context, req priceamountdomain.GetPriceAmountByID) (*priceamountdomain.Response, error) {
 	return nil, nil

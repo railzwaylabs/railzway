@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/redis/go-redis/v9"
 	customerdomain "github.com/railzwaylabs/railzway/internal/customer/domain"
 	quotadomain "github.com/railzwaylabs/railzway/internal/quota/domain"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -68,7 +68,7 @@ func (s *service) CanIngestUsage(ctx context.Context, orgID snowflake.ID) error 
 		s.redis.Expire(ctx, key, 35*24*time.Hour)
 	}
 
-	if val > int64(s.cfg.OrgUsageMonthly) {
+	if s.isQuotaExceeded(val, s.cfg.OrgUsageMonthly) {
 		return quotadomain.ErrOrgUsageQuotaExceeded
 	}
 
@@ -84,8 +84,7 @@ func (s *service) CanCreateCustomer(ctx context.Context, orgID snowflake.ID) err
 		s.log.Error("failed to count customers", zap.Error(err))
 		return err
 	}
-
-	if count >= int64(s.cfg.OrgCustomer) {
+	if s.isQuotaExceeded(count, s.cfg.OrgCustomer) {
 		return quotadomain.ErrOrgCustomerQuotaExceeded
 	}
 
@@ -103,7 +102,7 @@ func (s *service) CanCreateSubscription(ctx context.Context, orgID snowflake.ID)
 		return err
 	}
 
-	if count >= int64(s.cfg.OrgSubscription) {
+	if s.isQuotaExceeded(count, s.cfg.OrgSubscription) {
 		return quotadomain.ErrOrgSubscriptionQuotaExceeded
 	}
 
@@ -128,4 +127,8 @@ func (s *service) GetOrgUsage(ctx context.Context, orgID snowflake.ID) (map[stri
 	}
 
 	return usage, nil
+}
+
+func (s *service) isQuotaExceeded(count int64, limit int) bool {
+	return limit != -1 && count >= int64(limit)
 }

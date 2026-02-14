@@ -5,12 +5,14 @@ CREATE TABLE IF NOT EXISTS meters (
     name TEXT NOT NULL,
     aggregation TEXT NOT NULL,
     unit TEXT NOT NULL,
+    idempotency_key TEXT,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_meters_org_code ON meters(org_id, code);
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_meters_idempotency_key ON meters(org_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_meters_org_id ON meters(org_id);
 
 CREATE TABLE IF NOT EXISTS usage_events (

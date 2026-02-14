@@ -127,7 +127,7 @@ func TestSnapshotInvoicing_StrictCompliance(t *testing.T) {
 
 	// Execute logic
 	err = db.Transaction(func(tx *gorm.DB) error {
-		return svc.listInvoiceItemPartsFromRating(context.Background(), tx, cycle, invoiceID)
+		return svc.listInvoiceItemPartsFromRating(context.Background(), tx, cycle, invoiceID, "USD")
 	})
 	assert.NoError(t, err)
 
@@ -184,7 +184,7 @@ func TestSnapshotInvoicing_StrictCompliance(t *testing.T) {
 
 	// Generation should now SUCCEED with fallback description due to lenient logic
 	err = db.Transaction(func(tx *gorm.DB) error {
-		return svc.listInvoiceItemPartsFromRating(context.Background(), tx, cycle, invoiceID2)
+		return svc.listInvoiceItemPartsFromRating(context.Background(), tx, cycle, invoiceID2, "USD")
 	})
 	assert.NoError(t, err)
 

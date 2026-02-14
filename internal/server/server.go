@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -36,6 +37,8 @@ import (
 	"github.com/railzwaylabs/railzway/internal/events"
 	"github.com/railzwaylabs/railzway/internal/feature"
 	featuredomain "github.com/railzwaylabs/railzway/internal/feature/domain"
+	"github.com/railzwaylabs/railzway/internal/integration"
+	integrationdomain "github.com/railzwaylabs/railzway/internal/integration/domain"
 	"github.com/railzwaylabs/railzway/internal/invoice"
 	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
 	"github.com/railzwaylabs/railzway/internal/invoicetemplate"
@@ -76,6 +79,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/reference"
 	referencedomain "github.com/railzwaylabs/railzway/internal/reference/domain"
 	"github.com/railzwaylabs/railzway/internal/scheduler"
+	"github.com/railzwaylabs/railzway/internal/security/vault"
 	signupdomain "github.com/railzwaylabs/railzway/internal/signup/domain"
 	"github.com/railzwaylabs/railzway/internal/subscription"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
@@ -129,6 +133,8 @@ var Module = fx.Module("http.server",
 	usage.Module,
 	quota.Module,
 	testclock.Module,
+	vault.Module,
+	integration.Module,
 	fx.Provide(NewServer),
 	fx.Invoke(RegisterRoutes),
 	fx.Invoke(RunHTTP),
@@ -241,6 +247,7 @@ type Server struct {
 	paymentMethodSvc            paymentdomain.PaymentMethodService
 	paymentMethodConfigSvc      paymentdomain.PaymentMethodConfigService
 	checkoutSvc                 paymentdomain.CheckoutService
+	integrationSvc              integrationdomain.Service
 	testClockSvc                testclockdomain.Service
 
 	licenseSvc *license.Service
@@ -291,7 +298,8 @@ type ServerParams struct {
 	PaymentMethodSvc       paymentdomain.PaymentMethodService
 	PaymentMethodConfigSvc paymentdomain.PaymentMethodConfigService
 	CheckoutSvc            paymentdomain.CheckoutService
-	TestClockSvc           testclockdomain.Service `optional:"true"`
+	IntegrationSvc         integrationdomain.Service `optional:"true"`
+	TestClockSvc           testclockdomain.Service
 
 	LicenseSvc *license.Service
 	Scheduler  *scheduler.Scheduler `optional:"true"`
@@ -345,6 +353,7 @@ func NewServer(p ServerParams) *Server {
 		paymentMethodSvc:            p.PaymentMethodSvc,
 		paymentMethodConfigSvc:      p.PaymentMethodConfigSvc,
 		checkoutSvc:                 p.CheckoutSvc,
+		integrationSvc:              p.IntegrationSvc,
 		testClockSvc:                p.TestClockSvc,
 		licenseSvc:                  p.LicenseSvc,
 		scheduler:                   p.Scheduler,
@@ -442,6 +451,7 @@ func (s *Server) RegisterAPIRoutes() {
 	api.GET("/subscriptions", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectSubscription, authorization.ActionSubscriptionView), s.ListSubscriptions)
 	api.POST("/subscriptions", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectSubscription, authorization.ActionSubscriptionCreate), s.CreateSubscription)
 	api.GET("/subscriptions/:id", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectSubscription, authorization.ActionSubscriptionView), s.GetSubscriptionByID)
+	api.GET("/subscriptions/:id/entitlements", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectSubscription, authorization.ActionSubscriptionView), s.ListSubscriptionEntitlements)
 	api.PUT("/subscriptions/:id/items", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectSubscription, authorization.ActionSubscriptionUpdate), s.ReplaceSubscriptionItems)
 	api.POST("/subscriptions/:id/activate", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectSubscription, authorization.ActionSubscriptionActivate), s.ActivateSubscription)
 	api.POST("/subscriptions/:id/pause", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectSubscription, authorization.ActionSubscriptionPause), s.PauseSubscription)
@@ -477,7 +487,18 @@ func (s *Server) RegisterAPIRoutes() {
 	api.POST("/checkout/sessions", s.APIKeyRequired(), s.CreateCheckoutSession)
 	api.GET("/checkout/sessions/:session_id/verify", s.APIKeyRequired(), s.VerifyCheckoutSession)
 
+	// -------- Test Clocks (Public for Simulation) --------
+	log.Println("DEBUG: Registering public test clock routes")
+	api.POST("/test-clocks", s.APIKeyRequired(), func(c *gin.Context) {
+		log.Println("DEBUG: POST /api/test-clocks hit")
+		s.CreateTestClock(c)
+	})
+	api.GET("/test-clocks", s.APIKeyRequired(), s.ListTestClocks)
+	api.GET("/test-clocks/:id", s.APIKeyRequired(), s.GetTestClock)
+	api.POST("/test-clocks/:id/advance", s.APIKeyRequired(), s.AdvanceTestClock)
+
 	api.POST("/usage", s.APIKeyRequired(), s.UsageIngestRateLimit(), s.authorizeOrgAction(authorization.ObjectUsage, authorization.ActionUsageIngest), s.IngestUsage)
+	api.GET("/usage", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectUsage, authorization.ActionUsageView), s.ListUsage)
 	api.GET("/usage/summary", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectUsage, authorization.ActionUsageView), s.GetUsageSummary)
 
 	if s.cfg.Environment != "production" {
@@ -559,11 +580,15 @@ func (s *Server) RegisterAdminRoutes() {
 	admin.GET("/subscriptions", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.ListSubscriptions)
 	admin.POST("/subscriptions", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.CreateSubscription)
 	admin.GET("/subscriptions/:id", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.GetSubscriptionByID)
+	admin.GET("/subscriptions/:id/entitlements", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.ListSubscriptionEntitlements)
 	admin.PUT("/subscriptions/:id/items", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.ReplaceSubscriptionItems)
 	admin.POST("/subscriptions/:id/activate", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectSubscription, authorization.ActionSubscriptionActivate), s.ActivateSubscription)
 	admin.POST("/subscriptions/:id/pause", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectSubscription, authorization.ActionSubscriptionPause), s.PauseSubscription)
 	admin.POST("/subscriptions/:id/resume", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectSubscription, authorization.ActionSubscriptionResume), s.ResumeSubscription)
 	admin.POST("/subscriptions/:id/cancel", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectSubscription, authorization.ActionSubscriptionCancel), s.CancelSubscription)
+
+	// -------- Usage --------
+	admin.GET("/usage", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.ListUsage)
 
 	// -------- Invoices --------
 	admin.GET("/invoices", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin, organizationdomain.RoleFinOps), s.ListInvoices)
@@ -625,13 +650,7 @@ func (s *Server) RegisterAdminRoutes() {
 	admin.PATCH("/invoice-templates/:id", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.UpdateInvoiceTemplate)
 	admin.POST("/invoice-templates/:id/set-default", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.SetDefaultInvoiceTemplate)
 
-	// -------- Payment Providers --------
-	admin.GET("/payment-providers/catalog", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.ListPaymentProviderCatalog)
-	admin.GET("/payment-providers", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.ListPaymentProviderConfigs)
-	admin.POST("/payment-providers", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.UpsertPaymentProviderConfig)
-	admin.PATCH("/payment-providers/:provider", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.UpdatePaymentProviderStatus)
-
-	// -------- Payment Methods (Config) --------
+	// -------- Checkout Options (Legacy Payment Methods Config) --------
 	admin.GET("/payment-method-configs", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.ListPaymentMethodConfigs)
 	admin.POST("/payment-method-configs", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.UpsertPaymentMethodConfig)
 	admin.DELETE("/payment-method-configs/:id", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.authorizeOrgAction(authorization.ObjectPaymentProvider, authorization.ActionPaymentProviderManage), s.DeletePaymentMethodConfig)
@@ -659,6 +678,15 @@ func (s *Server) RegisterAdminRoutes() {
 	admin.POST("/test-clocks/:id/advance", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.AdvanceTestClock)
 	admin.DELETE("/test-clocks/:id", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.DeleteTestClock)
 	admin.PATCH("/test-clocks/:id", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.UpdateTestClock)
+
+	// -------- Integrations --------
+	integrations := admin.Group("/integrations")
+	{
+		integrations.GET("/catalog", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.ListIntegrationCatalog)
+		integrations.GET("/connections", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.ListIntegrationConnections)
+		integrations.POST("/connect", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.ConnectIntegration)
+		integrations.POST("/:id/disconnect", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin), s.DisconnectIntegration)
+	}
 }
 
 func (s *Server) GetSSOConfig(c *gin.Context) {
@@ -677,13 +705,41 @@ func (s *Server) UpdateSSOConfig(c *gin.Context) {
 }
 
 func (s *Server) GetSystemCapabilities(c *gin.Context) {
+	orgID := s.orgIDFromContext(c)
+
 	caps := s.licenseSvc.Capabilities()
 	meta := s.licenseSvc.Metadata()
+
+	readiness := gin.H{
+		"payment":      false,
+		"accounting":   false,
+		"notification": false,
+	}
+
+	// If we have an org context, check active connections for readiness
+	if orgID != 0 {
+		conns, err := s.integrationSvc.ListConnections(c.Request.Context(), orgID)
+		if err == nil {
+			for _, conn := range conns {
+				if conn.Status == "active" {
+					switch conn.Integration.Type {
+					case integrationdomain.TypePayment:
+						readiness["payment"] = true
+					case integrationdomain.TypeAccounting:
+						readiness["accounting"] = true
+					case integrationdomain.TypeNotification:
+						readiness["notification"] = true
+					}
+				}
+			}
+		}
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"plan":       meta.Plan,
 		"expires_at": meta.ExpiresAt,
 		"features":   caps,
+		"readiness":  readiness,
 	})
 }
 

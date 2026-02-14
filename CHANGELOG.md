@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Rebranding & Licensing
 - **Official Rebranding**: Project transitioned from Valora to **Railzway**.
-- **License Transition**: Shifted to **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+- **License Transition**: Shifted to **MIT License** for maximum adoption and enterprise-friendliness.
 
 #### Telemetry & Observability
 - **Anonymous Telemetry (Phone Home)**: Implemented background worker for usage statistics.

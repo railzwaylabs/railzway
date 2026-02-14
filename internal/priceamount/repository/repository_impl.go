@@ -20,9 +20,9 @@ func Provide() priceamountdomain.Repository {
 func (r *repo) Insert(ctx context.Context, db *gorm.DB, amount *priceamountdomain.PriceAmount) error {
 	return db.WithContext(ctx).Exec(
 		`INSERT INTO price_amounts (
-			id, org_id, price_id, meter_id, currency, unit_amount_cents, minimum_amount_cents, maximum_amount_cents, effective_from, effective_to,
+			id, org_id, price_id, meter_id, currency, unit_amount_cents, minimum_amount_cents, maximum_amount_cents, idempotency_key, effective_from, effective_to,
 			metadata, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		amount.ID,
 		amount.OrgID,
 		amount.PriceID,
@@ -31,6 +31,7 @@ func (r *repo) Insert(ctx context.Context, db *gorm.DB, amount *priceamountdomai
 		amount.UnitAmountCents,
 		amount.MinimumAmountCents,
 		amount.MaximumAmountCents,
+		amount.IdempotencyKey,
 		amount.EffectiveFrom,
 		amount.EffectiveTo,
 		amount.Metadata,
@@ -42,7 +43,7 @@ func (r *repo) Insert(ctx context.Context, db *gorm.DB, amount *priceamountdomai
 func (r *repo) FindByID(ctx context.Context, db *gorm.DB, orgID, id snowflake.ID) (*priceamountdomain.PriceAmount, error) {
 	var amount priceamountdomain.PriceAmount
 	err := db.WithContext(ctx).Raw(
-		`SELECT id, org_id, price_id, meter_id, currency,
+		`SELECT id, org_id, price_id, meter_id, currency, idempotency_key,
 		        unit_amount_cents, minimum_amount_cents, maximum_amount_cents,
 		        effective_from, effective_to,
 		        revoked_at, revoked_reason,
@@ -60,8 +61,29 @@ func (r *repo) FindByID(ctx context.Context, db *gorm.DB, orgID, id snowflake.ID
 	return &amount, nil
 }
 
-func (r *repo) List(ctx context.Context, db *gorm.DB, f priceamountdomain.PriceAmount, opts ...option.QueryOption) ([]priceamountdomain.PriceAmount, error) {
-	var items []priceamountdomain.PriceAmount
+func (r *repo) FindByIdempotencyKey(ctx context.Context, db *gorm.DB, orgID snowflake.ID, key string) (*priceamountdomain.PriceAmount, error) {
+	var amount priceamountdomain.PriceAmount
+	err := db.WithContext(ctx).Raw(
+		`SELECT id, org_id, price_id, meter_id, currency, idempotency_key,
+		        unit_amount_cents, minimum_amount_cents, maximum_amount_cents,
+		        effective_from, effective_to,
+		        revoked_at, revoked_reason,
+		        metadata, created_at, updated_at
+		 FROM price_amounts
+		 WHERE org_id = ? AND idempotency_key = ? LIMIT 1`,
+		orgID, key,
+	).Scan(&amount).Error
+	if err != nil {
+		return nil, err
+	}
+	if amount.ID == 0 {
+		return nil, nil
+	}
+	return &amount, nil
+}
+
+func (r *repo) List(ctx context.Context, db *gorm.DB, f priceamountdomain.PriceAmount, opts ...option.QueryOption) ([]*priceamountdomain.PriceAmount, error) {
+	var items []*priceamountdomain.PriceAmount
 	stmt := db.WithContext(ctx).Model(&priceamountdomain.PriceAmount{})
 
 	for _, opt := range opts {
@@ -237,8 +259,8 @@ func applyCurrencyCondition(query string, args []any, currency string) (string, 
 	if trimmed == "" {
 		return query, args
 	}
-	query += " AND currency = ?"
-	args = append(args, trimmed)
+	query += " AND UPPER(currency) = ?"
+	args = append(args, strings.ToUpper(trimmed))
 	return query, args
 }
 

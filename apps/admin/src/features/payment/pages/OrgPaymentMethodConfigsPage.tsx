@@ -149,7 +149,7 @@ export default function OrgPaymentMethodConfigsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">Payment Methods</h1>
+          <h1 className="text-2xl font-semibold">Checkout Options</h1>
           <p className="text-sm text-text-muted">
             Configure how payment methods are routed and displayed to customers.
           </p>

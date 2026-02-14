@@ -182,7 +182,7 @@ func (c *CloudMetrics) Push(ctx context.Context) error {
 		return nil
 	}
 	if c.pusher == nil {
-		c.logger.Info("skipping cloud metrics push: telemetry pusher not initialized (check CLOUD_METRICS_ENDPOINT)")
+		c.logger.Info("skipping cloud metrics push: telemetry pusher not initialized (check TELEMETRY_ENDPOINT)")
 		return nil
 	}
 	if ctx == nil {

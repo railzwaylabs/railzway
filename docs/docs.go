@@ -9,15 +9,7 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "http://swagger.io/terms/",
-        "contact": {
-            "name": "API Support",
-            "email": "support@railzway.com"
-        },
-        "license": {
-            "name": "Apache 2.0",
-            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-        },
+        "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -45,10 +37,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_reference_domain.Country"
-                            }
+                            "$ref": "#/definitions/server.ListResponse"
                         }
                     }
                 }
@@ -76,10 +65,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_reference_domain.Currency"
-                            }
+                            "$ref": "#/definitions/server.ListResponse"
                         }
                     }
                 }
@@ -151,10 +137,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer"
-                            }
+                            "$ref": "#/definitions/server.ListResponse"
                         }
                     }
                 }
@@ -178,12 +161,18 @@ const docTemplate = `{
                 "summary": "Create Customer",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
                         "description": "Create Customer Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_server.createCustomerRequest"
+                            "$ref": "#/definitions/server.createCustomerRequest"
                         }
                     }
                 ],
@@ -191,7 +180,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -228,7 +217,211 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer"
+                            "$ref": "#/definitions/server.DataResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/features": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List available features",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "features"
+                ],
+                "summary": "List Features",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Code",
+                        "name": "code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Feature Type",
+                        "name": "feature_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Active",
+                        "name": "active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort By",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order By",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page Token",
+                        "name": "page_token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page Size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.ListResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new feature",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "features"
+                ],
+                "summary": "Create Feature",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Idempotency Key",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "description": "Create Feature Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.createFeatureRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.DataResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/features/{id}": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update a feature",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "features"
+                ],
+                "summary": "Update Feature",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Feature ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Feature Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.updateFeatureRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.DataResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/features/{id}/archive": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Archive a feature",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "features"
+                ],
+                "summary": "Archive Feature",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Feature ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -336,10 +529,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.Invoice"
-                            }
+                            "$ref": "#/definitions/server.ListResponse"
                         }
                     }
                 }
@@ -376,7 +566,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.Invoice"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -413,7 +603,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.RenderInvoiceResponse"
+                            "$ref": "#/definitions/domain.RenderInvoiceResponse"
                         }
                     }
                 }
@@ -462,16 +652,25 @@ const docTemplate = `{
                         "description": "Order By",
                         "name": "order_by",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page Token",
+                        "name": "page_token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page Size",
+                        "name": "page_size",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter"
-                            }
+                            "$ref": "#/definitions/server.ListResponse"
                         }
                     }
                 }
@@ -490,12 +689,18 @@ const docTemplate = `{
                 "summary": "Create Meter",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
                         "description": "Create Meter Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_server.createMeterRequest"
+                            "$ref": "#/definitions/server.createMeterRequest"
                         }
                     }
                 ],
@@ -503,7 +708,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -535,7 +740,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -593,7 +798,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_server.updateMeterRequest"
+                            "$ref": "#/definitions/server.updateMeterRequest"
                         }
                     }
                 ],
@@ -601,7 +806,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -631,16 +836,43 @@ const docTemplate = `{
                         "description": "Price ID",
                         "name": "price_id",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Currency (ISO-4217)",
+                        "name": "currency",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Effective From (RFC3339)",
+                        "name": "effective_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Effective To (RFC3339)",
+                        "name": "effective_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page Token",
+                        "name": "page_token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page Size",
+                        "name": "page_size",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount"
-                            }
+                            "$ref": "#/definitions/server.ListResponse"
                         }
                     }
                 }
@@ -664,12 +896,18 @@ const docTemplate = `{
                 "summary": "Create Price Amount",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
                         "description": "Create Price Amount Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.CreateRequest"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_priceamount_domain.CreateRequest"
                         }
                     }
                 ],
@@ -677,7 +915,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -714,7 +952,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -738,14 +976,25 @@ const docTemplate = `{
                     "price_tiers"
                 ],
                 "summary": "List Price Tiers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page Token",
+                        "name": "page_token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page Size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier"
-                            }
+                            "$ref": "#/definitions/server.ListResponse"
                         }
                     }
                 }
@@ -769,12 +1018,18 @@ const docTemplate = `{
                 "summary": "Create Price Tier",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
                         "description": "Create Price Tier Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.CreateRequest"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_pricetier_domain.CreateRequest"
                         }
                     }
                 ],
@@ -782,7 +1037,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -819,7 +1074,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -843,14 +1098,37 @@ const docTemplate = `{
                     "prices"
                 ],
                 "summary": "List Prices",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "product_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Code",
+                        "name": "code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page Token",
+                        "name": "page_token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page Size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price"
-                            }
+                            "$ref": "#/definitions/server.ListResponse"
                         }
                     }
                 }
@@ -874,12 +1152,18 @@ const docTemplate = `{
                 "summary": "Create Price",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
                         "description": "Create Price Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_server.createPriceRequest"
+                            "$ref": "#/definitions/server.createPriceRequest"
                         }
                     }
                 ],
@@ -887,7 +1171,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -924,7 +1208,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -948,14 +1232,37 @@ const docTemplate = `{
                     "pricings"
                 ],
                 "summary": "List Pricings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "product_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Code",
+                        "name": "code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page Token",
+                        "name": "page_token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page Size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response"
-                            }
+                            "$ref": "#/definitions/server.ListResponse"
                         }
                     }
                 }
@@ -979,12 +1286,18 @@ const docTemplate = `{
                 "summary": "Create Pricing",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
                         "description": "Create Pricing Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.CreateRequest"
+                            "$ref": "#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.CreateRequest"
                         }
                     }
                 ],
@@ -992,7 +1305,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -1029,7 +1342,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -1077,16 +1390,25 @@ const docTemplate = `{
                         "description": "Order By",
                         "name": "order_by",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page Token",
+                        "name": "page_token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page Size",
+                        "name": "page_size",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
-                            }
+                            "$ref": "#/definitions/server.ListResponse"
                         }
                     }
                 }
@@ -1110,12 +1432,18 @@ const docTemplate = `{
                 "summary": "Create Product",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
                         "description": "Create Product Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_server.createProductRequest"
+                            "$ref": "#/definitions/server.createProductRequest"
                         }
                     }
                 ],
@@ -1123,7 +1451,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -1160,7 +1488,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -1196,7 +1524,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_server.updateProductRequest"
+                            "$ref": "#/definitions/server.updateProductRequest"
                         }
                     }
                 ],
@@ -1204,7 +1532,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -1241,7 +1569,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -1307,10 +1635,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription"
-                            }
+                            "$ref": "#/definitions/server.ListResponse"
                         }
                     }
                 }
@@ -1334,12 +1659,18 @@ const docTemplate = `{
                 "summary": "Create Subscription",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Idempotency Key",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
                         "description": "Create Subscription Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionRequest"
+                            "$ref": "#/definitions/domain.CreateSubscriptionRequest"
                         }
                     }
                 ],
@@ -1347,7 +1678,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -1384,7 +1715,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -1458,6 +1789,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/subscriptions/{id}/entitlements": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List entitlements for a subscription",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "List Subscription Entitlements",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Effective At (RFC3339 or YYYY-MM-DD)",
+                        "name": "effective_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page Token",
+                        "name": "page_token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page Size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.ListResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/subscriptions/{id}/items": {
             "put": {
                 "security": [
@@ -1490,7 +1876,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_server.replaceSubscriptionItemsRequest"
+                            "$ref": "#/definitions/server.replaceSubscriptionItemsRequest"
                         }
                     }
                 ],
@@ -1498,7 +1884,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription"
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -1603,16 +1989,95 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/server.ListResponse"
                         }
                     }
                 }
             }
         },
         "/usage": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List usage events",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "usage"
+                ],
+                "summary": "List Usage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "customer_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "subscription_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Meter ID",
+                        "name": "meter_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Meter Code",
+                        "name": "meter_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Usage Status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Recorded From (RFC3339 or YYYY-MM-DD)",
+                        "name": "recorded_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Recorded To (RFC3339 or YYYY-MM-DD)",
+                        "name": "recorded_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page Token",
+                        "name": "page_token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page Size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.ListResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -1637,7 +2102,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_usage_domain.CreateIngestRequest"
+                            "$ref": "#/definitions/domain.CreateIngestRequest"
                         }
                     }
                 ],
@@ -1645,7 +2110,58 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_usage_domain.UsageEvent"
+                            "$ref": "#/definitions/server.DataResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/usage/summary": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get aggregated usage summary for a customer",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "usage"
+                ],
+                "summary": "Get Usage Summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "customer_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start Time (RFC3339)",
+                        "name": "start",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "End Time (RFC3339)",
+                        "name": "end",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.DataResponse"
                         }
                     }
                 }
@@ -1653,820 +2169,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "datatypes.JSONMap": {
-            "type": "object",
-            "additionalProperties": true
-        },
-        "github_com_smallbiznis_railzway_internal_customer_domain.Customer": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "metadata": {
-                    "$ref": "#/definitions/datatypes.JSONMap"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "organization_id": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_invoice_domain.Invoice": {
-            "type": "object",
-            "properties": {
-                "billingCycleID": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "customerID": {
-                    "type": "integer"
-                },
-                "dueAt": {
-                    "type": "string"
-                },
-                "finalizedAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "invoiceNumber": {
-                    "type": "string"
-                },
-                "invoiceSeq": {
-                    "type": "integer"
-                },
-                "invoiceTemplateID": {
-                    "type": "integer"
-                },
-                "issuedAt": {
-                    "type": "string"
-                },
-                "items": {
-                    "description": "Items is populated for API responses, not persisted",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItem"
-                    }
-                },
-                "metadata": {
-                    "$ref": "#/definitions/datatypes.JSONMap"
-                },
-                "orgID": {
-                    "type": "integer"
-                },
-                "paidAt": {
-                    "type": "string"
-                },
-                "periodEnd": {
-                    "type": "string"
-                },
-                "periodStart": {
-                    "type": "string"
-                },
-                "renderedHTML": {
-                    "type": "string"
-                },
-                "renderedPDFURL": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceStatus"
-                },
-                "subscriptionID": {
-                    "type": "integer"
-                },
-                "subtotalAmount": {
-                    "type": "integer"
-                },
-                "taxAmount": {
-                    "type": "integer"
-                },
-                "taxCode": {
-                    "type": "string"
-                },
-                "taxRate": {
-                    "type": "number"
-                },
-                "totalAmount": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "voidedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItem": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "invoiceID": {
-                    "type": "integer"
-                },
-                "lineType": {
-                    "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItemLineType"
-                },
-                "metadata": {
-                    "$ref": "#/definitions/datatypes.JSONMap"
-                },
-                "orgID": {
-                    "type": "integer"
-                },
-                "quantity": {
-                    "type": "number"
-                },
-                "ratingResultID": {
-                    "type": "integer"
-                },
-                "unitPrice": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItemLineType": {
-            "type": "string",
-            "enum": [
-                "subscription",
-                "usage",
-                "credit",
-                "one_off",
-                "tax"
-            ],
-            "x-enum-varnames": [
-                "InvoiceItemLineTypeSubscription",
-                "InvoiceItemLineTypeUsage",
-                "InvoiceItemLineTypeCredit",
-                "InvoiceItemLineTypeOneOff",
-                "InvoiceItemLineTypeTax"
-            ]
-        },
-        "github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceStatus": {
-            "type": "string",
-            "enum": [
-                "DRAFT",
-                "FINALIZED",
-                "VOID"
-            ],
-            "x-enum-varnames": [
-                "InvoiceStatusDraft",
-                "InvoiceStatusFinalized",
-                "InvoiceStatusVoid"
-            ]
-        },
-        "github_com_smallbiznis_railzway_internal_invoice_domain.RenderInvoiceResponse": {
-            "type": "object",
-            "properties": {
-                "invoice_template_id": {
-                    "type": "string"
-                },
-                "is_snapshot": {
-                    "type": "boolean"
-                },
-                "rendered_html": {
-                    "type": "string"
-                },
-                "rendered_pdf_url": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_meter_domain.Meter": {
-            "type": "object",
-            "properties": {
-                "active": {
-                    "type": "boolean"
-                },
-                "aggregation": {
-                    "type": "string"
-                },
-                "code": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "organization_id": {
-                    "type": "integer"
-                },
-                "unit": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_price_domain.CreateRequest": {
-            "type": "object",
-            "properties": {
-                "active": {
-                    "type": "boolean"
-                },
-                "aggregate_usage": {
-                    "type": "string"
-                },
-                "billing_interval": {
-                    "type": "string"
-                },
-                "billing_interval_count": {
-                    "type": "integer"
-                },
-                "billing_mode": {
-                    "type": "string"
-                },
-                "billing_threshold": {
-                    "type": "number"
-                },
-                "billing_unit": {
-                    "type": "string"
-                },
-                "code": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "is_default": {
-                    "type": "boolean"
-                },
-                "lookup_key": {
-                    "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
-                },
-                "name": {
-                    "type": "string"
-                },
-                "pricing_model": {
-                    "type": "string"
-                },
-                "product_id": {
-                    "type": "string"
-                },
-                "retired_at": {
-                    "type": "string"
-                },
-                "tax_behavior": {
-                    "type": "string"
-                },
-                "tax_code": {
-                    "type": "string"
-                },
-                "version": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_price_domain.Price": {
-            "type": "object",
-            "properties": {
-                "active": {
-                    "type": "boolean"
-                },
-                "aggregate_usage": {
-                    "type": "string"
-                },
-                "billing_interval": {
-                    "type": "string"
-                },
-                "billing_interval_count": {
-                    "type": "integer"
-                },
-                "billing_mode": {
-                    "type": "string"
-                },
-                "billing_threshold": {
-                    "type": "number"
-                },
-                "billing_unit": {
-                    "type": "string"
-                },
-                "code": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_default": {
-                    "type": "boolean"
-                },
-                "metadata": {
-                    "$ref": "#/definitions/datatypes.JSONMap"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "organization_id": {
-                    "type": "integer"
-                },
-                "pricing_model": {
-                    "type": "string"
-                },
-                "product_id": {
-                    "type": "integer"
-                },
-                "retired_at": {
-                    "type": "string"
-                },
-                "tax_behavior": {
-                    "type": "string"
-                },
-                "tax_code": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "version": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_price_domain.Response": {
-            "type": "object",
-            "properties": {
-                "active": {
-                    "type": "boolean"
-                },
-                "aggregate_usage": {
-                    "type": "string"
-                },
-                "billing_interval": {
-                    "type": "string"
-                },
-                "billing_interval_count": {
-                    "type": "integer"
-                },
-                "billing_mode": {
-                    "type": "string"
-                },
-                "billing_threshold": {
-                    "type": "number"
-                },
-                "billing_unit": {
-                    "type": "string"
-                },
-                "code": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_default": {
-                    "type": "boolean"
-                },
-                "lookup_key": {
-                    "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
-                },
-                "name": {
-                    "type": "string"
-                },
-                "organization_id": {
-                    "type": "integer"
-                },
-                "pricing_model": {
-                    "type": "string"
-                },
-                "product_id": {
-                    "type": "integer"
-                },
-                "retired_at": {
-                    "type": "string"
-                },
-                "tax_behavior": {
-                    "type": "string"
-                },
-                "tax_code": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "version": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_priceamount_domain.CreateRequest": {
-            "type": "object",
-            "properties": {
-                "currency": {
-                    "type": "string"
-                },
-                "effective_from": {
-                    "type": "string"
-                },
-                "effective_to": {
-                    "type": "string"
-                },
-                "maximum_amount_cents": {
-                    "type": "integer"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
-                },
-                "meter_id": {
-                    "type": "string"
-                },
-                "minimum_amount_cents": {
-                    "type": "integer"
-                },
-                "price_id": {
-                    "type": "string"
-                },
-                "unit_amount_cents": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "effective_from": {
-                    "type": "string"
-                },
-                "effective_to": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "maximum_amount_cents": {
-                    "type": "integer"
-                },
-                "metadata": {
-                    "$ref": "#/definitions/datatypes.JSONMap"
-                },
-                "meterID": {
-                    "type": "integer"
-                },
-                "minimum_amount_cents": {
-                    "type": "integer"
-                },
-                "organization_id": {
-                    "type": "integer"
-                },
-                "price_id": {
-                    "type": "integer"
-                },
-                "revokedAt": {
-                    "type": "string"
-                },
-                "revokedReason": {
-                    "type": "string"
-                },
-                "unit_amount_cents": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_pricetier_domain.CreateRequest": {
-            "type": "object",
-            "properties": {
-                "end_quantity": {
-                    "type": "number"
-                },
-                "flat_amount_cents": {
-                    "type": "integer"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
-                },
-                "price_id": {
-                    "type": "string"
-                },
-                "start_quantity": {
-                    "type": "number"
-                },
-                "tier_mode": {
-                    "type": "integer"
-                },
-                "unit": {
-                    "type": "string"
-                },
-                "unit_amount_cents": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "end_quantity": {
-                    "type": "number"
-                },
-                "flat_amount_cents": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "metadata": {
-                    "$ref": "#/definitions/datatypes.JSONMap"
-                },
-                "organization_id": {
-                    "type": "integer"
-                },
-                "price_id": {
-                    "type": "integer"
-                },
-                "start_quantity": {
-                    "type": "number"
-                },
-                "tier_mode": {
-                    "type": "integer"
-                },
-                "unit": {
-                    "type": "string"
-                },
-                "unit_amount_cents": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_product_domain.Product": {
-            "type": "object",
-            "properties": {
-                "active": {
-                    "type": "boolean"
-                },
-                "code": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "metadata": {
-                    "$ref": "#/definitions/datatypes.JSONMap"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "organization_id": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_reference_domain.Country": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_reference_domain.Currency": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "minor_unit": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "symbol": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest": {
-            "type": "object",
-            "properties": {
-                "meter_id": {
-                    "type": "string"
-                },
-                "price_id": {
-                    "type": "string"
-                },
-                "quantity": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionRequest": {
-            "type": "object",
-            "properties": {
-                "billing_cycle_type": {
-                    "type": "string"
-                },
-                "collection_mode": {
-                    "type": "string"
-                },
-                "customer_id": {
-                    "type": "string"
-                },
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest"
-                    }
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
-                },
-                "trial_days": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_subscription_domain.Subscription": {
-            "type": "object",
-            "properties": {
-                "activatedAt": {
-                    "type": "string"
-                },
-                "billingAnchorDay": {
-                    "type": "integer"
-                },
-                "billingCycleType": {
-                    "type": "string"
-                },
-                "cancelAt": {
-                    "type": "string"
-                },
-                "cancelAtPeriodEnd": {
-                    "type": "boolean"
-                },
-                "canceledAt": {
-                    "type": "string"
-                },
-                "collectionMode": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "customerID": {
-                    "type": "integer"
-                },
-                "defaultCurrency": {
-                    "type": "string"
-                },
-                "defaultPaymentTermDays": {
-                    "type": "integer"
-                },
-                "defaultTaxBehavior": {
-                    "type": "string"
-                },
-                "endAt": {
-                    "type": "string"
-                },
-                "endedAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "metadata": {
-                    "$ref": "#/definitions/datatypes.JSONMap"
-                },
-                "orgID": {
-                    "type": "integer"
-                },
-                "pausedAt": {
-                    "type": "string"
-                },
-                "planChangedAt": {
-                    "type": "string"
-                },
-                "resumedAt": {
-                    "type": "string"
-                },
-                "startAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.SubscriptionStatus"
-                },
-                "trialEndsAt": {
-                    "type": "string"
-                },
-                "trialStartsAt": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_smallbiznis_railzway_internal_subscription_domain.SubscriptionStatus": {
-            "type": "string",
-            "enum": [
-                "DRAFT",
-                "ACTIVE",
-                "PAUSED",
-                "CANCELED",
-                "ENDED"
-            ],
-            "x-enum-varnames": [
-                "SubscriptionStatusDraft",
-                "SubscriptionStatusActive",
-                "SubscriptionStatusPaused",
-                "SubscriptionStatusCanceled",
-                "SubscriptionStatusEnded"
-            ]
-        },
-        "github_com_smallbiznis_railzway_internal_usage_domain.CreateIngestRequest": {
+        "domain.CreateIngestRequest": {
             "type": "object",
             "required": [
                 "customer_id",
@@ -2502,70 +2205,62 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_smallbiznis_railzway_internal_usage_domain.UsageEvent": {
+        "domain.CreateSubscriptionItemRequest": {
             "type": "object",
             "properties": {
-                "customer_id": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "idempotency_key": {
+                "price_id": {
                     "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "domain.CreateSubscriptionRequest": {
+            "type": "object",
+            "properties": {
+                "billing_cycle_type": {
+                    "type": "string"
+                },
+                "collection_mode": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.CreateSubscriptionItemRequest"
+                    }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/datatypes.JSONMap"
+                    "type": "object",
+                    "additionalProperties": {}
                 },
-                "meter_code": {
-                    "type": "string"
-                },
-                "org_id": {
+                "trial_days": {
                     "type": "integer"
-                },
-                "recorded_at": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "number"
                 }
             }
         },
-        "internal_server.createCustomerRequest": {
+        "domain.RenderInvoiceResponse": {
             "type": "object",
             "properties": {
-                "email": {
+                "invoice_template_id": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_server.createMeterRequest": {
-            "type": "object",
-            "properties": {
-                "active": {
+                "is_snapshot": {
                     "type": "boolean"
                 },
-                "aggregation_type": {
+                "rendered_html": {
                     "type": "string"
                 },
-                "code": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "unit": {
+                "rendered_pdf_url": {
                     "type": "string"
                 }
             }
         },
-        "internal_server.createPriceRequest": {
+        "github_com_railzwaylabs_railzway_internal_price_domain.CreateRequest": {
             "type": "object",
             "properties": {
                 "active": {
@@ -2628,7 +2323,223 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_server.createProductRequest": {
+        "github_com_railzwaylabs_railzway_internal_priceamount_domain.CreateRequest": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "effective_from": {
+                    "type": "string"
+                },
+                "effective_to": {
+                    "type": "string"
+                },
+                "maximum_amount_cents": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "meter_id": {
+                    "type": "string"
+                },
+                "minimum_amount_cents": {
+                    "type": "integer"
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "unit_amount_cents": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_railzwaylabs_railzway_internal_pricetier_domain.CreateRequest": {
+            "type": "object",
+            "properties": {
+                "end_quantity": {
+                    "type": "number"
+                },
+                "flat_amount_cents": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "start_quantity": {
+                    "type": "number"
+                },
+                "tier_mode": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "unit_amount_cents": {
+                    "type": "integer"
+                }
+            }
+        },
+        "pagination.PageInfo": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "next_page_token": {
+                    "type": "string"
+                },
+                "previous_page_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.DataResponse": {
+            "type": "object",
+            "properties": {
+                "data": {}
+            }
+        },
+        "server.ListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "page_info": {
+                    "$ref": "#/definitions/pagination.PageInfo"
+                }
+            }
+        },
+        "server.createCustomerRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.createFeatureRequest": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "feature_type": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "meter_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.createMeterRequest": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "aggregation_type": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.createPriceRequest": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "aggregate_usage": {
+                    "type": "string"
+                },
+                "billing_interval": {
+                    "type": "string"
+                },
+                "billing_interval_count": {
+                    "type": "integer"
+                },
+                "billing_mode": {
+                    "type": "string"
+                },
+                "billing_threshold": {
+                    "type": "number"
+                },
+                "billing_unit": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "lookup_key": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pricing_model": {
+                    "type": "string"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "retired_at": {
+                    "type": "string"
+                },
+                "tax_behavior": {
+                    "type": "string"
+                },
+                "tax_code": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "server.createProductRequest": {
             "type": "object",
             "properties": {
                 "active": {
@@ -2649,18 +2560,56 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_server.replaceSubscriptionItemsRequest": {
+        "server.createSubscriptionItemRequest": {
+            "type": "object",
+            "properties": {
+                "meter_id": {
+                    "type": "string"
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "server.replaceSubscriptionItemsRequest": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest"
+                        "$ref": "#/definitions/server.createSubscriptionItemRequest"
                     }
                 }
             }
         },
-        "internal_server.updateMeterRequest": {
+        "server.updateFeatureRequest": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "feature_type": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "meter_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.updateMeterRequest": {
             "type": "object",
             "properties": {
                 "active": {
@@ -2677,7 +2626,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_server.updateProductRequest": {
+        "server.updateProductRequest": {
             "type": "object",
             "properties": {
                 "active": {
@@ -2695,24 +2644,17 @@ const docTemplate = `{
                 }
             }
         }
-    },
-    "securityDefinitions": {
-        "ApiKeyAuth": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
-        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/api",
-	Schemes:          []string{"http", "https"},
-	Title:            "Railzway API",
-	Description:      "Railzway Billing & Operations API",
+	Version:          "",
+	Host:             "",
+	BasePath:         "",
+	Schemes:          []string{},
+	Title:            "",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
