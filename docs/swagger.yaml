@@ -1,551 +1,5 @@
-basePath: /api
 definitions:
-  datatypes.JSONMap:
-    additionalProperties: true
-    type: object
-  github_com_smallbiznis_railzway_internal_customer_domain.Customer:
-    properties:
-      created_at:
-        type: string
-      currency:
-        type: string
-      email:
-        type: string
-      id:
-        type: integer
-      metadata:
-        $ref: '#/definitions/datatypes.JSONMap'
-      name:
-        type: string
-      organization_id:
-        type: integer
-      updated_at:
-        type: string
-    type: object
-  github_com_smallbiznis_railzway_internal_invoice_domain.Invoice:
-    properties:
-      billingCycleID:
-        type: integer
-      createdAt:
-        type: string
-      currency:
-        type: string
-      customerID:
-        type: integer
-      dueAt:
-        type: string
-      finalizedAt:
-        type: string
-      id:
-        type: integer
-      invoiceNumber:
-        type: string
-      invoiceSeq:
-        type: integer
-      invoiceTemplateID:
-        type: integer
-      issuedAt:
-        type: string
-      items:
-        description: Items is populated for API responses, not persisted
-        items:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItem'
-        type: array
-      metadata:
-        $ref: '#/definitions/datatypes.JSONMap'
-      orgID:
-        type: integer
-      paidAt:
-        type: string
-      periodEnd:
-        type: string
-      periodStart:
-        type: string
-      renderedHTML:
-        type: string
-      renderedPDFURL:
-        type: string
-      status:
-        $ref: '#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceStatus'
-      subscriptionID:
-        type: integer
-      subtotalAmount:
-        type: integer
-      taxAmount:
-        type: integer
-      taxCode:
-        type: string
-      taxRate:
-        type: number
-      totalAmount:
-        type: integer
-      updatedAt:
-        type: string
-      voidedAt:
-        type: string
-    type: object
-  github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItem:
-    properties:
-      amount:
-        type: integer
-      createdAt:
-        type: string
-      description:
-        type: string
-      id:
-        type: integer
-      invoiceID:
-        type: integer
-      lineType:
-        $ref: '#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItemLineType'
-      metadata:
-        $ref: '#/definitions/datatypes.JSONMap'
-      orgID:
-        type: integer
-      quantity:
-        type: number
-      ratingResultID:
-        type: integer
-      unitPrice:
-        type: integer
-    type: object
-  github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceItemLineType:
-    enum:
-    - subscription
-    - usage
-    - credit
-    - one_off
-    - tax
-    type: string
-    x-enum-varnames:
-    - InvoiceItemLineTypeSubscription
-    - InvoiceItemLineTypeUsage
-    - InvoiceItemLineTypeCredit
-    - InvoiceItemLineTypeOneOff
-    - InvoiceItemLineTypeTax
-  github_com_smallbiznis_railzway_internal_invoice_domain.InvoiceStatus:
-    enum:
-    - DRAFT
-    - FINALIZED
-    - VOID
-    type: string
-    x-enum-varnames:
-    - InvoiceStatusDraft
-    - InvoiceStatusFinalized
-    - InvoiceStatusVoid
-  github_com_smallbiznis_railzway_internal_invoice_domain.RenderInvoiceResponse:
-    properties:
-      invoice_template_id:
-        type: string
-      is_snapshot:
-        type: boolean
-      rendered_html:
-        type: string
-      rendered_pdf_url:
-        type: string
-    type: object
-  github_com_smallbiznis_railzway_internal_meter_domain.Meter:
-    properties:
-      active:
-        type: boolean
-      aggregation:
-        type: string
-      code:
-        type: string
-      created_at:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      organization_id:
-        type: integer
-      unit:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  github_com_smallbiznis_railzway_internal_price_domain.CreateRequest:
-    properties:
-      active:
-        type: boolean
-      aggregate_usage:
-        type: string
-      billing_interval:
-        type: string
-      billing_interval_count:
-        type: integer
-      billing_mode:
-        type: string
-      billing_threshold:
-        type: number
-      billing_unit:
-        type: string
-      code:
-        type: string
-      description:
-        type: string
-      is_default:
-        type: boolean
-      lookup_key:
-        type: string
-      metadata:
-        additionalProperties: {}
-        type: object
-      name:
-        type: string
-      pricing_model:
-        type: string
-      product_id:
-        type: string
-      retired_at:
-        type: string
-      tax_behavior:
-        type: string
-      tax_code:
-        type: string
-      version:
-        type: integer
-    type: object
-  github_com_smallbiznis_railzway_internal_price_domain.Price:
-    properties:
-      active:
-        type: boolean
-      aggregate_usage:
-        type: string
-      billing_interval:
-        type: string
-      billing_interval_count:
-        type: integer
-      billing_mode:
-        type: string
-      billing_threshold:
-        type: number
-      billing_unit:
-        type: string
-      code:
-        type: string
-      created_at:
-        type: string
-      description:
-        type: string
-      id:
-        type: integer
-      is_default:
-        type: boolean
-      metadata:
-        $ref: '#/definitions/datatypes.JSONMap'
-      name:
-        type: string
-      organization_id:
-        type: integer
-      pricing_model:
-        type: string
-      product_id:
-        type: integer
-      retired_at:
-        type: string
-      tax_behavior:
-        type: string
-      tax_code:
-        type: string
-      updated_at:
-        type: string
-      version:
-        type: integer
-    type: object
-  github_com_smallbiznis_railzway_internal_price_domain.Response:
-    properties:
-      active:
-        type: boolean
-      aggregate_usage:
-        type: string
-      billing_interval:
-        type: string
-      billing_interval_count:
-        type: integer
-      billing_mode:
-        type: string
-      billing_threshold:
-        type: number
-      billing_unit:
-        type: string
-      code:
-        type: string
-      created_at:
-        type: string
-      description:
-        type: string
-      id:
-        type: integer
-      is_default:
-        type: boolean
-      lookup_key:
-        type: string
-      metadata:
-        additionalProperties: {}
-        type: object
-      name:
-        type: string
-      organization_id:
-        type: integer
-      pricing_model:
-        type: string
-      product_id:
-        type: integer
-      retired_at:
-        type: string
-      tax_behavior:
-        type: string
-      tax_code:
-        type: string
-      updated_at:
-        type: string
-      version:
-        type: integer
-    type: object
-  github_com_smallbiznis_railzway_internal_priceamount_domain.CreateRequest:
-    properties:
-      currency:
-        type: string
-      effective_from:
-        type: string
-      effective_to:
-        type: string
-      maximum_amount_cents:
-        type: integer
-      metadata:
-        additionalProperties: {}
-        type: object
-      meter_id:
-        type: string
-      minimum_amount_cents:
-        type: integer
-      price_id:
-        type: string
-      unit_amount_cents:
-        type: integer
-    type: object
-  github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount:
-    properties:
-      created_at:
-        type: string
-      currency:
-        type: string
-      effective_from:
-        type: string
-      effective_to:
-        type: string
-      id:
-        type: integer
-      maximum_amount_cents:
-        type: integer
-      metadata:
-        $ref: '#/definitions/datatypes.JSONMap'
-      meterID:
-        type: integer
-      minimum_amount_cents:
-        type: integer
-      organization_id:
-        type: integer
-      price_id:
-        type: integer
-      revokedAt:
-        type: string
-      revokedReason:
-        type: string
-      unit_amount_cents:
-        type: integer
-      updated_at:
-        type: string
-    type: object
-  github_com_smallbiznis_railzway_internal_pricetier_domain.CreateRequest:
-    properties:
-      end_quantity:
-        type: number
-      flat_amount_cents:
-        type: integer
-      metadata:
-        additionalProperties: {}
-        type: object
-      price_id:
-        type: string
-      start_quantity:
-        type: number
-      tier_mode:
-        type: integer
-      unit:
-        type: string
-      unit_amount_cents:
-        type: integer
-    type: object
-  github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier:
-    properties:
-      created_at:
-        type: string
-      end_quantity:
-        type: number
-      flat_amount_cents:
-        type: integer
-      id:
-        type: integer
-      metadata:
-        $ref: '#/definitions/datatypes.JSONMap'
-      organization_id:
-        type: integer
-      price_id:
-        type: integer
-      start_quantity:
-        type: number
-      tier_mode:
-        type: integer
-      unit:
-        type: string
-      unit_amount_cents:
-        type: integer
-      updated_at:
-        type: string
-    type: object
-  github_com_smallbiznis_railzway_internal_product_domain.Product:
-    properties:
-      active:
-        type: boolean
-      code:
-        type: string
-      created_at:
-        type: string
-      description:
-        type: string
-      id:
-        type: integer
-      metadata:
-        $ref: '#/definitions/datatypes.JSONMap'
-      name:
-        type: string
-      organization_id:
-        type: integer
-      updated_at:
-        type: string
-    type: object
-  github_com_smallbiznis_railzway_internal_reference_domain.Country:
-    properties:
-      code:
-        type: string
-      created_at:
-        type: string
-      name:
-        type: string
-    type: object
-  github_com_smallbiznis_railzway_internal_reference_domain.Currency:
-    properties:
-      code:
-        type: string
-      created_at:
-        type: string
-      is_active:
-        type: boolean
-      minor_unit:
-        type: integer
-      name:
-        type: string
-      symbol:
-        type: string
-    type: object
-  github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest:
-    properties:
-      meter_id:
-        type: string
-      price_id:
-        type: string
-      quantity:
-        type: integer
-    type: object
-  github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionRequest:
-    properties:
-      billing_cycle_type:
-        type: string
-      collection_mode:
-        type: string
-      customer_id:
-        type: string
-      items:
-        items:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest'
-        type: array
-      metadata:
-        additionalProperties: {}
-        type: object
-      trial_days:
-        type: integer
-    type: object
-  github_com_smallbiznis_railzway_internal_subscription_domain.Subscription:
-    properties:
-      activatedAt:
-        type: string
-      billingAnchorDay:
-        type: integer
-      billingCycleType:
-        type: string
-      cancelAt:
-        type: string
-      cancelAtPeriodEnd:
-        type: boolean
-      canceledAt:
-        type: string
-      collectionMode:
-        type: string
-      createdAt:
-        type: string
-      customerID:
-        type: integer
-      defaultCurrency:
-        type: string
-      defaultPaymentTermDays:
-        type: integer
-      defaultTaxBehavior:
-        type: string
-      endAt:
-        type: string
-      endedAt:
-        type: string
-      id:
-        type: integer
-      metadata:
-        $ref: '#/definitions/datatypes.JSONMap'
-      orgID:
-        type: integer
-      pausedAt:
-        type: string
-      planChangedAt:
-        type: string
-      resumedAt:
-        type: string
-      startAt:
-        type: string
-      status:
-        $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.SubscriptionStatus'
-      trialEndsAt:
-        type: string
-      trialStartsAt:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  github_com_smallbiznis_railzway_internal_subscription_domain.SubscriptionStatus:
-    enum:
-    - DRAFT
-    - ACTIVE
-    - PAUSED
-    - CANCELED
-    - ENDED
-    type: string
-    x-enum-varnames:
-    - SubscriptionStatusDraft
-    - SubscriptionStatusActive
-    - SubscriptionStatusPaused
-    - SubscriptionStatusCanceled
-    - SubscriptionStatusEnded
-  github_com_smallbiznis_railzway_internal_usage_domain.CreateIngestRequest:
+  domain.CreateIngestRequest:
     properties:
       customer_id:
         minLength: 1
@@ -572,48 +26,43 @@ definitions:
     - recorded_at
     - value
     type: object
-  github_com_smallbiznis_railzway_internal_usage_domain.UsageEvent:
+  domain.CreateSubscriptionItemRequest:
     properties:
+      price_id:
+        type: string
+      quantity:
+        type: integer
+    type: object
+  domain.CreateSubscriptionRequest:
+    properties:
+      billing_cycle_type:
+        type: string
+      collection_mode:
+        type: string
       customer_id:
-        type: integer
-      id:
-        type: integer
-      idempotency_key:
         type: string
+      items:
+        items:
+          $ref: '#/definitions/domain.CreateSubscriptionItemRequest'
+        type: array
       metadata:
-        $ref: '#/definitions/datatypes.JSONMap'
-      meter_code:
-        type: string
-      org_id:
+        additionalProperties: {}
+        type: object
+      trial_days:
         type: integer
-      recorded_at:
-        type: string
-      value:
-        type: number
     type: object
-  internal_server.createCustomerRequest:
+  domain.RenderInvoiceResponse:
     properties:
-      email:
+      invoice_template_id:
         type: string
-      name:
-        type: string
-    type: object
-  internal_server.createMeterRequest:
-    properties:
-      active:
+      is_snapshot:
         type: boolean
-      aggregation_type:
+      rendered_html:
         type: string
-      code:
-        type: string
-      description:
-        type: string
-      name:
-        type: string
-      unit:
+      rendered_pdf_url:
         type: string
     type: object
-  internal_server.createPriceRequest:
+  github_com_railzwaylabs_railzway_internal_price_domain.CreateRequest:
     properties:
       active:
         type: boolean
@@ -655,7 +104,150 @@ definitions:
       version:
         type: integer
     type: object
-  internal_server.createProductRequest:
+  github_com_railzwaylabs_railzway_internal_priceamount_domain.CreateRequest:
+    properties:
+      currency:
+        type: string
+      effective_from:
+        type: string
+      effective_to:
+        type: string
+      maximum_amount_cents:
+        type: integer
+      metadata:
+        additionalProperties: {}
+        type: object
+      meter_id:
+        type: string
+      minimum_amount_cents:
+        type: integer
+      price_id:
+        type: string
+      unit_amount_cents:
+        type: integer
+    type: object
+  github_com_railzwaylabs_railzway_internal_pricetier_domain.CreateRequest:
+    properties:
+      end_quantity:
+        type: number
+      flat_amount_cents:
+        type: integer
+      metadata:
+        additionalProperties: {}
+        type: object
+      price_id:
+        type: string
+      start_quantity:
+        type: number
+      tier_mode:
+        type: integer
+      unit:
+        type: string
+      unit_amount_cents:
+        type: integer
+    type: object
+  pagination.PageInfo:
+    properties:
+      has_more:
+        type: boolean
+      next_page_token:
+        type: string
+      previous_page_token:
+        type: string
+    type: object
+  server.DataResponse:
+    properties:
+      data: {}
+    type: object
+  server.ListResponse:
+    properties:
+      data: {}
+      page_info:
+        $ref: '#/definitions/pagination.PageInfo'
+    type: object
+  server.createCustomerRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+    type: object
+  server.createFeatureRequest:
+    properties:
+      active:
+        type: boolean
+      code:
+        type: string
+      description:
+        type: string
+      feature_type:
+        type: string
+      metadata:
+        additionalProperties: {}
+        type: object
+      meter_id:
+        type: string
+      name:
+        type: string
+    type: object
+  server.createMeterRequest:
+    properties:
+      active:
+        type: boolean
+      aggregation_type:
+        type: string
+      code:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      unit:
+        type: string
+    type: object
+  server.createPriceRequest:
+    properties:
+      active:
+        type: boolean
+      aggregate_usage:
+        type: string
+      billing_interval:
+        type: string
+      billing_interval_count:
+        type: integer
+      billing_mode:
+        type: string
+      billing_threshold:
+        type: number
+      billing_unit:
+        type: string
+      code:
+        type: string
+      description:
+        type: string
+      is_default:
+        type: boolean
+      lookup_key:
+        type: string
+      metadata:
+        additionalProperties: {}
+        type: object
+      name:
+        type: string
+      pricing_model:
+        type: string
+      product_id:
+        type: string
+      retired_at:
+        type: string
+      tax_behavior:
+        type: string
+      tax_code:
+        type: string
+      version:
+        type: integer
+    type: object
+  server.createProductRequest:
     properties:
       active:
         type: boolean
@@ -669,14 +261,39 @@ definitions:
       name:
         type: string
     type: object
-  internal_server.replaceSubscriptionItemsRequest:
+  server.createSubscriptionItemRequest:
+    properties:
+      meter_id:
+        type: string
+      price_id:
+        type: string
+      quantity:
+        type: integer
+    type: object
+  server.replaceSubscriptionItemsRequest:
     properties:
       items:
         items:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionItemRequest'
+          $ref: '#/definitions/server.createSubscriptionItemRequest'
         type: array
     type: object
-  internal_server.updateMeterRequest:
+  server.updateFeatureRequest:
+    properties:
+      active:
+        type: boolean
+      description:
+        type: string
+      feature_type:
+        type: string
+      metadata:
+        additionalProperties: {}
+        type: object
+      meter_id:
+        type: string
+      name:
+        type: string
+    type: object
+  server.updateMeterRequest:
     properties:
       active:
         type: boolean
@@ -687,7 +304,7 @@ definitions:
       unit:
         type: string
     type: object
-  internal_server.updateProductRequest:
+  server.updateProductRequest:
     properties:
       active:
         type: boolean
@@ -699,18 +316,8 @@ definitions:
       name:
         type: string
     type: object
-host: localhost:8080
 info:
-  contact:
-    email: support@railzway.com
-    name: API Support
-  description: Railzway Billing & Operations API
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-  termsOfService: http://swagger.io/terms/
-  title: Railzway API
-  version: "1.0"
+  contact: {}
 paths:
   /countries:
     get:
@@ -723,9 +330,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_reference_domain.Country'
-            type: array
+            $ref: '#/definitions/server.ListResponse'
       security:
       - ApiKeyAuth: []
       summary: List Countries
@@ -742,9 +347,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_reference_domain.Currency'
-            type: array
+            $ref: '#/definitions/server.ListResponse'
       security:
       - ApiKeyAuth: []
       summary: List Currencies
@@ -790,9 +393,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer'
-            type: array
+            $ref: '#/definitions/server.ListResponse'
       security:
       - ApiKeyAuth: []
       summary: List Customers
@@ -803,19 +404,23 @@ paths:
       - application/json
       description: Create a new customer
       parameters:
+      - description: Idempotency Key
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Create Customer Request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_server.createCustomerRequest'
+          $ref: '#/definitions/server.createCustomerRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Create Customer
@@ -838,12 +443,141 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_customer_domain.Customer'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Get Customer
       tags:
       - customers
+  /features:
+    get:
+      consumes:
+      - application/json
+      description: List available features
+      parameters:
+      - description: Name
+        in: query
+        name: name
+        type: string
+      - description: Code
+        in: query
+        name: code
+        type: string
+      - description: Feature Type
+        in: query
+        name: feature_type
+        type: string
+      - description: Active
+        in: query
+        name: active
+        type: boolean
+      - description: Sort By
+        in: query
+        name: sort_by
+        type: string
+      - description: Order By
+        in: query
+        name: order_by
+        type: string
+      - description: Page Token
+        in: query
+        name: page_token
+        type: string
+      - description: Page Size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.ListResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List Features
+      tags:
+      - features
+    post:
+      consumes:
+      - application/json
+      description: Create a new feature
+      parameters:
+      - description: Idempotency Key
+        in: header
+        name: Idempotency-Key
+        type: string
+      - description: Create Feature Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/server.createFeatureRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.DataResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Feature
+      tags:
+      - features
+  /features/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: Update a feature
+      parameters:
+      - description: Feature ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update Feature Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/server.updateFeatureRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.DataResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update Feature
+      tags:
+      - features
+  /features/{id}/archive:
+    post:
+      consumes:
+      - application/json
+      description: Archive a feature
+      parameters:
+      - description: Feature ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.DataResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Archive Feature
+      tags:
+      - features
   /invoices:
     get:
       consumes:
@@ -908,9 +642,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.Invoice'
-            type: array
+            $ref: '#/definitions/server.ListResponse'
       security:
       - ApiKeyAuth: []
       summary: List Invoices
@@ -933,7 +665,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.Invoice'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Get Invoice
@@ -956,7 +688,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_invoice_domain.RenderInvoiceResponse'
+            $ref: '#/definitions/domain.RenderInvoiceResponse'
       security:
       - ApiKeyAuth: []
       summary: Render Invoice
@@ -988,15 +720,21 @@ paths:
         in: query
         name: order_by
         type: string
+      - description: Page Token
+        in: query
+        name: page_token
+        type: string
+      - description: Page Size
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter'
-            type: array
+            $ref: '#/definitions/server.ListResponse'
       summary: List Meters
       tags:
       - meters
@@ -1005,19 +743,23 @@ paths:
       - application/json
       description: Create a new meter
       parameters:
+      - description: Idempotency Key
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Create Meter Request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_server.createMeterRequest'
+          $ref: '#/definitions/server.createMeterRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter'
+            $ref: '#/definitions/server.DataResponse'
       summary: Create Meter
       tags:
       - meters
@@ -1056,7 +798,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter'
+            $ref: '#/definitions/server.DataResponse'
       summary: Get Meter
       tags:
       - meters
@@ -1075,14 +817,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_server.updateMeterRequest'
+          $ref: '#/definitions/server.updateMeterRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_meter_domain.Meter'
+            $ref: '#/definitions/server.DataResponse'
       summary: Update Meter
       tags:
       - meters
@@ -1096,15 +838,33 @@ paths:
         in: query
         name: price_id
         type: string
+      - description: Currency (ISO-4217)
+        in: query
+        name: currency
+        type: string
+      - description: Effective From (RFC3339)
+        in: query
+        name: effective_from
+        type: string
+      - description: Effective To (RFC3339)
+        in: query
+        name: effective_to
+        type: string
+      - description: Page Token
+        in: query
+        name: page_token
+        type: string
+      - description: Page Size
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount'
-            type: array
+            $ref: '#/definitions/server.ListResponse'
       security:
       - ApiKeyAuth: []
       summary: List Price Amounts
@@ -1115,19 +875,23 @@ paths:
       - application/json
       description: Create a new price amount
       parameters:
+      - description: Idempotency Key
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Create Price Amount Request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.CreateRequest'
+          $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_priceamount_domain.CreateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Create Price Amount
@@ -1150,7 +914,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_priceamount_domain.PriceAmount'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Get Price Amount
@@ -1161,15 +925,22 @@ paths:
       consumes:
       - application/json
       description: List available price tiers
+      parameters:
+      - description: Page Token
+        in: query
+        name: page_token
+        type: string
+      - description: Page Size
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier'
-            type: array
+            $ref: '#/definitions/server.ListResponse'
       security:
       - ApiKeyAuth: []
       summary: List Price Tiers
@@ -1180,19 +951,23 @@ paths:
       - application/json
       description: Create a new price tier
       parameters:
+      - description: Idempotency Key
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Create Price Tier Request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.CreateRequest'
+          $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_pricetier_domain.CreateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Create Price Tier
@@ -1215,7 +990,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_pricetier_domain.PriceTier'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Get Price Tier
@@ -1226,15 +1001,30 @@ paths:
       consumes:
       - application/json
       description: List available prices
+      parameters:
+      - description: Product ID
+        in: query
+        name: product_id
+        type: string
+      - description: Code
+        in: query
+        name: code
+        type: string
+      - description: Page Token
+        in: query
+        name: page_token
+        type: string
+      - description: Page Size
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price'
-            type: array
+            $ref: '#/definitions/server.ListResponse'
       security:
       - ApiKeyAuth: []
       summary: List Prices
@@ -1245,19 +1035,23 @@ paths:
       - application/json
       description: Create a new price
       parameters:
+      - description: Idempotency Key
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Create Price Request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_server.createPriceRequest'
+          $ref: '#/definitions/server.createPriceRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Create Price
@@ -1280,7 +1074,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Price'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Get Price
@@ -1291,15 +1085,30 @@ paths:
       consumes:
       - application/json
       description: List available pricings
+      parameters:
+      - description: Product ID
+        in: query
+        name: product_id
+        type: string
+      - description: Code
+        in: query
+        name: code
+        type: string
+      - description: Page Token
+        in: query
+        name: page_token
+        type: string
+      - description: Page Size
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response'
-            type: array
+            $ref: '#/definitions/server.ListResponse'
       security:
       - ApiKeyAuth: []
       summary: List Pricings
@@ -1310,19 +1119,23 @@ paths:
       - application/json
       description: Create a new pricing
       parameters:
+      - description: Idempotency Key
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Create Pricing Request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.CreateRequest'
+          $ref: '#/definitions/github_com_railzwaylabs_railzway_internal_price_domain.CreateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Create Pricing
@@ -1345,7 +1158,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_price_domain.Response'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Get Pricing
@@ -1373,15 +1186,21 @@ paths:
         in: query
         name: order_by
         type: string
+      - description: Page Token
+        in: query
+        name: page_token
+        type: string
+      - description: Page Size
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product'
-            type: array
+            $ref: '#/definitions/server.ListResponse'
       security:
       - ApiKeyAuth: []
       summary: List Products
@@ -1392,19 +1211,23 @@ paths:
       - application/json
       description: Create a new product
       parameters:
+      - description: Idempotency Key
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Create Product Request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_server.createProductRequest'
+          $ref: '#/definitions/server.createProductRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Create Product
@@ -1427,7 +1250,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Get Product
@@ -1448,14 +1271,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_server.updateProductRequest'
+          $ref: '#/definitions/server.updateProductRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Update Product
@@ -1478,7 +1301,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_product_domain.Product'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Archive Product
@@ -1520,9 +1343,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription'
-            type: array
+            $ref: '#/definitions/server.ListResponse'
       security:
       - ApiKeyAuth: []
       summary: List Subscriptions
@@ -1533,19 +1354,23 @@ paths:
       - application/json
       description: Create a new subscription
       parameters:
+      - description: Idempotency Key
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Create Subscription Request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.CreateSubscriptionRequest'
+          $ref: '#/definitions/domain.CreateSubscriptionRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Create Subscription
@@ -1568,7 +1393,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Get Subscription
@@ -1616,6 +1441,41 @@ paths:
       summary: Cancel Subscription
       tags:
       - subscriptions
+  /subscriptions/{id}/entitlements:
+    get:
+      consumes:
+      - application/json
+      description: List entitlements for a subscription
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Effective At (RFC3339 or YYYY-MM-DD)
+        in: query
+        name: effective_at
+        type: string
+      - description: Page Token
+        in: query
+        name: page_token
+        type: string
+      - description: Page Size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.ListResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List Subscription Entitlements
+      tags:
+      - subscriptions
   /subscriptions/{id}/items:
     put:
       consumes:
@@ -1632,14 +1492,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_server.replaceSubscriptionItemsRequest'
+          $ref: '#/definitions/server.replaceSubscriptionItemsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_subscription_domain.Subscription'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Replace Subscription Items
@@ -1704,15 +1564,66 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              type: string
-            type: array
+            $ref: '#/definitions/server.ListResponse'
       security:
       - ApiKeyAuth: []
       summary: List Timezones
       tags:
       - reference
   /usage:
+    get:
+      consumes:
+      - application/json
+      description: List usage events
+      parameters:
+      - description: Customer ID
+        in: query
+        name: customer_id
+        type: string
+      - description: Subscription ID
+        in: query
+        name: subscription_id
+        type: string
+      - description: Meter ID
+        in: query
+        name: meter_id
+        type: string
+      - description: Meter Code
+        in: query
+        name: meter_code
+        type: string
+      - description: Usage Status
+        in: query
+        name: status
+        type: string
+      - description: Recorded From (RFC3339 or YYYY-MM-DD)
+        in: query
+        name: recorded_from
+        type: string
+      - description: Recorded To (RFC3339 or YYYY-MM-DD)
+        in: query
+        name: recorded_to
+        type: string
+      - description: Page Token
+        in: query
+        name: page_token
+        type: string
+      - description: Page Size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.ListResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List Usage
+      tags:
+      - usage
     post:
       consumes:
       - application/json
@@ -1723,25 +1634,50 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_smallbiznis_railzway_internal_usage_domain.CreateIngestRequest'
+          $ref: '#/definitions/domain.CreateIngestRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_smallbiznis_railzway_internal_usage_domain.UsageEvent'
+            $ref: '#/definitions/server.DataResponse'
       security:
       - ApiKeyAuth: []
       summary: Ingest Usage
       tags:
       - usage
-schemes:
-- http
-- https
-securityDefinitions:
-  ApiKeyAuth:
-    in: header
-    name: Authorization
-    type: apiKey
+  /usage/summary:
+    get:
+      consumes:
+      - application/json
+      description: Get aggregated usage summary for a customer
+      parameters:
+      - description: Customer ID
+        in: query
+        name: customer_id
+        required: true
+        type: string
+      - description: Start Time (RFC3339)
+        in: query
+        name: start
+        required: true
+        type: string
+      - description: End Time (RFC3339)
+        in: query
+        name: end
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.DataResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Usage Summary
+      tags:
+      - usage
 swagger: "2.0"

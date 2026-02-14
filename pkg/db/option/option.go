@@ -158,6 +158,18 @@ func WithStartAndEndDate(p QueryStartAndEndDate) QueryOption {
 	})
 }
 
+func WithTimeRange(field string, start, end *time.Time) QueryOption {
+	return applyQuery(func(db *gorm.DB) *gorm.DB {
+		if start != nil && !start.IsZero() {
+			db = db.Where(field+" >= ?", start.Format(time.RFC3339))
+		}
+		if end != nil && !end.IsZero() {
+			db = db.Where(field+" <= ?", end.Format(time.RFC3339))
+		}
+		return db
+	})
+}
+
 type QueryRange struct {
 	Ranges map[string][2]any `form:"ranges"`
 	Allow  map[string]bool   `form:"-"`

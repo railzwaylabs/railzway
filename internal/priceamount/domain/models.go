@@ -16,6 +16,7 @@ type PriceAmount struct {
 	UnitAmountCents    int64         `json:"unit_amount_cents" gorm:"not null"`
 	MinimumAmountCents *int64        `json:"minimum_amount_cents,omitempty" gorm:""`
 	MaximumAmountCents *int64        `json:"maximum_amount_cents,omitempty" gorm:""`
+	IdempotencyKey     *string       `json:"-" gorm:"column:idempotency_key"`
 	EffectiveFrom      time.Time     `json:"effective_from" gorm:"not null;default:CURRENT_TIMESTAMP"`
 	EffectiveTo        *time.Time    `json:"effective_to,omitempty" gorm:""`
 

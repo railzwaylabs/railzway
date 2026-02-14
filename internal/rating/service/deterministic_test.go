@@ -9,6 +9,7 @@ import (
 	"github.com/glebarez/sqlite"
 	billingcycledomain "github.com/railzwaylabs/railzway/internal/billingcycle/domain"
 	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
+	pricerepository "github.com/railzwaylabs/railzway/internal/price/repository"
 	priceamountdomain "github.com/railzwaylabs/railzway/internal/priceamount/domain"
 	ratingdomain "github.com/railzwaylabs/railzway/internal/rating/domain"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
@@ -48,10 +49,12 @@ func TestRating_Deterministic_Idempotency(t *testing.T) {
 		Amounts: make(map[string]priceamountdomain.PriceAmount),
 	}
 
+	priceRepo := pricerepository.Provide()
 	svc := NewService(ServiceParam{
 		DB:              db,
 		Log:             logger,
 		GenID:           node,
+		PriceRepo:       priceRepo,
 		PriceAmountRepo: priceAmountStub,
 	})
 
@@ -91,7 +94,19 @@ func TestRating_Deterministic_Idempotency(t *testing.T) {
 	priceAmountStub.Amounts[priceID.String()] = priceamountdomain.PriceAmount{
 		PriceID:         priceID,
 		UnitAmountCents: 100, // $1.00
+		Currency:        "USD",
 	}
+
+	// Subscription (Required for rating)
+	currency := "USD"
+	db.Create(&subscriptiondomain.Subscription{
+		ID:              subID,
+		OrgID:           orgID,
+		CustomerID:      node.Generate(),
+		Status:          subscriptiondomain.SubscriptionStatusActive,
+		StartAt:         start,
+		DefaultCurrency: &currency,
+	})
 
 	// Subscription Item (Metered)
 	db.Create(&subscriptiondomain.SubscriptionItem{

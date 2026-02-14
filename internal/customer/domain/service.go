@@ -34,6 +34,7 @@ type ListCustomerResponse struct {
 type CreateCustomerRequest struct {
 	Name  string
 	Email string
+	IdempotencyKey string
 }
 
 type GetCustomerRequest struct {

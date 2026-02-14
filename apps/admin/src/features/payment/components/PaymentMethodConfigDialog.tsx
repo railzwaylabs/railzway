@@ -132,7 +132,7 @@ export function PaymentMethodConfigDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{config ? "Edit Payment Method" : "Add Payment Method"}</DialogTitle>
+          <DialogTitle>{config ? "Edit Checkout Option" : "Add Checkout Option"}</DialogTitle>
           <DialogDescription>
             Configure the routing and display properties for this payment method.
           </DialogDescription>

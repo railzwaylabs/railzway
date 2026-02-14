@@ -93,6 +93,16 @@ const AdminTaxDefinitionsPage = lazy(
   () => import("@/features/admin/catalog/pages/AdminTaxDefinitionsPage")
 )
 
+const IntegrationMarketplacePage = lazy(
+  () => import("@/features/integrations/pages/IntegrationMarketplacePage")
+)
+const IntegrationDetailPage = lazy(
+  () => import("@/features/integrations/pages/IntegrationDetailPage")
+)
+const MyConnectionsPage = lazy(
+  () => import("@/features/integrations/pages/MyConnectionsPage")
+)
+
 const LicensePage = lazy(() => import("@/features/settings/pages/LicensePage"))
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -292,7 +302,7 @@ export const router = createBrowserRouter([
             element: withFeatureBoundary(<OrgPaymentProvidersPage />),
           },
           {
-            path: "payment-method-configs",
+            path: "checkout-options",
             element: withFeatureBoundary(<OrgPaymentMethodConfigsPage />),
           },
           {
@@ -342,6 +352,18 @@ export const router = createBrowserRouter([
           {
             path: "invoice-templates/:templateId",
             element: withFeatureBoundary(<OrgInvoiceTemplateFormPage />),
+          },
+          {
+            path: "integrations",
+            element: withFeatureBoundary(<IntegrationMarketplacePage />),
+          },
+          {
+            path: "integrations/:integrationId",
+            element: withFeatureBoundary(<IntegrationDetailPage />),
+          },
+          {
+            path: "integrations/connections",
+            element: withFeatureBoundary(<MyConnectionsPage />),
           },
           { path: "settings", element: withFeatureBoundary(<OrgSettings />), errorElement: <EnterpriseErrorBoundary /> },
           { path: "settings/license", element: withFeatureBoundary(<LicensePage />), errorElement: <EnterpriseErrorBoundary /> },

@@ -17,6 +17,7 @@ type PriceTier struct {
 	UnitAmountCents *int64            `json:"unit_amount_cents,omitempty" gorm:""`
 	FlatAmountCents *int64            `json:"flat_amount_cents,omitempty" gorm:""`
 	Unit            string            `json:"unit" gorm:"type:text;not null"`
+	IdempotencyKey  *string           `json:"-" gorm:"column:idempotency_key"`
 	Metadata        datatypes.JSONMap `json:"metadata,omitempty" gorm:"type:jsonb"`
 	CreatedAt       time.Time         `json:"created_at" gorm:"not null;default:CURRENT_TIMESTAMP"`
 	UpdatedAt       time.Time         `json:"updated_at" gorm:"not null;default:CURRENT_TIMESTAMP"`

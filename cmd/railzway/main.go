@@ -129,7 +129,9 @@ func runServe() {
 		bootstrap.Module,
 		fx.Invoke(bootstrap.EnforceSchemaGate),
 		fx.Invoke(bootstrap.EnsureDefaultOrgAndUser),
+		scheduler.Module,
 		server.Module,
+		fx.Invoke(startScheduler),
 	)
 	app.Run()
 }

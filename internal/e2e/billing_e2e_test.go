@@ -43,7 +43,6 @@ func TestE2E_RatingFlatOnly(t *testing.T) {
 
 	client, orgID := loginAdmin(t)
 	suffix := testSuffix(t)
-	meterID, _ := createAdminMeter(t, client, orgID, "flat-meter-"+suffix)
 	productID := createAdminProduct(t, client, orgID, "flat-product-"+suffix)
 	priceID := createAdminPrice(t, client, orgID, map[string]any{
 		"product_id":             productID,
@@ -67,7 +66,7 @@ func TestE2E_RatingFlatOnly(t *testing.T) {
 		"collection_mode":    "SEND_INVOICE",
 		"billing_cycle_type": "MONTHLY",
 		"items": []map[string]any{
-			{"price_id": priceID, "meter_id": meterID, "quantity": 1},
+			{"price_id": priceID, "quantity": 1},
 		},
 	})
 	activateSubscription(t, client, orgID, subscriptionID)
@@ -122,7 +121,7 @@ func TestE2E_RatingUsageOnly(t *testing.T) {
 		"collection_mode":    "SEND_INVOICE",
 		"billing_cycle_type": "MONTHLY",
 		"items": []map[string]any{
-			{"price_id": priceID, "meter_id": meterID, "quantity": 1},
+			{"price_id": priceID, "quantity": 1},
 		},
 	})
 	activateSubscription(t, client, orgID, subscriptionID)
@@ -167,6 +166,330 @@ func TestE2E_RatingUsageOnly(t *testing.T) {
 	}
 	if results[0].MeterID == nil {
 		t.Fatalf("expected usage rating result to include meter_id")
+	}
+}
+
+func TestE2E_RatingTieredVolume(t *testing.T) {
+	resetDatabase(t, env.db)
+
+	client, orgID := loginAdmin(t)
+	apiKey := createAPIKey(t, client, orgID)
+	suffix := testSuffix(t)
+	meterID, meterCode := createAdminMeter(t, client, orgID, "tiered-volume-meter-"+suffix)
+	productID := createAdminProduct(t, client, orgID, "tiered-volume-product-"+suffix)
+
+	priceID := createAdminPrice(t, client, orgID, map[string]any{
+		"product_id":             productID,
+		"name":                   "Tiered Volume Price",
+		"code":                   "tiered-volume-price-" + suffix,
+		"pricing_model":          "TIERED_VOLUME",
+		"billing_mode":           "METERED",
+		"billing_interval":       "MONTH",
+		"billing_interval_count": 1,
+		"aggregate_usage":        "SUM",
+		"billing_unit":           "API_CALL",
+		"tax_behavior":           "EXCLUSIVE",
+	})
+	createAdminPriceAmount(t, client, orgID, map[string]any{
+		"price_id":          priceID,
+		"meter_id":          meterID,
+		"currency":          "USD",
+		"unit_amount_cents": 0,
+	})
+
+	tierOneEnd := 100.0
+	unitTierOne := int64(10)
+	unitTierTwo := int64(8)
+	flatTierTwo := int64(100)
+	createAdminPriceTier(t, client, orgID, map[string]any{
+		"price_id":          priceID,
+		"tier_mode":         0,
+		"start_quantity":    1.0,
+		"end_quantity":      &tierOneEnd,
+		"unit_amount_cents": &unitTierOne,
+		"unit":              "API_CALL",
+	})
+	createAdminPriceTier(t, client, orgID, map[string]any{
+		"price_id":          priceID,
+		"tier_mode":         0,
+		"start_quantity":    101.0,
+		"end_quantity":      nil,
+		"unit_amount_cents": &unitTierTwo,
+		"flat_amount_cents": &flatTierTwo,
+		"unit":              "API_CALL",
+	})
+
+	customerID := createAdminCustomer(t, client, orgID, "Tiered Volume Customer "+suffix)
+	subscriptionID := createAdminSubscription(t, client, orgID, map[string]any{
+		"customer_id":        customerID,
+		"collection_mode":    "SEND_INVOICE",
+		"billing_cycle_type": "MONTHLY",
+		"items": []map[string]any{
+			{"price_id": priceID, "quantity": 1},
+		},
+	})
+	activateSubscription(t, client, orgID, subscriptionID)
+
+	periodStart, periodEnd := pastWindow()
+	if err := env.db.Exec(
+		`UPDATE subscriptions SET start_at = ? WHERE id = ?`,
+		periodStart,
+		mustParseID(t, subscriptionID),
+	).Error; err != nil {
+		t.Fatalf("update subscription start: %v", err)
+	}
+
+	ingestUsage(t, apiKey, map[string]any{
+		"customer_id":     customerID,
+		"meter_code":      meterCode,
+		"value":           150.0,
+		"recorded_at":     periodStart.Add(30 * time.Minute),
+		"idempotency_key": fmt.Sprintf("tiered-volume-%d", time.Now().UnixNano()),
+	})
+
+	runSnapshot(t)
+	assertUsageStatus(t, customerID, usagedomain.UsageStatusEnriched, 1)
+
+	cycle := ensureBillingCycle(t, subscriptionID)
+	updateBillingCycleWindow(t, cycle.ID, periodStart, periodEnd)
+	runRatingForCycles(t)
+
+	results := fetchRatingResults(t, subscriptionID)
+	if len(results) != 1 {
+		t.Fatalf("expected 1 rating result, got %d", len(results))
+	}
+	if results[0].Amount != 1300 {
+		t.Fatalf("expected tiered volume amount 1300, got %d", results[0].Amount)
+	}
+	if results[0].Currency != "USD" {
+		t.Fatalf("expected currency USD, got %s", results[0].Currency)
+	}
+	if results[0].Source != "tiered_volume" {
+		t.Fatalf("expected source tiered_volume, got %s", results[0].Source)
+	}
+}
+
+func TestE2E_RatingTieredGraduated(t *testing.T) {
+	resetDatabase(t, env.db)
+
+	client, orgID := loginAdmin(t)
+	apiKey := createAPIKey(t, client, orgID)
+	suffix := testSuffix(t)
+	meterID, meterCode := createAdminMeter(t, client, orgID, "tiered-graduated-meter-"+suffix)
+	productID := createAdminProduct(t, client, orgID, "tiered-graduated-product-"+suffix)
+
+	priceID := createAdminPrice(t, client, orgID, map[string]any{
+		"product_id":             productID,
+		"name":                   "Tiered Graduated Price",
+		"code":                   "tiered-graduated-price-" + suffix,
+		"pricing_model":          "TIERED_GRADUATED",
+		"billing_mode":           "METERED",
+		"billing_interval":       "MONTH",
+		"billing_interval_count": 1,
+		"aggregate_usage":        "SUM",
+		"billing_unit":           "API_CALL",
+		"tax_behavior":           "EXCLUSIVE",
+	})
+	createAdminPriceAmount(t, client, orgID, map[string]any{
+		"price_id":          priceID,
+		"meter_id":          meterID,
+		"currency":          "USD",
+		"unit_amount_cents": 0,
+	})
+
+	tierOneEnd := 100.0
+	tierTwoEnd := 200.0
+	unitTierOne := int64(10)
+	unitTierTwo := int64(8)
+	unitTierThree := int64(6)
+	createAdminPriceTier(t, client, orgID, map[string]any{
+		"price_id":          priceID,
+		"tier_mode":         0,
+		"start_quantity":    1.0,
+		"end_quantity":      &tierOneEnd,
+		"unit_amount_cents": &unitTierOne,
+		"unit":              "API_CALL",
+	})
+	createAdminPriceTier(t, client, orgID, map[string]any{
+		"price_id":          priceID,
+		"tier_mode":         0,
+		"start_quantity":    101.0,
+		"end_quantity":      &tierTwoEnd,
+		"unit_amount_cents": &unitTierTwo,
+		"unit":              "API_CALL",
+	})
+	createAdminPriceTier(t, client, orgID, map[string]any{
+		"price_id":          priceID,
+		"tier_mode":         0,
+		"start_quantity":    201.0,
+		"end_quantity":      nil,
+		"unit_amount_cents": &unitTierThree,
+		"unit":              "API_CALL",
+	})
+
+	customerID := createAdminCustomer(t, client, orgID, "Tiered Graduated Customer "+suffix)
+	subscriptionID := createAdminSubscription(t, client, orgID, map[string]any{
+		"customer_id":        customerID,
+		"collection_mode":    "SEND_INVOICE",
+		"billing_cycle_type": "MONTHLY",
+		"items": []map[string]any{
+			{"price_id": priceID, "quantity": 1},
+		},
+	})
+	activateSubscription(t, client, orgID, subscriptionID)
+
+	periodStart, periodEnd := pastWindow()
+	if err := env.db.Exec(
+		`UPDATE subscriptions SET start_at = ? WHERE id = ?`,
+		periodStart,
+		mustParseID(t, subscriptionID),
+	).Error; err != nil {
+		t.Fatalf("update subscription start: %v", err)
+	}
+
+	ingestUsage(t, apiKey, map[string]any{
+		"customer_id":     customerID,
+		"meter_code":      meterCode,
+		"value":           250.0,
+		"recorded_at":     periodStart.Add(30 * time.Minute),
+		"idempotency_key": fmt.Sprintf("tiered-graduated-%d", time.Now().UnixNano()),
+	})
+
+	runSnapshot(t)
+	assertUsageStatus(t, customerID, usagedomain.UsageStatusEnriched, 1)
+
+	cycle := ensureBillingCycle(t, subscriptionID)
+	updateBillingCycleWindow(t, cycle.ID, periodStart, periodEnd)
+	runRatingForCycles(t)
+
+	results := fetchRatingResults(t, subscriptionID)
+	if len(results) != 1 {
+		t.Fatalf("expected 1 rating result, got %d", len(results))
+	}
+	if results[0].Amount != 2100 {
+		t.Fatalf("expected tiered graduated amount 2100, got %d", results[0].Amount)
+	}
+	if results[0].Currency != "USD" {
+		t.Fatalf("expected currency USD, got %s", results[0].Currency)
+	}
+	if results[0].Source != "tiered_graduated" {
+		t.Fatalf("expected source tiered_graduated, got %s", results[0].Source)
+	}
+}
+
+func TestE2E_MultiCurrencyPricingEnforcement(t *testing.T) {
+	resetDatabase(t, env.db)
+
+	client, orgID := loginAdmin(t)
+	setOrgBillingCurrency(t, orgID, "IDR")
+	suffix := testSuffix(t)
+	meterID, _ := createAdminMeter(t, client, orgID, "currency-meter-"+suffix)
+	productID := createAdminProduct(t, client, orgID, "currency-product-"+suffix)
+	priceID := createAdminPrice(t, client, orgID, map[string]any{
+		"product_id":             productID,
+		"name":                   "Currency Price",
+		"code":                   "currency-price-" + suffix,
+		"pricing_model":          "PER_UNIT",
+		"billing_mode":           "METERED",
+		"billing_interval":       "MONTH",
+		"billing_interval_count": 1,
+		"aggregate_usage":        "SUM",
+		"billing_unit":           "API_CALL",
+		"tax_behavior":           "EXCLUSIVE",
+	})
+	createAdminPriceAmount(t, client, orgID, map[string]any{
+		"price_id":          priceID,
+		"meter_id":          meterID,
+		"currency":          "USD",
+		"unit_amount_cents": 100,
+	})
+
+	customerID := createAdminCustomer(t, client, orgID, "Currency Customer "+suffix)
+	resp, _ := createSubscriptionWithResponse(t, client, orgID, map[string]any{
+		"customer_id":        customerID,
+		"collection_mode":    "SEND_INVOICE",
+		"billing_cycle_type": "MONTHLY",
+		"items": []map[string]any{
+			{"price_id": priceID, "quantity": 1},
+		},
+	})
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected status 400 for missing currency pricing, got %d", resp.StatusCode)
+	}
+}
+
+func TestE2E_MultiCurrencyRating(t *testing.T) {
+	resetDatabase(t, env.db)
+
+	client, orgID := loginAdmin(t)
+	apiKey := createAPIKey(t, client, orgID)
+	setOrgBillingCurrency(t, orgID, "IDR")
+	suffix := testSuffix(t)
+	meterID, meterCode := createAdminMeter(t, client, orgID, "multi-currency-meter-"+suffix)
+	productID := createAdminProduct(t, client, orgID, "multi-currency-product-"+suffix)
+	priceID := createAdminPrice(t, client, orgID, map[string]any{
+		"product_id":             productID,
+		"name":                   "Multi Currency Price",
+		"code":                   "multi-currency-price-" + suffix,
+		"pricing_model":          "PER_UNIT",
+		"billing_mode":           "METERED",
+		"billing_interval":       "MONTH",
+		"billing_interval_count": 1,
+		"aggregate_usage":        "SUM",
+		"billing_unit":           "API_CALL",
+		"tax_behavior":           "EXCLUSIVE",
+	})
+	createAdminPriceAmount(t, client, orgID, map[string]any{
+		"price_id":          priceID,
+		"meter_id":          meterID,
+		"currency":          "IDR",
+		"unit_amount_cents": 250,
+	})
+
+	customerID := createAdminCustomer(t, client, orgID, "Multi Currency Customer "+suffix)
+	subscriptionID := createAdminSubscription(t, client, orgID, map[string]any{
+		"customer_id":        customerID,
+		"collection_mode":    "SEND_INVOICE",
+		"billing_cycle_type": "MONTHLY",
+		"items": []map[string]any{
+			{"price_id": priceID, "quantity": 1},
+		},
+	})
+	activateSubscription(t, client, orgID, subscriptionID)
+
+	periodStart, periodEnd := pastWindow()
+	if err := env.db.Exec(
+		`UPDATE subscriptions SET start_at = ? WHERE id = ?`,
+		periodStart,
+		mustParseID(t, subscriptionID),
+	).Error; err != nil {
+		t.Fatalf("update subscription start: %v", err)
+	}
+
+	ingestUsage(t, apiKey, map[string]any{
+		"customer_id":     customerID,
+		"meter_code":      meterCode,
+		"value":           4.0,
+		"recorded_at":     periodStart.Add(15 * time.Minute),
+		"idempotency_key": fmt.Sprintf("multi-currency-%d", time.Now().UnixNano()),
+	})
+
+	runSnapshot(t)
+	assertUsageStatus(t, customerID, usagedomain.UsageStatusEnriched, 1)
+
+	cycle := ensureBillingCycle(t, subscriptionID)
+	updateBillingCycleWindow(t, cycle.ID, periodStart, periodEnd)
+	runRatingForCycles(t)
+
+	results := fetchRatingResults(t, subscriptionID)
+	if len(results) != 1 {
+		t.Fatalf("expected 1 rating result, got %d", len(results))
+	}
+	if results[0].Currency != "IDR" {
+		t.Fatalf("expected currency IDR, got %s", results[0].Currency)
+	}
+	if results[0].Amount != 1000 {
+		t.Fatalf("expected amount 1000, got %d", results[0].Amount)
 	}
 }
 
@@ -310,7 +633,7 @@ func TestE2E_CustomerLifecycleValidation(t *testing.T) {
 		"collection_mode":    "SEND_INVOICE",
 		"billing_cycle_type": "MONTHLY",
 		"items": []map[string]any{
-			{"price_id": priceID, "meter_id": meterID, "quantity": 1},
+			{"price_id": priceID, "quantity": 1},
 		},
 	})
 	activateSubscription(t, client, orgID, subscriptionID)
@@ -331,7 +654,7 @@ func TestE2E_CustomerLifecycleValidation(t *testing.T) {
 		"collection_mode":    "SEND_INVOICE",
 		"billing_cycle_type": "MONTHLY",
 		"items": []map[string]any{
-			{"price_id": priceID, "meter_id": meterID, "quantity": 1},
+			{"price_id": priceID, "quantity": 1},
 		},
 	})
 	if resp.StatusCode != http.StatusBadRequest {
@@ -392,7 +715,7 @@ func TestE2E_SubscriptionLifecycleValidation(t *testing.T) {
 		"collection_mode":    "SEND_INVOICE",
 		"billing_cycle_type": "MONTHLY",
 		"items": []map[string]any{
-			{"price_id": priceID, "meter_id": meterID, "quantity": 1},
+			{"price_id": priceID, "quantity": 1},
 		},
 	})
 	activateSubscription(t, client, orgID, subscriptionID)
@@ -583,6 +906,15 @@ func createAdminPriceAmount(t *testing.T, client *http.Client, orgID string, req
 	}
 }
 
+func createAdminPriceTier(t *testing.T, client *http.Client, orgID string, req map[string]any) {
+	t.Helper()
+	headers := map[string]string{server.HeaderOrg: orgID}
+	resp, body := doJSON(t, client, http.MethodPost, env.baseURL+"/admin/price_tiers", req, headers)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("create price tier failed: %d: %s", resp.StatusCode, string(body))
+	}
+}
+
 func createAdminCustomer(t *testing.T, client *http.Client, orgID, name string) string {
 	t.Helper()
 	headers := map[string]string{server.HeaderOrg: orgID}
@@ -630,6 +962,24 @@ func createSubscriptionWithResponse(t *testing.T, client *http.Client, orgID str
 	t.Helper()
 	headers := map[string]string{server.HeaderOrg: orgID}
 	return doJSON(t, client, http.MethodPost, env.baseURL+"/admin/subscriptions", req, headers)
+}
+
+func setOrgBillingCurrency(t *testing.T, orgID, currency string) {
+	t.Helper()
+	now := time.Now().UTC()
+	if err := env.db.Exec(
+		`INSERT INTO organization_billing_preferences (org_id, currency, timezone, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?)
+		 ON CONFLICT (org_id)
+		 DO UPDATE SET currency = EXCLUDED.currency, timezone = EXCLUDED.timezone, updated_at = EXCLUDED.updated_at`,
+		mustParseID(t, orgID),
+		strings.ToUpper(strings.TrimSpace(currency)),
+		"UTC",
+		now,
+		now,
+	).Error; err != nil {
+		t.Fatalf("set org billing currency: %v", err)
+	}
 }
 
 func ingestUsage(t *testing.T, apiKey string, req map[string]any) {

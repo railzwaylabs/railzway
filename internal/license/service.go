@@ -16,9 +16,12 @@ import (
 
 // Capabilities represents the features enabled by the active license.
 type Capabilities struct {
-	SSO         bool
-	RBAC        bool
-	AuditExport bool
+	SSO           bool
+	RBAC          bool
+	AuditExport   bool
+	AppStore      bool
+	DataWarehouse bool
+	Analytics     bool
 	// Add other capabilities as needed
 }
 
@@ -42,8 +45,10 @@ type LicenseMetadata struct {
 func NewService(logger *zap.Logger, cfg config.Config) (*Service, error) {
 	svc := &Service{
 		logger: logger,
-		// Default to all false (OSS mode)
-		capabilities: Capabilities{},
+		// Default capabilities enabled in OSS mode
+		capabilities: Capabilities{
+			AppStore: true,
+		},
 	}
 
 	publicKeyBase64 := cfg.License.PublicKey
@@ -90,7 +95,7 @@ func (s *Service) LoadFromFile(path string) error {
 // Deprecated: prefer file loading via config.
 func (s *Service) LoadFromEnv() error {
 	// Logic moved to NewService to support unified config loading
-	return nil 
+	return nil
 }
 
 // LoadLicense verifies and loads a license string (JSON).
@@ -113,8 +118,8 @@ func (s *Service) LoadLicense(licenseJSON string) error {
 
 	s.license = payload
 	s.capabilities = s.deriveCapabilities(payload)
-	
-	s.logger.Info("License loaded successfully", 
+
+	s.logger.Info("License loaded successfully",
 		zap.String("org_id", payload.OrgID),
 		zap.Time("expires_at", payload.ExpiresAt),
 		zap.Strings("features", payload.Features),
@@ -127,7 +132,7 @@ func (s *Service) LoadLicense(licenseJSON string) error {
 func (s *Service) Metadata() LicenseMetadata {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	if s.license == nil {
 		return LicenseMetadata{
 			Plan: "oss",
@@ -160,6 +165,12 @@ func (s *Service) deriveCapabilities(p *Payload) Capabilities {
 			caps.RBAC = true
 		case "audit_export":
 			caps.AuditExport = true
+		case "app_store":
+			caps.AppStore = true
+		case "data_warehouse":
+			caps.DataWarehouse = true
+		case "analytics":
+			caps.Analytics = true
 		}
 	}
 	return caps
@@ -175,6 +186,12 @@ func (s *Service) HasCapability(feature string) bool {
 		return caps.RBAC
 	case "audit_export":
 		return caps.AuditExport
+	case "app_store":
+		return caps.AppStore
+	case "data_warehouse":
+		return caps.DataWarehouse
+	case "analytics":
+		return caps.Analytics
 	default:
 		return false
 	}

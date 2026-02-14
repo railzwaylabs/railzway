@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS products (
     code TEXT NOT NULL,
     name TEXT NOT NULL,
     description TEXT,
+    idempotency_key TEXT,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -12,6 +13,7 @@ CREATE TABLE IF NOT EXISTS products (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_products_org_code ON products(org_id, code);
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_products_idempotency_key ON products(org_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_products_org_id ON products(org_id);
 
 CREATE TABLE IF NOT EXISTS tax_definitions (
@@ -51,6 +53,7 @@ CREATE TABLE IF NOT EXISTS features (
   meter_id BIGINT,
   active BOOLEAN NOT NULL DEFAULT TRUE,
 
+  idempotency_key TEXT,
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -59,6 +62,8 @@ CREATE TABLE IF NOT EXISTS features (
   CONSTRAINT ux_features_org_code
     UNIQUE (org_id, code)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_features_idempotency_key ON features(org_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS product_features (
   product_id BIGINT NOT NULL,
@@ -93,6 +98,7 @@ CREATE TABLE IF NOT EXISTS prices (
     tax_code TEXT,
     version INTEGER NOT NULL DEFAULT 1,
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    idempotency_key TEXT,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     retired_at TIMESTAMPTZ,
     metadata JSONB DEFAULT '{}',
@@ -102,6 +108,7 @@ CREATE TABLE IF NOT EXISTS prices (
 
 CREATE INDEX IF NOT EXISTS idx_prices_org_id ON prices(org_id);
 CREATE INDEX IF NOT EXISTS idx_prices_product_id ON prices(product_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_prices_idempotency_key ON prices(org_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS price_amounts (
     id BIGINT PRIMARY KEY,
@@ -114,6 +121,7 @@ CREATE TABLE IF NOT EXISTS price_amounts (
     maximum_amount_cents BIGINT,
     effective_from TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     effective_to TIMESTAMPTZ,
+    idempotency_key TEXT,
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -122,6 +130,7 @@ CREATE TABLE IF NOT EXISTS price_amounts (
 CREATE INDEX IF NOT EXISTS idx_price_amounts_org_id ON price_amounts(org_id);
 CREATE INDEX IF NOT EXISTS idx_price_amounts_price_id ON price_amounts(price_id);
 CREATE INDEX IF NOT EXISTS idx_price_amounts_meter_id ON price_amounts(meter_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_price_amounts_idempotency_key ON price_amounts(org_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS price_tiers (
     id BIGINT PRIMARY KEY,
@@ -133,6 +142,7 @@ CREATE TABLE IF NOT EXISTS price_tiers (
     unit_amount_cents BIGINT,
     flat_amount_cents BIGINT,
     unit TEXT NOT NULL,
+    idempotency_key TEXT,
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -140,6 +150,7 @@ CREATE TABLE IF NOT EXISTS price_tiers (
 
 CREATE INDEX IF NOT EXISTS idx_price_tiers_org_id ON price_tiers(org_id);
 CREATE INDEX IF NOT EXISTS idx_price_tiers_price_id ON price_tiers(price_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_price_tiers_idempotency_key ON price_tiers(org_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS customers (
     id BIGINT PRIMARY KEY,
@@ -147,9 +158,11 @@ CREATE TABLE IF NOT EXISTS customers (
     name TEXT NOT NULL,
     email TEXT NOT NULL,
     currency TEXT,
+    idempotency_key TEXT,
     metadata JSONB NOT NULL DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_customers_org_id ON customers(org_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_customers_idempotency_key ON customers(org_id, idempotency_key) WHERE idempotency_key IS NOT NULL;

@@ -6,6 +6,8 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/option"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"gorm.io/gorm"
 )
 
@@ -21,8 +23,8 @@ func (r *repo) Insert(ctx context.Context, db *gorm.DB, subscription *subscripti
 			id, org_id, customer_id, status, collection_mode, start_at, end_at, cancel_at,
 			cancel_at_period_end, canceled_at, activated_at, paused_at, resumed_at, ended_at,
 			billing_anchor_day, billing_cycle_type, default_payment_term_days, default_currency,
-			default_tax_behavior, metadata, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			default_tax_behavior, idempotency_key, metadata, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		subscription.ID,
 		subscription.OrgID,
 		subscription.CustomerID,
@@ -42,6 +44,7 @@ func (r *repo) Insert(ctx context.Context, db *gorm.DB, subscription *subscripti
 		subscription.DefaultPaymentTermDays,
 		subscription.DefaultCurrency,
 		subscription.DefaultTaxBehavior,
+		subscription.IdempotencyKey,
 		subscription.Metadata,
 		subscription.CreatedAt,
 		subscription.UpdatedAt,
@@ -104,11 +107,13 @@ func (r *repo) InsertEntitlements(ctx context.Context, db *gorm.DB, entitlements
 	for _, item := range entitlements {
 		if err := db.WithContext(ctx).Exec(
 			`INSERT INTO subscription_entitlements (
-				id, subscription_id, feature_code, feature_name, feature_type, meter_id,
+				id, org_id, subscription_id, product_id, feature_code, feature_name, feature_type, meter_id,
 				effective_from, effective_to, created_at
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			item.ID,
+			item.OrgID,
 			item.SubscriptionID,
+			item.ProductID,
 			item.FeatureCode,
 			item.FeatureName,
 			item.FeatureType,
@@ -130,7 +135,7 @@ func (r *repo) FindByID(ctx context.Context, db *gorm.DB, orgID, id snowflake.ID
 		`SELECT id, org_id, customer_id, status, collection_mode, start_at, end_at, cancel_at,
 		 cancel_at_period_end, canceled_at, activated_at, paused_at, resumed_at, ended_at,
 		 billing_anchor_day, billing_cycle_type, default_payment_term_days, default_currency,
-		 default_tax_behavior, metadata, created_at, updated_at
+		 default_tax_behavior, idempotency_key, metadata, created_at, updated_at
 		 FROM subscriptions WHERE org_id = ? AND id = ?`,
 		orgID,
 		id,
@@ -150,7 +155,7 @@ func (r *repo) FindByIDForUpdate(ctx context.Context, db *gorm.DB, orgID, id sno
 		`SELECT id, org_id, customer_id, status, collection_mode, start_at, end_at, cancel_at,
 		 cancel_at_period_end, canceled_at, activated_at, paused_at, resumed_at, ended_at,
 		 billing_anchor_day, billing_cycle_type, default_payment_term_days, default_currency,
-		 default_tax_behavior, metadata, created_at, updated_at
+		 default_tax_behavior, idempotency_key, metadata, created_at, updated_at
 		 FROM subscriptions WHERE org_id = ? AND id = ? FOR UPDATE`,
 		orgID,
 		id,
@@ -164,13 +169,73 @@ func (r *repo) FindByIDForUpdate(ctx context.Context, db *gorm.DB, orgID, id sno
 	return &subscription, nil
 }
 
+func (r *repo) FindByIdempotencyKey(ctx context.Context, db *gorm.DB, orgID snowflake.ID, key string) (*subscriptiondomain.Subscription, error) {
+	var subscription subscriptiondomain.Subscription
+	err := db.WithContext(ctx).Raw(
+		`SELECT id, org_id, customer_id, status, collection_mode, start_at, end_at, cancel_at,
+		 cancel_at_period_end, canceled_at, activated_at, paused_at, resumed_at, ended_at,
+		 billing_anchor_day, billing_cycle_type, default_payment_term_days, default_currency,
+		 default_tax_behavior, idempotency_key, metadata, created_at, updated_at
+		 FROM subscriptions WHERE org_id = ? AND idempotency_key = ? LIMIT 1`,
+		orgID,
+		key,
+	).Scan(&subscription).Error
+	if err != nil {
+		return nil, err
+	}
+	if subscription.ID == 0 {
+		return nil, nil
+	}
+	return &subscription, nil
+}
+
+func (r *repo) ListItemsBySubscriptionID(ctx context.Context, db *gorm.DB, orgID, subscriptionID snowflake.ID) ([]subscriptiondomain.SubscriptionItem, error) {
+	var items []subscriptiondomain.SubscriptionItem
+	err := db.WithContext(ctx).Raw(
+		`SELECT id, org_id, subscription_id, price_id, price_code, meter_id, meter_code, quantity,
+		 billing_mode, usage_behavior, billing_threshold, proration_behavior, next_period_start,
+		 next_period_end, metadata, created_at, updated_at
+		 FROM subscription_items WHERE org_id = ? AND subscription_id = ? ORDER BY created_at ASC`,
+		orgID,
+		subscriptionID,
+	).Scan(&items).Error
+	if err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func (r *repo) ListEntitlements(ctx context.Context, db *gorm.DB, subscriptionID snowflake.ID, activeAt *time.Time, page pagination.Pagination) ([]*subscriptiondomain.SubscriptionEntitlement, error) {
+	var items []*subscriptiondomain.SubscriptionEntitlement
+	stmt := db.WithContext(ctx).Model(&subscriptiondomain.SubscriptionEntitlement{}).
+		Where("subscription_id = ?", subscriptionID)
+
+	if activeAt != nil {
+		stmt = stmt.Where("effective_from <= ?", *activeAt).
+			Where("effective_to IS NULL OR effective_to > ?", *activeAt)
+	}
+
+	stmt = option.ApplyPagination(page).Apply(stmt)
+	if page.PageToken != "" || page.PageSize > 0 {
+		stmt = stmt.Order("created_at desc, id desc")
+	} else {
+		stmt = stmt.Order("created_at ASC")
+	}
+
+	if err := stmt.Find(&items).Error; err != nil {
+		return nil, err
+	}
+
+	return items, nil
+}
+
 func (r *repo) List(ctx context.Context, db *gorm.DB, orgID snowflake.ID) ([]subscriptiondomain.Subscription, error) {
 	var subscriptions []subscriptiondomain.Subscription
 	err := db.WithContext(ctx).Raw(
 		`SELECT id, org_id, customer_id, status, collection_mode, start_at, end_at, cancel_at,
 		 cancel_at_period_end, canceled_at, activated_at, paused_at, resumed_at, ended_at,
 		 billing_anchor_day, billing_cycle_type, default_payment_term_days, default_currency,
-		 default_tax_behavior, metadata, created_at, updated_at
+		 default_tax_behavior, idempotency_key, metadata, created_at, updated_at
 		 FROM subscriptions WHERE org_id = ? ORDER BY created_at ASC`,
 		orgID,
 	).Scan(&subscriptions).Error

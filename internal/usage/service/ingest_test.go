@@ -41,6 +41,9 @@ func (m *subscriptionMock) ValidateUsageEntitlement(ctx context.Context, subID, 
 func (m *subscriptionMock) List(context.Context, subscriptiondomain.ListSubscriptionRequest) (subscriptiondomain.ListSubscriptionResponse, error) {
 	return subscriptiondomain.ListSubscriptionResponse{}, nil
 }
+func (m *subscriptionMock) ListEntitlements(context.Context, subscriptiondomain.ListEntitlementsRequest) (subscriptiondomain.ListEntitlementsResponse, error) {
+	return subscriptiondomain.ListEntitlementsResponse{}, nil
+}
 func (m *subscriptionMock) Create(context.Context, subscriptiondomain.CreateSubscriptionRequest) (subscriptiondomain.CreateSubscriptionResponse, error) {
 	return subscriptiondomain.CreateSubscriptionResponse{}, nil
 }
@@ -232,7 +235,7 @@ func TestIngest_EntitlementGating(t *testing.T) {
 				// 3. Validate Entitlement -> FeatureNotEntitled
 				s.On("ValidateUsageEntitlement", mock.Anything, subID, meterID, mock.Anything).Return(subscriptiondomain.ErrFeatureNotEntitled)
 			},
-			expectedErr:  errors.New("usage_rejected_feature_not_entitled"),
+			expectedErr:  usagedomain.ErrFeatureNotEntitled,
 			expectIngest: false,
 		},
 	}
@@ -398,7 +401,7 @@ func TestIngest_Idempotency_BypassEntitlementFailure(t *testing.T) {
 	mockMeter.Calls = nil
 	mockQuota.ExpectedCalls = nil
 	mockQuota.Calls = nil
-	
+
 	// If any service method is called now, it should panic/fail because there are no expectations.
 	// We want to verify that Ingest returns 'res1' purely from DB check without consulting services.
 

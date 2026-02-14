@@ -4,12 +4,24 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 type Service interface {
 	Create(ctx context.Context, req CreateRequest) (*Response, error)
-	List(ctx context.Context) ([]Response, error)
+	List(ctx context.Context, req ListRequest) (ListResponse, error)
 	Get(ctx context.Context, id string) (*Response, error)
+}
+
+type ListRequest struct {
+	PageToken string
+	PageSize  int32
+}
+
+type ListResponse struct {
+	PageInfo pagination.PageInfo `json:"page_info"`
+	Tiers    []Response          `json:"tiers"`
 }
 
 type CreateRequest struct {
@@ -21,6 +33,7 @@ type CreateRequest struct {
 	FlatAmountCents *int64         `json:"flat_amount_cents"`
 	Unit            string         `json:"unit"`
 	Metadata        map[string]any `json:"metadata"`
+	IdempotencyKey  string         `json:"-"`
 }
 
 type Response struct {

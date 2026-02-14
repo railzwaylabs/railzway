@@ -87,13 +87,15 @@ func (s *CheckoutServiceImpl) calculateLineItemsTotal(ctx context.Context, lineI
 		}
 
 		// Fetch price amounts for this price
-		priceAmounts, err := s.priceAmountService.List(ctx, priceamountdomain.ListPriceAmountRequest{
-			PriceID: priceID.String(),
+		listResp, err := s.priceAmountService.List(ctx, priceamountdomain.ListPriceAmountRequest{
+			PriceID:  priceID.String(),
+			PageSize: -1,
 		})
 		if err != nil {
 			return 0, nil, fmt.Errorf("failed to fetch price amount for price %s: %w", item.PriceID, err)
 		}
 
+		priceAmounts := listResp.Amounts
 		if len(priceAmounts) == 0 {
 			return 0, nil, fmt.Errorf("no price amount found for price %s", item.PriceID)
 		}
@@ -287,12 +289,14 @@ func (s *CheckoutServiceImpl) GetLineItems(ctx context.Context, sessionID snowfl
 		}
 
 		// Fetch price amount (filter by session currency)
-		priceAmounts, err := s.priceAmountService.List(ctx, priceamountdomain.ListPriceAmountRequest{
-			PriceID: priceID.String(),
+		listResp, err := s.priceAmountService.List(ctx, priceamountdomain.ListPriceAmountRequest{
+			PriceID:  priceID.String(),
+			PageSize: -1,
 		})
-		if err != nil || len(priceAmounts) == 0 {
+		if err != nil || len(listResp.Amounts) == 0 {
 			continue // Skip if price not found
 		}
+		priceAmounts := listResp.Amounts
 
 		// Find matching currency
 		var unitAmount int64

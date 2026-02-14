@@ -230,23 +230,38 @@ type MetricCardProps = {
   subtitle?: string
   loading: boolean
   hasData: boolean
+  trend?: {
+    amount?: number | null
+    rate?: number | null
+    currency?: string
+  }
 }
 
-const MetricCard = ({ title, value, subtitle, loading, hasData }: MetricCardProps) => {
+const MetricCard = ({ title, value, subtitle, loading, hasData, trend }: MetricCardProps) => {
   return (
-    <Card className="h-full">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-sm font-medium text-text-muted">{title}</CardTitle>
+    <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-border-strong group">
+      <CardHeader className="space-y-1 pb-2">
+        <CardTitle className="text-[10px] font-bold text-text-muted uppercase tracking-widest opacity-70 group-hover:opacity-100 transition-opacity">
+          {title}
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-3">
         {loading ? (
-          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-9 w-32" />
         ) : hasData ? (
-          <div className="text-2xl font-semibold">{value}</div>
+          <div className="space-y-1">
+            <div className="text-3xl font-bold tracking-tight text-text-primary">{value}</div>
+            {trend && (
+              <div className="flex items-center gap-2">
+                <DeltaBadge amount={trend.amount} rate={trend.rate} currency={trend.currency} compact />
+                <span className="text-[10px] font-medium text-text-muted">vs last period</span>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="text-sm text-text-muted">No data</div>
         )}
-        {subtitle ? <div className="text-xs text-text-muted">{subtitle}</div> : null}
+        {subtitle ? <div className="text-xs text-text-muted leading-relaxed opacity-80">{subtitle}</div> : null}
       </CardContent>
     </Card>
   )
@@ -424,9 +439,9 @@ export default function OrgBillingOverviewPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-32">
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">Billing overview</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-text-primary">Billing overview</h1>
         <p className="text-sm text-text-muted">
           Revenue-first insights for subscriptions, growth, and retention.
         </p>
@@ -608,79 +623,97 @@ export default function OrgBillingOverviewPage() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <MetricCard
-          title="MRR"
+          title="Monthly Recurring Revenue"
           value={formatCurrency(mrr?.current ?? null, mrr?.currency ?? "USD")}
-          subtitle={compare ? "Month-over-month recurring baseline." : "Recurring baseline at period end."}
+          subtitle={compare ? "Normalized recurring revenue baseline." : "Recurring baseline at period end."}
           loading={isLoading}
           hasData={Boolean(mrr?.has_data)}
+          trend={{
+            amount: mrr?.growth_amount,
+            rate: mrr?.growth_rate,
+            currency: mrr?.currency,
+          }}
         />
         <MetricCard
-          title="Net revenue"
+          title="Net Revenue"
           value={formatCurrency(revenue?.total ?? null, revenue?.currency ?? "USD")}
-          subtitle={compare ? "Booked from ledger entries." : "Booked revenue in selected period."}
+          subtitle={compare ? "Total booked from ledger entries." : "Booked revenue in selected period."}
           loading={isLoading}
           hasData={Boolean(revenue?.has_data)}
+          trend={{
+            amount: (revenue?.total ?? 0) - (revenue?.previous ?? 0),
+            rate: revenue?.growth_rate,
+            currency: revenue?.currency,
+          }}
         />
-        <Card className="h-full">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-sm font-medium text-text-muted">Outstanding balance</CardTitle>
+        <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-border-strong group">
+          <CardHeader className="space-y-1 pb-2">
+            <CardTitle className="text-[10px] font-bold text-text-muted uppercase tracking-widest opacity-70 group-hover:opacity-100 transition-opacity">
+              Outstanding Balance
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-3">
             {isLoading ? (
-              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-9 w-32" />
             ) : outstandingBalance?.has_data ? (
               <div className="space-y-1">
-                <div className="text-2xl font-semibold">
+                <div className="text-3xl font-bold tracking-tight text-text-primary">
                   {formatCurrency(outstandingBalance.outstanding ?? null, outstandingCurrency)}
                 </div>
-                <div className="text-xs text-status-warning">
+                <div className="text-[10px] font-bold text-status-warning uppercase tracking-wider flex items-center gap-1.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-status-warning animate-pulse" />
                   Overdue {formatCurrency(outstandingBalance.overdue ?? null, outstandingCurrency)}
                 </div>
               </div>
             ) : (
               <div className="text-sm text-text-muted">No data</div>
             )}
-            <div className="text-xs text-text-muted">Total owed but not collected.</div>
+            <div className="text-xs text-text-muted opacity-80">Total amount owed but not yet collected.</div>
           </CardContent>
         </Card>
-        <Card className="h-full">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-sm font-medium text-text-muted">Collection rate</CardTitle>
+        <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-border-strong group">
+          <CardHeader className="space-y-1 pb-2">
+            <CardTitle className="text-[10px] font-bold text-text-muted uppercase tracking-widest opacity-70 group-hover:opacity-100 transition-opacity">
+              Collection Rate
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-3">
             {isLoading ? (
-              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-9 w-32" />
             ) : collectionRate?.has_data && collectionRate.collection_rate !== undefined ? (
-              <div className="text-2xl font-semibold">
-                {formatPercentCompact(collectionRate.collection_rate ?? null)}
+              <div className="space-y-1">
+                <div className="text-3xl font-bold tracking-tight text-text-primary">
+                  {formatPercentCompact(collectionRate.collection_rate ?? null)}
+                </div>
+                <div className="text-[10px] font-medium text-text-muted tracking-wide">
+                  {formatCurrency(collectionRate.collected_amount ?? null, collectionCurrency)} of {formatCurrency(collectionRate.invoiced_amount ?? null, collectionCurrency)}
+                </div>
               </div>
             ) : (
               <div className="text-sm text-text-muted">No data</div>
             )}
-            <div className="text-xs text-text-muted">
-              Percentage of invoiced revenue successfully collected.
+            <div className="text-xs text-text-muted opacity-80">
+              Efficiency of invoicing to collection lifecycle.
             </div>
-            {collectionRate?.has_data ? (
-              <div className="text-xs text-text-muted">
-                Collected {formatCurrency(collectionRate.collected_amount ?? null, collectionCurrency)} /{" "}
-                {formatCurrency(collectionRate.invoiced_amount ?? null, collectionCurrency)}
-              </div>
-            ) : null}
           </CardContent>
         </Card>
         <MetricCard
-          title="Active subscribers"
+          title="Active Subscribers"
           value={formatCount(subscribers?.current ?? null)}
-          subtitle={compare ? "Active at period end." : "Current active subscribers."}
+          subtitle={compare ? "Net growth after churn in period." : "Current active count at period end."}
           loading={isLoading}
           hasData={Boolean(subscribers?.has_data)}
+          trend={{
+            amount: subscribers?.growth_amount,
+            rate: subscribers?.growth_rate,
+          }}
         />
         <MetricCard
-          title="Churn rate"
+          title="Subscription Churn Rate"
           value={formatPercentCompact(subscribers?.churn_rate ?? null)}
-          subtitle="Canceled or ended in period."
+          subtitle="Percentage of cancellations vs total."
           loading={isLoading}
           hasData={subscribers?.churn_rate !== null && subscribers?.churn_rate !== undefined}
         />

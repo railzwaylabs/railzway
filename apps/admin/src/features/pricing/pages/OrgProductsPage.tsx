@@ -69,6 +69,9 @@ const readMetadataValue = (
 }
 
 const PAGE_SIZE = 25
+const allowedSortBy = ["created_at"] as const
+const allowedOrderBy = ["asc", "desc"] as const
+const allowedActive = ["true", "false"] as const
 
 export default function OrgProductsPage() {
   const { orgId } = useParams()
@@ -77,26 +80,38 @@ export default function OrgProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const nameFilter = searchParams.get("name") ?? ""
   const activeParam = searchParams.get("active")
-  const sortBy = searchParams.get("sort_by") ?? "created_at"
-  const orderBy = searchParams.get("order_by") ?? "asc"
+  const rawSortBy = searchParams.get("sort_by")
+  const rawOrderBy = searchParams.get("order_by")
+  const sortBy =
+    rawSortBy && allowedSortBy.includes(rawSortBy as (typeof allowedSortBy)[number])
+      ? rawSortBy
+      : "created_at"
+  const orderBy =
+    rawOrderBy && allowedOrderBy.includes(rawOrderBy as (typeof allowedOrderBy)[number])
+      ? rawOrderBy
+      : "asc"
   const activeFilter =
     activeParam === "true" ? true : activeParam === "false" ? false : undefined
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams)
     let changed = false
-    if (!searchParams.get("sort_by")) {
+    if (!rawSortBy || !allowedSortBy.includes(rawSortBy as (typeof allowedSortBy)[number])) {
       next.set("sort_by", "created_at")
       changed = true
     }
-    if (!searchParams.get("order_by")) {
+    if (!rawOrderBy || !allowedOrderBy.includes(rawOrderBy as (typeof allowedOrderBy)[number])) {
       next.set("order_by", "asc")
+      changed = true
+    }
+    if (activeParam && !allowedActive.includes(activeParam as (typeof allowedActive)[number])) {
+      next.delete("active")
       changed = true
     }
     if (changed) {
       setSearchParams(next, { replace: true })
     }
-  }, [searchParams, setSearchParams])
+  }, [activeParam, rawOrderBy, rawSortBy, searchParams, setSearchParams])
 
   const fetchProducts = useCallback(
     async (cursor: string | null) => {

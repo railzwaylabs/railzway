@@ -58,6 +58,14 @@ type Config struct {
 	Logger    LoggerConfig
 	Privacy   PrivacyConfig
 	License   LicenseConfig
+	Vault     VaultConfig
+}
+
+type VaultConfig struct {
+	Provider string
+	AESKey   string
+	Addr     string
+	Token    string
 }
 
 type LicenseConfig struct {
@@ -180,10 +188,10 @@ func Load() Config {
 		StaticDir:                   getenv("STATIC_DIR", "apps/admin/dist"),
 		Cloud: CloudConfig{
 			Metrics: CloudMetricsConfig{
-				Enabled:   getenvBool("CLOUD_METRICS_ENABLED", true),
-				Exporter:  strings.ToLower(getenv("CLOUD_METRICS_EXPORTER", "prometheus_remote_write")),
-				Endpoint:  strings.TrimSpace(getenv("CLOUD_METRICS_ENDPOINT", DefaultCloudMetricsEndpoint)),
-				AuthToken: strings.TrimSpace(getenv("CLOUD_METRICS_AUTH_TOKEN", DefaultCloudMetricsAuthToken)),
+				Enabled:   getenvBool("TELEMETRY_ENABLED", true),
+				Exporter:  strings.ToLower(getenv("TELEMETRY_EXPORTER", "prometheus_remote_write")),
+				Endpoint:  strings.TrimSpace(getenv("TELEMETRY_ENDPOINT", DefaultCloudMetricsEndpoint)),
+				AuthToken: strings.TrimSpace(getenv("TELEMETRY_AUTH_TOKEN", DefaultCloudMetricsAuthToken)),
 			},
 		},
 		Bootstrap: BootstrapConfig{
@@ -250,6 +258,12 @@ func Load() Config {
 		License: LicenseConfig{
 			PublicKey: strings.TrimSpace(getenv("RAILZWAY_LICENSE_PUBLIC_KEY", "")),
 			FilePath:  strings.TrimSpace(getenv("RAILZWAY_LICENSE_FILE_PATH", "")),
+		},
+		Vault: VaultConfig{
+			Provider: getenv("VAULT_PROVIDER", "aes"),
+			AESKey:   strings.TrimSpace(getenv("PAYMENT_PROVIDER_CONFIG_SECRET", "")),
+			Addr:     getenv("VAULT_ADDR", ""),
+			Token:    strings.TrimSpace(getenv("VAULT_TOKEN", "")),
 		},
 	}
 

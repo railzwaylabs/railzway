@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     default_payment_term_days INTEGER,
     default_currency TEXT,
     default_tax_behavior TEXT,
+    idempotency_key TEXT,
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 
 CREATE INDEX IF NOT EXISTS idx_subscriptions_org_id ON subscriptions(org_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_customer_id ON subscriptions(customer_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_subscriptions_idempotency_key ON subscriptions(org_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS subscription_items (
     id BIGINT PRIMARY KEY,

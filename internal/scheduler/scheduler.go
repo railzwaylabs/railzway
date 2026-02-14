@@ -17,6 +17,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/bootstrap"
 	"github.com/railzwaylabs/railzway/internal/clock"
 	"github.com/railzwaylabs/railzway/internal/cloudmetrics"
+	integrationsvc "github.com/railzwaylabs/railzway/internal/integration/service"
 	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
 	ledgerdomain "github.com/railzwaylabs/railzway/internal/ledger/domain"
 	obsmetrics "github.com/railzwaylabs/railzway/internal/observability/metrics"
@@ -50,6 +51,7 @@ type Params struct {
 	Config               Config                     `optional:"true"`
 	CloudMetrics         *cloudmetrics.CloudMetrics `optional:"true"`
 	OrgGate              bootstrap.OrgGate          `optional:"true"`
+	IntegrationDispatcher *integrationsvc.Dispatcher `optional:"true"`
 }
 
 type Scheduler struct {
@@ -68,6 +70,7 @@ type Scheduler struct {
 	rollupSvc            *rollup.Service
 	cloudMetrics         *cloudmetrics.CloudMetrics
 	orgGate              bootstrap.OrgGate
+	integrationDispatcher *integrationsvc.Dispatcher
 }
 
 type auditEvent struct {
@@ -101,6 +104,7 @@ func New(p Params) (*Scheduler, error) {
 		rollupSvc:            p.RollupSvc,
 		cloudMetrics:         p.CloudMetrics,
 		orgGate:              p.OrgGate,
+		integrationDispatcher: p.IntegrationDispatcher,
 	}, nil
 }
 
@@ -223,6 +227,9 @@ func (s *Scheduler) RunOnce(parent context.Context) error {
 		}},
 		{"cleanup_webhook_logs", s.isJobEnabled("cleanup_webhook_logs"), func(ctx context.Context) error {
 			return s.runJob(ctx, "cleanup_webhook_logs", 1, 24*time.Hour, s.ResizeWebhookLogsJob)
+		}},
+		{"notification_dispatcher", s.isJobEnabled("notification_dispatcher") && s.integrationDispatcher != nil, func(ctx context.Context) error {
+			return s.runJob(ctx, "notification_dispatcher", s.cfg.BatchSize, 30*time.Second, s.integrationDispatcher.ProcessEvents)
 		}},
 	}
 

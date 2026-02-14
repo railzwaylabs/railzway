@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	meterdomain "github.com/railzwaylabs/railzway/internal/meter/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 type createMeterRequest struct {
@@ -24,14 +25,14 @@ type updateMeterRequest struct {
 	Active          *bool   `json:"active,omitempty"`
 }
 
-
 // @Summary      Create Meter
 // @Description  Create a new meter
 // @Tags         meters
 // @Accept       json
 // @Produce      json
+// @Param        Idempotency-Key  header  string  false  "Idempotency Key"
 // @Param        request body createMeterRequest true "Create Meter Request"
-// @Success      200  {object}  meterdomain.Meter
+// @Success      200  {object}  DataResponse
 // @Router       /meters [post]
 func (s *Server) CreateMeter(c *gin.Context) {
 	var req createMeterRequest
@@ -41,18 +42,19 @@ func (s *Server) CreateMeter(c *gin.Context) {
 	}
 
 	resp, err := s.meterSvc.Create(c.Request.Context(), meterdomain.CreateRequest{
-		Code:        strings.TrimSpace(req.Code),
-		Name:        strings.TrimSpace(req.Name),
-		Aggregation: strings.TrimSpace(req.AggregationType),
-		Unit:        strings.TrimSpace(req.Unit),
-		Active:      req.Active,
+		Code:           strings.TrimSpace(req.Code),
+		Name:           strings.TrimSpace(req.Name),
+		Aggregation:    strings.TrimSpace(req.AggregationType),
+		Unit:           strings.TrimSpace(req.Unit),
+		Active:         req.Active,
+		IdempotencyKey: idempotencyKeyFromHeader(c),
 	})
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 // @Summary      List Meters
@@ -65,10 +67,13 @@ func (s *Server) CreateMeter(c *gin.Context) {
 // @Param        active   query     bool    false  "Active"
 // @Param        sort_by  query     string  false  "Sort By"
 // @Param        order_by query     string  false  "Order By"
-// @Success      200  {object}  []meterdomain.Meter
+// @Param        page_token  query  string  false  "Page Token"
+// @Param        page_size   query  int     false  "Page Size"
+// @Success      200  {object}  ListResponse
 // @Router       /meters [get]
 func (s *Server) ListMeters(c *gin.Context) {
 	var query struct {
+		pagination.Pagination
 		Name    string `form:"name"`
 		Code    string `form:"code"`
 		Active  string `form:"active"`
@@ -87,18 +92,20 @@ func (s *Server) ListMeters(c *gin.Context) {
 	}
 
 	resp, err := s.meterSvc.List(c.Request.Context(), meterdomain.ListRequest{
-		Name:    strings.TrimSpace(query.Name),
-		Code:    strings.TrimSpace(query.Code),
-		Active:  active,
-		SortBy:  strings.TrimSpace(query.SortBy),
-		OrderBy: strings.TrimSpace(query.OrderBy),
+		Name:      strings.TrimSpace(query.Name),
+		Code:      strings.TrimSpace(query.Code),
+		Active:    active,
+		SortBy:    strings.TrimSpace(query.SortBy),
+		OrderBy:   strings.TrimSpace(query.OrderBy),
+		PageToken: query.PageToken,
+		PageSize:  int32(query.PageSize),
 	})
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondList(c, resp.Meters, &resp.PageInfo)
 }
 
 // @Summary      Get Meter
@@ -107,7 +114,7 @@ func (s *Server) ListMeters(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      string  true  "Meter ID"
-// @Success      200  {object}  meterdomain.Meter
+// @Success      200  {object}  DataResponse
 // @Router       /meters/{id} [get]
 func (s *Server) GetMeterByID(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
@@ -117,7 +124,7 @@ func (s *Server) GetMeterByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 // @Summary      Update Meter
@@ -127,7 +134,7 @@ func (s *Server) GetMeterByID(c *gin.Context) {
 // @Produce      json
 // @Param        id       path      string             true  "Meter ID"
 // @Param        request  body      updateMeterRequest true  "Update Meter Request"
-// @Success      200  {object}  meterdomain.Meter
+// @Success      200  {object}  DataResponse
 // @Router       /meters/{id} [patch]
 func (s *Server) UpdateMeter(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
@@ -150,7 +157,7 @@ func (s *Server) UpdateMeter(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 // @Summary      Delete Meter
@@ -185,7 +192,6 @@ func isMeterValidationError(err error) bool {
 		return false
 	}
 }
-
 
 func trimStringPtr(value *string) *string {
 	if value == nil {

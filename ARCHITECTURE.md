@@ -11,7 +11,7 @@ It computes *what should be billed*, not *how money is collected*.
 
 ## Licensing & Open Source Status
 
-Railzway is an **Open Source** project licensed under the **GNU Affero General Public License v3 (AGPLv3)**. This ensures that any improvements or modifications made to Railzway while offered as a service (SaaS) are contributed back to the community.
+Railzway is an **Open Source** project licensed under the **MIT License**. This allows you to freely use, modify, and distribute Railzway for any purpose, including commercial use.
 
 This document describes how Railzway is structured, where its boundaries are, and why those boundaries exist.
 
@@ -190,3 +190,56 @@ flowchart TB
     Railzway -->|Internal persistence| DB
     Railzway -.->|References only| External
 ```
+
+---
+
+## Idempotency & Entitlements
+
+Railzway guarantees **strict idempotency** for usage ingestion to prevent double-billing.
+
+### Entitlement "Drift" Protection
+
+When a usage event is retried with the same `idempotency_key`, Railzway returns the **original result** of the first attempt.
+
+- **Scenario**:
+    1. Event A is ingested at T1 (Entitled: YES). Status: `Accepted`.
+    2. Subscription is canceled at T2.
+    3. Event A is retried at T3.
+- **Result**:
+    - The retry returns `Accepted` (matching the T1 result).
+    - It does **NOT** re-evaluate entitlements against the T3 state.
+
+This prevents "permission drift" where a valid event might be rejected on retry due to race conditions or network delays.
+
+### Entitlements (Feature Access)
+
+Entitlements are the durable record of which features a subscription is allowed to use.
+
+1. Entitlements are created when a subscription is created or when subscription items are replaced.
+2. One entitlement is created per feature attached to the subscribed product.
+3. A metered feature must include a `meter_id`, otherwise the subscription change fails.
+4. An entitlement is active when `effective_from <= t` and (`effective_to` is null or `t < effective_to`).
+5. When a plan changes, existing entitlements are closed by setting `effective_to`, and new ones are created.
+
+### Entitlements API (List)
+
+`GET /subscriptions/{id}/entitlements`
+
+Query parameters:
+1. `effective_at` (optional): RFC3339 or `YYYY-MM-DD` to filter active entitlements at a point in time.
+2. `page_token` (optional)
+3. `page_size` (optional)
+
+Response:
+1. `data`: array of entitlements
+2. `page_info`: cursor pagination info
+
+Each entitlement includes: `id`, `subscription_id`, `product_id`, `feature_code`, `feature_name`, `feature_type`, `meter_id`, `effective_from`, `effective_to`, `created_at`.
+
+### Strict Usage Gating
+
+Usage ingestion is strictly gated by entitlements.
+
+1. If no active entitlement exists for the meter at `recorded_at`, ingestion is rejected.
+2. The error code returned is `feature_not_entitled` (HTTP 400).
+3. Metered usage for a non-metered feature is rejected with the same error.

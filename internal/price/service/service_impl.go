@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
 	productdomain "github.com/railzwaylabs/railzway/internal/product/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
@@ -49,6 +51,17 @@ func (s *Service) Create(ctx context.Context, req pricedomain.CreateRequest) (*p
 		return nil, err
 	}
 
+	idempotencyKey := strings.TrimSpace(req.IdempotencyKey)
+	if idempotencyKey != "" {
+		existing, err := s.repo.FindByIdempotencyKey(ctx, s.db, orgID, idempotencyKey)
+		if err != nil {
+			return nil, err
+		}
+		if existing != nil {
+			return s.toResponse(existing), nil
+		}
+	}
+
 	pricingModel, billingMode, billingInterval, taxBehavior, aggregateUsagePtr, billingUnitPtr, err := parseCreatePricing(req)
 	if err != nil {
 		return nil, err
@@ -67,6 +80,7 @@ func (s *Service) Create(ctx context.Context, req pricedomain.CreateRequest) (*p
 		Code:                 code,
 		Name:                 req.Name,
 		Description:          req.Description,
+		IdempotencyKey:       nil,
 		PricingModel:         pricingModel,
 		BillingMode:          billingMode,
 		BillingInterval:      billingInterval,
@@ -83,34 +97,81 @@ func (s *Service) Create(ctx context.Context, req pricedomain.CreateRequest) (*p
 		CreatedAt:            now,
 		UpdatedAt:            now,
 	}
+	if idempotencyKey != "" {
+		entity.IdempotencyKey = &idempotencyKey
+	}
 	if req.Metadata != nil {
 		entity.Metadata = datatypes.JSONMap(req.Metadata)
 	}
 
 	if err := s.repo.Insert(ctx, s.db, entity); err != nil {
+		if idempotencyKey != "" && errors.Is(err, gorm.ErrDuplicatedKey) {
+			existing, findErr := s.repo.FindByIdempotencyKey(ctx, s.db, orgID, idempotencyKey)
+			if findErr != nil {
+				return nil, findErr
+			}
+			if existing != nil {
+				return s.toResponse(existing), nil
+			}
+		}
 		return nil, err
 	}
 
 	return s.toResponse(entity), nil
 }
 
-func (s *Service) List(ctx context.Context, opts pricedomain.ListOptions) ([]pricedomain.Response, error) {
+func (s *Service) List(ctx context.Context, opts pricedomain.ListOptions) (pricedomain.ListResponse, error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
-		return nil, pricedomain.ErrInvalidOrganization
+		return pricedomain.ListResponse{}, pricedomain.ErrInvalidOrganization
 	}
 
-	items, err := s.repo.List(ctx, s.db, orgID, opts)
+	pageSize := opts.PageSize
+	if pageSize < 0 {
+		pageSize = 0
+	} else if pageSize == 0 {
+		pageSize = 50
+	}
+
+	items, err := s.repo.List(ctx, s.db, orgID, opts, pagination.Pagination{
+		PageToken: opts.PageToken,
+		PageSize:  int(pageSize),
+	})
 	if err != nil {
-		return nil, err
+		return pricedomain.ListResponse{}, err
+	}
+
+	var pageInfo *pagination.PageInfo
+	if pageSize > 0 {
+		pageInfo = pagination.BuildCursorPageInfo(items, pageSize, func(item *pricedomain.Price) string {
+			token, err := pagination.EncodeCursor(pagination.Cursor{
+				ID:        item.ID.String(),
+				CreatedAt: item.CreatedAt.Format(time.RFC3339),
+			})
+			if err != nil {
+				return ""
+			}
+			return token
+		})
+		if pageInfo != nil && pageInfo.HasMore && len(items) > int(pageSize) {
+			items = items[:pageSize]
+		}
 	}
 
 	resp := make([]pricedomain.Response, 0, len(items))
-	for i := range items {
-		resp = append(resp, *s.toResponse(&items[i]))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		resp = append(resp, *s.toResponse(item))
 	}
 
-	return resp, nil
+	out := pricedomain.ListResponse{Prices: resp}
+	if pageInfo != nil {
+		out.PageInfo = *pageInfo
+	}
+
+	return out, nil
 }
 
 func (s *Service) Get(ctx context.Context, id string) (*pricedomain.Response, error) {

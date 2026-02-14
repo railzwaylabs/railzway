@@ -1,4 +1,4 @@
-import { Loader2, History, CheckCircle, XCircle, AlertCircle } from "lucide-react"
+import { History, CheckCircle, XCircle, AlertCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -10,17 +10,14 @@ import {
 } from "@/components/ui/table"
 import { useRecentlyResolved } from "../hooks/useIA"
 import { formatCurrency, formatDateTime } from "../utils/formatting"
+import { TableSkeleton } from "@/components/loading-skeletons"
 import { cn } from "@/lib/utils"
 
 export function RecentlyResolvedTab() {
   const { data, isLoading, error } = useRecentlyResolved()
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <TableSkeleton />
   }
 
   if (error) {

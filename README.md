@@ -1,35 +1,46 @@
 # Railzway
 
-**Railzway** is a **deterministic billing computation engine** for modern SaaS and platform products.
+**Self-hosted billing engine for usage-based SaaS**
 
 ![Release CI](https://github.com/smallbiznis/railzway/actions/workflows/github-release.yml/badge.svg)
 [![Docker Release](https://github.com/smallbiznis/railzway/actions/workflows/docker-release.yml/badge.svg)](https://github.com/smallbiznis/railzway/actions/workflows/docker-release.yml)
-![License](https://img.shields.io/badge/license-AGPL--3.0-orange.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Release](https://img.shields.io/github/v/release/smallbiznis/railzway)
 ![Go Version](https://img.shields.io/badge/go-1.23+-00ADD8?logo=go)
 
 Railzway extracts billing concerns—usage metering, pricing, subscriptions, and invoicing—out of application code and into a **dedicated, self-hosted engine** with explicit boundaries.
 
-> **Railzway determines what should be billed.
-> It does not execute payments.**
+> **Railzway determines what should be billed.**  
+> **It does not execute payments.**
 
 ---
 
-## Why Railzway Exists
+## Why Railzway?
 
 Billing is a **financial truth system**, not a convenience feature.
 
 In many systems, billing logic is:
 
-- scattered across application code,
-- difficult to audit or reproduce,
-- tightly coupled with payments and entitlements,
-- fragile under scale and change.
+- Scattered across application code
+- Difficult to audit or reproduce
+- Tightly coupled with payments and entitlements
+- Fragile under scale and change
 
-Railzway takes a deliberate approach:
-**make billing boring, deterministic, and explainable.**
+Railzway takes a deliberate approach:  
+**Make billing boring, deterministic, and explainable.**
 
-This project is developed independently, outside of any employment responsibilities, as a space to design systems with clear boundaries, correctness, and accountability.
+### Perfect For
+
+- **AI/ML APIs** - Token-based pricing with multi-dimensional metering
+- **Infrastructure Platforms** - Compute + storage + bandwidth billing
+- **IoT/Hardware-as-a-Service** - Per-device, per-message pricing
+- **Any SaaS** - Complex usage patterns beyond simple subscriptions
+
+### Not For
+
+- Simple subscription-only billing (use Stripe)
+- Need merchant-of-record (use Paddle)
+- Want fully-managed service (use Lago Cloud)
 
 ---
 
@@ -346,32 +357,54 @@ Grafana dashboards expect the following metrics:
 
 ## License
 
-Railzway is Open Source software under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+Railzway is Open Source software under the **MIT License**.
 
-### Dual Licensing
-
-For companies that require commercial use without the obligations of AGPLv3 (such as keeping modifications private), we offer commercial licenses. Contact [SmallBiznis](mailto:hello@smallbiznis.com) for details.
+You are free to use, modify, and distribute Railzway for any purpose, including commercial use, without restrictions.
 
 ## Telemetry
 
-Railzway includes an anonymous telemetry system that sends non-sensitive usage statistics (e.g., organization count, version) to SmallBiznis. This helps us understand project adoption and identify potential enterprise leads.
+Railzway collects **anonymous usage metrics** to help us understand adoption and prioritize improvements.
 
-**What we collect:**
+### What We Collect
 
-- Anonymous Instance ID
-- Application Version & OS
-- Aggregated counts (total orgs, subscriptions, invoices)
-- **We do NOT collect PII, emails, or financial data.**
+- **Instance ID**: Random UUID (not tied to your identity)
+- **Version Info**: Railzway version and OS
+- **Aggregate Counts**: Total organizations, subscriptions, invoices
+- **Feature Flags**: Which features are enabled (e.g., tiered pricing)
 
-**How to Disable:**
-Telemetry is **enabled by default** to help improve the project. To disable it, set the following environment variable to `false`:
+### What We DON'T Collect
+
+- ❌ Personal information (emails, names, IP addresses)
+- ❌ Financial data (invoice amounts, customer data)
+- ❌ Usage event contents
+- ❌ Any identifiable business information
+
+### Why Telemetry?
+
+This helps us:
+- Understand how many instances are running (project health)
+- Prioritize features based on actual usage
+- Identify common error patterns for stability improvements
+
+### Opt-Out
+
+Telemetry is **enabled by default**. To disable:
 
 ```bash
-CLOUD_METRICS_ENABLED=false
+TELEMETRY_ENABLED=false
 ```
 
-### Security & Privacy "Defense in Depth"
-Railzway enforces strict boundaries. Even if a user manually enables SSO in the configuration without a license, the backend **Middleware Gatekeeper** will reject the authentication flow. Security is enforced at the API level, not just the UI level.
+Or set in your `.env` file:
+
+```env
+TELEMETRY_ENABLED=false
+```
+
+### Transparency
+
+- View telemetry code: [`internal/cloudmetrics/`](internal/cloudmetrics/)
+- All data is anonymized and aggregated
+- We respect your privacy and data ownership
 
 ---
 

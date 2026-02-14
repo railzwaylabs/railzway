@@ -1,11 +1,11 @@
 package server
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	pricetierdomain "github.com/railzwaylabs/railzway/internal/pricetier/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 // @Summary      List Price Tiers
@@ -14,16 +14,29 @@ import (
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
-// @Success      200  {object}  []pricetierdomain.PriceTier
+// @Param        page_token query string false "Page Token"
+// @Param        page_size query int false "Page Size"
+// @Success      200  {object}  ListResponse
 // @Router       /price_tiers [get]
 func (s *Server) ListPriceTiers(c *gin.Context) {
-	resp, err := s.priceTierSvc.List(c.Request.Context())
+	var query struct {
+		pagination.Pagination
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		AbortWithError(c, invalidRequestError())
+		return
+	}
+
+	resp, err := s.priceTierSvc.List(c.Request.Context(), pricetierdomain.ListRequest{
+		PageToken: query.PageToken,
+		PageSize:  int32(query.PageSize),
+	})
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondList(c, resp.Tiers, &resp.PageInfo)
 }
 
 // @Summary      Get Price Tier
@@ -33,7 +46,7 @@ func (s *Server) ListPriceTiers(c *gin.Context) {
 // @Produce      json
 // @Security     ApiKeyAuth
 // @Param        id   path      string  true  "Price Tier ID"
-// @Success      200  {object}  pricetierdomain.PriceTier
+// @Success      200  {object}  DataResponse
 // @Router       /price_tiers/{id} [get]
 func (s *Server) GetPriceTierByID(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
@@ -43,7 +56,7 @@ func (s *Server) GetPriceTierByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 // @Summary      Create Price Tier
@@ -52,8 +65,9 @@ func (s *Server) GetPriceTierByID(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
+// @Param        Idempotency-Key  header  string  false  "Idempotency Key"
 // @Param        request body pricetierdomain.CreateRequest true "Create Price Tier Request"
-// @Success      200  {object}  pricetierdomain.PriceTier
+// @Success      200  {object}  DataResponse
 // @Router       /price_tiers [post]
 func (s *Server) CreatePriceTier(c *gin.Context) {
 	var req pricetierdomain.CreateRequest
@@ -64,6 +78,7 @@ func (s *Server) CreatePriceTier(c *gin.Context) {
 
 	req.PriceID = strings.TrimSpace(req.PriceID)
 	req.Unit = strings.TrimSpace(req.Unit)
+	req.IdempotencyKey = idempotencyKeyFromHeader(c)
 
 	resp, err := s.priceTierSvc.Create(c.Request.Context(), req)
 	if err != nil {
@@ -71,7 +86,7 @@ func (s *Server) CreatePriceTier(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 func isPriceTierValidationError(err error) bool {

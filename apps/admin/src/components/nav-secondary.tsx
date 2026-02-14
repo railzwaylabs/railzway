@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { NavLink } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import type { LucideIcon } from "lucide-react"
 
 import {
@@ -20,22 +20,41 @@ export function NavSecondary({
     title: string
     url: string
     icon: LucideIcon
+    isActive?: (pathname: string) => boolean
   }[]
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
+  const { pathname } = useLocation()
+
+  const normalizePath = (value: string) => {
+    const trimmed = value.replace(/\/+$/, "")
+    return trimmed.length ? trimmed : "/"
+  }
+  const currentPath = normalizePath(pathname)
+
+  const resolveActive = (item: (typeof items)[number]) => {
+    if (item.isActive) return item.isActive(currentPath)
+    const target = normalizePath(item.url)
+    if (currentPath === target) return true
+    return currentPath.startsWith(`${target}/`)
+  }
+
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <NavLink to={item.url} end={true}>
-                  <item.icon />
-                  <span>{item.title}</span>
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) => {
+            const isActive = resolveActive(item)
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild isActive={isActive}>
+                  <Link to={item.url} aria-current={isActive ? "page" : undefined}>
+                    <item.icon />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

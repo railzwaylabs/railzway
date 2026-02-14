@@ -11,19 +11,40 @@ import (
 	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
+type createSubscriptionItemRequest struct {
+	PriceID  string  `json:"price_id"`
+	MeterID  *string `json:"meter_id,omitempty"`
+	Quantity int8    `json:"quantity,omitempty"`
+}
+
+type createSubscriptionRequest struct {
+	CustomerID       string                                        `json:"customer_id"`
+	CollectionMode   subscriptiondomain.SubscriptionCollectionMode `json:"collection_mode"`
+	BillingCycleType string                                        `json:"billing_cycle_type"`
+	Items            []createSubscriptionItemRequest               `json:"items"`
+	TrialDays        *int                                          `json:"trial_days,omitempty"`
+	Metadata         map[string]any                                `json:"metadata,omitempty"`
+}
+
 // @Summary      Create Subscription
 // @Description  Create a new subscription
 // @Tags         subscriptions
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
+// @Param        Idempotency-Key  header  string  false  "Idempotency Key"
 // @Param        request body subscriptiondomain.CreateSubscriptionRequest true "Create Subscription Request"
-// @Success      200  {object}  subscriptiondomain.Subscription
+// @Success      200  {object}  DataResponse
 // @Router       /subscriptions [post]
 func (s *Server) CreateSubscription(c *gin.Context) {
-	var req subscriptiondomain.CreateSubscriptionRequest
+	var req createSubscriptionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		AbortWithError(c, invalidRequestError())
+		return
+	}
+
+	if err := rejectSubscriptionMeterID(req.Items); err != nil {
+		AbortWithError(c, err)
 		return
 	}
 
@@ -33,6 +54,7 @@ func (s *Server) CreateSubscription(c *gin.Context) {
 		BillingCycleType: strings.TrimSpace(req.BillingCycleType),
 		Items:            normalizeSubscriptionItems(req.Items),
 		Metadata:         req.Metadata,
+		IdempotencyKey:   idempotencyKeyFromHeader(c),
 	})
 	if err != nil {
 		AbortWithError(c, err)
@@ -48,11 +70,11 @@ func (s *Server) CreateSubscription(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 type replaceSubscriptionItemsRequest struct {
-	Items []subscriptiondomain.CreateSubscriptionItemRequest `json:"items"`
+	Items []createSubscriptionItemRequest `json:"items"`
 }
 
 // @Summary      Replace Subscription Items
@@ -63,7 +85,7 @@ type replaceSubscriptionItemsRequest struct {
 // @Security     ApiKeyAuth
 // @Param        id       path      string                           true  "Subscription ID"
 // @Param        request  body      replaceSubscriptionItemsRequest  true  "Replace Subscription Items Request"
-// @Success      200  {object}  subscriptiondomain.Subscription
+// @Success      200  {object}  DataResponse
 // @Router       /subscriptions/{id}/items [put]
 func (s *Server) ReplaceSubscriptionItems(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
@@ -75,6 +97,11 @@ func (s *Server) ReplaceSubscriptionItems(c *gin.Context) {
 	var req replaceSubscriptionItemsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		AbortWithError(c, invalidRequestError())
+		return
+	}
+
+	if err := rejectSubscriptionMeterID(req.Items); err != nil {
+		AbortWithError(c, err)
 		return
 	}
 
@@ -94,7 +121,7 @@ func (s *Server) ReplaceSubscriptionItems(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 // @Summary      List Subscriptions
@@ -109,7 +136,7 @@ func (s *Server) ReplaceSubscriptionItems(c *gin.Context) {
 // @Param        created_to    query     string  false  "Created To"
 // @Param        page_token    query     string  false  "Page Token"
 // @Param        page_size     query     int     false  "Page Size"
-// @Success      200  {object}  []subscriptiondomain.Subscription
+// @Success      200  {object}  ListResponse
 // @Router       /subscriptions [get]
 func (s *Server) ListSubscriptions(c *gin.Context) {
 	var query struct {
@@ -149,7 +176,7 @@ func (s *Server) ListSubscriptions(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp.Subscriptions, "page_info": resp.PageInfo})
+	respondList(c, resp.Subscriptions, &resp.PageInfo)
 }
 
 // @Summary      Get Subscription
@@ -159,7 +186,7 @@ func (s *Server) ListSubscriptions(c *gin.Context) {
 // @Produce      json
 // @Security     ApiKeyAuth
 // @Param        id   path      string  true  "Subscription ID"
-// @Success      200  {object}  subscriptiondomain.Subscription
+// @Success      200  {object}  DataResponse
 // @Router       /subscriptions/{id} [get]
 func (s *Server) GetSubscriptionByID(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
@@ -174,7 +201,55 @@ func (s *Server) GetSubscriptionByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": item})
+	respondData(c, item)
+}
+
+// @Summary      List Subscription Entitlements
+// @Description  List entitlements for a subscription
+// @Tags         subscriptions
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id            path     string  true   "Subscription ID"
+// @Param        effective_at  query    string  false  "Effective At (RFC3339 or YYYY-MM-DD)"
+// @Param        page_token    query    string  false  "Page Token"
+// @Param        page_size     query    int     false  "Page Size"
+// @Success      200  {object}  ListResponse
+// @Router       /subscriptions/{id}/entitlements [get]
+func (s *Server) ListSubscriptionEntitlements(c *gin.Context) {
+	id := strings.TrimSpace(c.Param("id"))
+	if _, err := snowflake.ParseString(id); err != nil {
+		AbortWithError(c, newValidationError("id", "invalid_id", "invalid id"))
+		return
+	}
+
+	var query struct {
+		pagination.Pagination
+		EffectiveAt string `form:"effective_at"`
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		AbortWithError(c, invalidRequestError())
+		return
+	}
+
+	effectiveAt, err := parseOptionalTime(query.EffectiveAt, false)
+	if err != nil {
+		AbortWithError(c, newValidationError("effective_at", "invalid_effective_at", "invalid effective_at"))
+		return
+	}
+
+	resp, err := s.subscriptionSvc.ListEntitlements(c.Request.Context(), subscriptiondomain.ListEntitlementsRequest{
+		SubscriptionID: id,
+		EffectiveAt:    effectiveAt,
+		PageToken:      query.PageToken,
+		PageSize:       int32(query.PageSize),
+	})
+	if err != nil {
+		AbortWithError(c, err)
+		return
+	}
+
+	respondList(c, resp.Entitlements, &resp.PageInfo)
 }
 
 // @Summary      Cancel Subscription
@@ -273,7 +348,7 @@ func (s *Server) transitionSubscription(c *gin.Context, target subscriptiondomai
 	c.Status(http.StatusNoContent)
 }
 
-func normalizeSubscriptionItems(items []subscriptiondomain.CreateSubscriptionItemRequest) []subscriptiondomain.CreateSubscriptionItemRequest {
+func normalizeSubscriptionItems(items []createSubscriptionItemRequest) []subscriptiondomain.CreateSubscriptionItemRequest {
 	if len(items) == 0 {
 		return nil
 	}
@@ -282,11 +357,23 @@ func normalizeSubscriptionItems(items []subscriptiondomain.CreateSubscriptionIte
 	for _, item := range items {
 		normalized = append(normalized, subscriptiondomain.CreateSubscriptionItemRequest{
 			PriceID:  strings.TrimSpace(item.PriceID),
-			MeterID:  strings.TrimSpace(item.MeterID),
 			Quantity: item.Quantity,
 		})
 	}
 	return normalized
+}
+
+func rejectSubscriptionMeterID(items []createSubscriptionItemRequest) error {
+	for _, item := range items {
+		if item.MeterID == nil {
+			continue
+		}
+		if strings.TrimSpace(*item.MeterID) == "" {
+			continue
+		}
+		return newValidationError("items.meter_id", "unsupported", "meter_id is not supported on subscription items")
+	}
+	return nil
 }
 
 func isSubscriptionValidationError(err error) bool {
@@ -306,6 +393,7 @@ func isSubscriptionValidationError(err error) bool {
 		errors.Is(err, subscriptiondomain.ErrInvoicesNotFinalized),
 		errors.Is(err, subscriptiondomain.ErrInvalidCollectionMode),
 		errors.Is(err, subscriptiondomain.ErrInvalidBillingCycleType),
+		errors.Is(err, subscriptiondomain.ErrInvalidCurrency),
 		errors.Is(err, subscriptiondomain.ErrInvalidStartAt),
 		errors.Is(err, subscriptiondomain.ErrInvalidPeriod),
 		errors.Is(err, subscriptiondomain.ErrInvalidItems),

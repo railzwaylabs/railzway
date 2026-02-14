@@ -439,7 +439,7 @@ func (s *Service) GenerateInvoice(ctx context.Context, billingCycleID string) (*
 		}
 		createdInvoice = &invoice
 
-		if err := s.listInvoiceItemPartsFromRating(ctx, tx, *cycle, invoiceID); err != nil {
+		if err := s.listInvoiceItemPartsFromRating(ctx, tx, *cycle, invoiceID, invoice.Currency); err != nil {
 			return err
 		}
 
@@ -461,6 +461,7 @@ func (s *Service) listInvoiceItemPartsFromRating(
 	tx *gorm.DB,
 	cycle billingCycleRow,
 	invoiceID snowflake.ID,
+	expectedCurrency string,
 ) error {
 
 	// 1. Load active entitlements for the cycle
@@ -510,6 +511,16 @@ func (s *Service) listInvoiceItemPartsFromRating(
 
 	now := time.Now().UTC()
 	for _, r := range rows {
+		// Validate currency matches invoice
+		if r.Currency != expectedCurrency {
+			s.log.Error("currency mismatch in rating result",
+				zap.String("expected", expectedCurrency),
+				zap.String("found", r.Currency),
+				zap.String("rating_id", r.ID.String()),
+			)
+			return invoicedomain.ErrCurrencyMismatch
+		}
+
 		// Strict Join Rule: WAS Must match entitlement
 		// Now: Optional.
 		ent, ok := entitlementMap[r.FeatureCode]

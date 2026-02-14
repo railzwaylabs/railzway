@@ -22,9 +22,9 @@ type EventRecord struct {
 func (EventRecord) TableName() string { return "payment_events" }
 
 const (
-	EventTypePaymentSucceeded      = "payment_succeeded"
-	EventTypePaymentFailed         = "payment_failed"
-	EventTypeRefunded              = "refunded"
+	EventTypePaymentSucceeded         = "payment_succeeded"
+	EventTypePaymentFailed            = "payment_failed"
+	EventTypeRefunded                 = "refunded"
 	EventTypeCheckoutSessionCompleted = "checkout_session_completed"
 )
 
@@ -54,39 +54,39 @@ type AvailabilityRules struct {
 
 // PaymentMethodConfig defines available payment methods and routing rules
 type PaymentMethodConfig struct {
-	ID                 snowflake.ID      `json:"id" gorm:"primaryKey"`
-	OrgID              snowflake.ID      `json:"org_id" gorm:"not null;index"`
-	MethodType         string            `json:"method_type" gorm:"type:varchar(50);not null"`         // 'card', 'virtual_account', 'ewallet'
-	MethodName         string            `json:"method_name" gorm:"type:varchar(100);not null"`        // 'card_global', 'va_bca', 'gopay'
-	AvailabilityRules  datatypes.JSON    `json:"availability_rules" gorm:"type:jsonb;not null"`        // JSON rules
-	Provider           string            `json:"provider" gorm:"type:varchar(50);not null"`            // 'xendit', 'stripe'
-	ProviderMethodType string            `json:"provider_method_type" gorm:"type:varchar(50)"`         // Provider-specific type
-	DisplayName        string            `json:"display_name" gorm:"type:varchar(100);not null"`       // User-facing name
-	Description        string            `json:"description" gorm:"type:text"`                         // User-facing description
-	IconURL            string            `json:"icon_url" gorm:"type:varchar(255)"`                    // Icon URL
-	Priority           int               `json:"priority" gorm:"default:0"`                            // Display priority
-	IsActive           bool              `json:"is_active" gorm:"default:true"`                        // Enabled/disabled
-	CreatedAt          time.Time         `json:"created_at" gorm:"not null"`
-	UpdatedAt          time.Time         `json:"updated_at" gorm:"not null"`
-	PublicKey          string            `json:"public_key,omitempty" gorm:"-"`                        // Transient field from provider config
+	ID                 snowflake.ID   `json:"id" gorm:"primaryKey"`
+	OrgID              snowflake.ID   `json:"org_id" gorm:"not null;index"`
+	MethodType         string         `json:"method_type" gorm:"type:varchar(50);not null"`   // 'card', 'virtual_account', 'ewallet'
+	MethodName         string         `json:"method_name" gorm:"type:varchar(100);not null"`  // 'card_global', 'va_bca', 'gopay'
+	AvailabilityRules  datatypes.JSON `json:"availability_rules" gorm:"type:jsonb;not null"`  // JSON rules
+	Provider           string         `json:"provider" gorm:"type:varchar(50);not null"`      // 'xendit', 'stripe'
+	ProviderMethodType string         `json:"provider_method_type" gorm:"type:varchar(50)"`   // Provider-specific type
+	DisplayName        string         `json:"display_name" gorm:"type:varchar(100);not null"` // User-facing name
+	Description        string         `json:"description" gorm:"type:text"`                   // User-facing description
+	IconURL            string         `json:"icon_url" gorm:"type:varchar(255)"`              // Icon URL
+	Priority           int            `json:"priority" gorm:"default:0"`                      // Display priority
+	IsActive           bool           `json:"is_active" gorm:"default:true"`                  // Enabled/disabled
+	CreatedAt          time.Time      `json:"created_at" gorm:"not null"`
+	UpdatedAt          time.Time      `json:"updated_at" gorm:"not null"`
+	PublicKey          string         `json:"public_key,omitempty" gorm:"-"` // Transient field from provider config
 }
 
 func (PaymentMethodConfig) TableName() string { return "payment_method_configs" }
 
 // PaymentMethod represents a tokenized payment method stored for a customer
 type PaymentMethod struct {
-	ID                       snowflake.ID `json:"id" gorm:"primaryKey"`
-	CustomerID               snowflake.ID `json:"customer_id" gorm:"not null;index"`
-	Type                     string       `json:"type" gorm:"type:varchar(50);not null"`                  // 'card', 'virtual_account', 'ewallet'
-	Provider                 string       `json:"provider" gorm:"type:varchar(50);not null"`              // 'xendit', 'stripe'
-	ProviderPaymentMethodID  string       `json:"provider_payment_method_id" gorm:"type:varchar(255);not null"` // Token
-	Last4                    string       `json:"last4" gorm:"type:varchar(4)"`                           // Last 4 digits
-	Brand                    string       `json:"brand" gorm:"type:varchar(50)"`                          // 'visa', 'bca', 'gopay'
-	ExpMonth                 int          `json:"exp_month"`                                              // Expiry month (cards)
-	ExpYear                  int          `json:"exp_year"`                                               // Expiry year (cards)
-	IsDefault                bool         `json:"is_default" gorm:"default:false"`                        // Default payment method
-	CreatedAt                time.Time    `json:"created_at" gorm:"not null"`
-	UpdatedAt                time.Time    `json:"updated_at" gorm:"not null"`
+	ID                      snowflake.ID `json:"id" gorm:"primaryKey"`
+	CustomerID              snowflake.ID `json:"customer_id" gorm:"not null;index"`
+	Type                    string       `json:"type" gorm:"type:varchar(50);not null"`                        // 'card', 'virtual_account', 'ewallet'
+	Provider                string       `json:"provider" gorm:"type:varchar(50);not null"`                    // 'xendit', 'stripe'
+	ProviderPaymentMethodID string       `json:"provider_payment_method_id" gorm:"type:varchar(255);not null"` // Token
+	Last4                   string       `json:"last4" gorm:"type:varchar(4)"`                                 // Last 4 digits
+	Brand                   string       `json:"brand" gorm:"type:varchar(50)"`                                // 'visa', 'bca', 'gopay'
+	ExpMonth                int          `json:"exp_month"`                                                    // Expiry month (cards)
+	ExpYear                 int          `json:"exp_year"`                                                     // Expiry year (cards)
+	IsDefault               bool         `json:"is_default" gorm:"default:false"`                              // Default payment method
+	CreatedAt               time.Time    `json:"created_at" gorm:"not null"`
+	UpdatedAt               time.Time    `json:"updated_at" gorm:"not null"`
 }
 
 func (PaymentMethod) TableName() string { return "customer_payment_methods" }
@@ -100,7 +100,3 @@ type PaymentMethodDetails struct {
 	ExpMonth int    // Expiry month (if applicable)
 	ExpYear  int    // Expiry year (if applicable)
 }
-
-
-
-

@@ -24,11 +24,15 @@ type CreateIngestRequest struct {
 }
 
 type ListUsageRequest struct {
-	CustomerID     string `json:"customer_id"`
-	SubscriptionID string `json:"subscription_id"`
-	MeterID        string `json:"meter_id"`
-	PageToken      string `json:"page_token"`
-	PageSize       int32  `json:"page_size"`
+	CustomerID     string     `json:"customer_id"`
+	SubscriptionID string     `json:"subscription_id"`
+	MeterID        string     `json:"meter_id"`
+	MeterCode      string     `json:"meter_code"`
+	Status         string     `json:"status"`
+	PageToken      string     `json:"page_token"`
+	PageSize       int32      `json:"page_size"`
+	RecordedFrom   *time.Time `json:"recorded_from,omitempty"`
+	RecordedTo     *time.Time `json:"recorded_to,omitempty"`
 }
 
 type ListUsageResponse struct {
@@ -58,4 +62,5 @@ var (
 	ErrInvalidValue            = errors.New("invalid_value")
 	ErrInvalidRecordedAt       = errors.New("invalid_recorded_at")
 	ErrInvalidIdempotencyKey   = errors.New("invalid_idempotency_key")
+	ErrFeatureNotEntitled      = errors.New("feature_not_entitled")
 )

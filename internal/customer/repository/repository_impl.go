@@ -18,13 +18,14 @@ func Provide() domain.Repository {
 
 func (r *repo) Insert(ctx context.Context, db *gorm.DB, customer *domain.Customer) error {
 	return db.WithContext(ctx).Exec(
-		`INSERT INTO customers (id, org_id, name, email, currency, metadata, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO customers (id, org_id, name, email, currency, idempotency_key, metadata, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		customer.ID,
 		customer.OrgID,
 		customer.Name,
 		customer.Email,
 		customer.Currency,
+		customer.IdempotencyKey,
 		customer.Metadata,
 		customer.CreatedAt,
 		customer.UpdatedAt,
@@ -34,10 +35,27 @@ func (r *repo) Insert(ctx context.Context, db *gorm.DB, customer *domain.Custome
 func (r *repo) FindByID(ctx context.Context, db *gorm.DB, orgID, id snowflake.ID) (*domain.Customer, error) {
 	var customer domain.Customer
 	err := db.WithContext(ctx).Raw(
-		`SELECT id, org_id, name, email, currency, metadata, created_at, updated_at
+		`SELECT id, org_id, name, email, currency, idempotency_key, metadata, created_at, updated_at
 		 FROM customers WHERE org_id = ? AND id = ?`,
 		orgID,
 		id,
+	).Scan(&customer).Error
+	if err != nil {
+		return nil, err
+	}
+	if customer.ID == 0 {
+		return nil, nil
+	}
+	return &customer, nil
+}
+
+func (r *repo) FindByIdempotencyKey(ctx context.Context, db *gorm.DB, orgID snowflake.ID, key string) (*domain.Customer, error) {
+	var customer domain.Customer
+	err := db.WithContext(ctx).Raw(
+		`SELECT id, org_id, name, email, currency, idempotency_key, metadata, created_at, updated_at
+		 FROM customers WHERE org_id = ? AND idempotency_key = ? LIMIT 1`,
+		orgID,
+		key,
 	).Scan(&customer).Error
 	if err != nil {
 		return nil, err

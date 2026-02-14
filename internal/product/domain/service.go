@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 type Service interface {
 	Create(ctx context.Context, req CreateRequest) (*Response, error)
-	List(ctx context.Context, req ListRequest) ([]Response, error)
+	List(ctx context.Context, req ListRequest) (ListResponse, error)
 	Get(ctx context.Context, id string) (*Response, error)
 	Update(ctx context.Context, req UpdateRequest) (*Response, error)
 	Archive(ctx context.Context, id string) (*Response, error)
@@ -19,6 +21,13 @@ type ListRequest struct {
 	Active  *bool
 	SortBy  string
 	OrderBy string
+	PageToken string
+	PageSize  int32
+}
+
+type ListResponse struct {
+	PageInfo pagination.PageInfo `json:"page_info"`
+	Products []Response          `json:"products"`
 }
 
 type CreateRequest struct {
@@ -27,6 +36,7 @@ type CreateRequest struct {
 	Description *string        `json:"description"`
 	Active      *bool          `json:"active"`
 	Metadata    map[string]any `json:"metadata"`
+	IdempotencyKey string       `json:"-"`
 }
 
 type UpdateRequest struct {

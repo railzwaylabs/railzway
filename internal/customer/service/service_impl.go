@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -65,6 +66,17 @@ func (s *Service) Create(ctx context.Context, req domain.CreateCustomerRequest) 
 		return domain.Customer{}, domain.ErrInvalidEmail
 	}
 
+	idempotencyKey := strings.TrimSpace(req.IdempotencyKey)
+	if idempotencyKey != "" {
+		existing, err := s.repo.FindByIdempotencyKey(ctx, s.db, orgID, idempotencyKey)
+		if err != nil {
+			return domain.Customer{}, err
+		}
+		if existing != nil {
+			return *existing, nil
+		}
+	}
+
 	now := time.Now().UTC()
 	customer := domain.Customer{
 		ID:        s.genID.Generate(),
@@ -75,8 +87,20 @@ func (s *Service) Create(ctx context.Context, req domain.CreateCustomerRequest) 
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
+	if idempotencyKey != "" {
+		customer.IdempotencyKey = &idempotencyKey
+	}
 
 	if err := s.repo.Insert(ctx, s.db, &customer); err != nil {
+		if idempotencyKey != "" && errors.Is(err, gorm.ErrDuplicatedKey) {
+			existing, findErr := s.repo.FindByIdempotencyKey(ctx, s.db, orgID, idempotencyKey)
+			if findErr != nil {
+				return domain.Customer{}, findErr
+			}
+			if existing != nil {
+				return *existing, nil
+			}
+		}
 		return domain.Customer{}, err
 	}
 

@@ -7,7 +7,7 @@ import {
   IconTrash,
   type Icon,
 } from "@tabler/icons-react"
-import { NavLink } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 
 import {
   DropdownMenu,
@@ -36,6 +36,19 @@ export function NavDocuments({
   }[]
 }) {
   const { isMobile } = useSidebar()
+  const { pathname } = useLocation()
+
+  const normalizePath = (value: string) => {
+    const trimmed = value.replace(/\/+$/, "")
+    return trimmed.length ? trimmed : "/"
+  }
+  const currentPath = normalizePath(pathname)
+
+  const resolveActive = (url: string) => {
+    const target = normalizePath(url)
+    if (currentPath === target) return true
+    return currentPath.startsWith(`${target}/`)
+  }
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
@@ -43,11 +56,11 @@ export function NavDocuments({
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <NavLink to={item.url}>
+            <SidebarMenuButton asChild isActive={resolveActive(item.url)}>
+              <Link to={item.url} aria-current={resolveActive(item.url) ? "page" : undefined}>
                 <item.icon />
                 <span>{item.name}</span>
-              </NavLink>
+              </Link>
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

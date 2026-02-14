@@ -60,6 +60,7 @@ func GinMiddleware(cfg MiddlewareConfig) gin.HandlerFunc {
 			fields = append(fields,
 				zap.String("error_type", errorType),
 				zap.String("error_code", errorCode),
+				zap.String("error", lastErr.Error()),
 			)
 			if cfg.Debug {
 				fields = append(fields, zap.Stack("stack"))

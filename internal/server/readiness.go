@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	integrationdomain "github.com/railzwaylabs/railzway/internal/integration/domain"
 	invoicetemplatedomain "github.com/railzwaylabs/railzway/internal/invoicetemplate/domain"
 	meterdomain "github.com/railzwaylabs/railzway/internal/meter/domain"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
@@ -48,14 +49,14 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 	// --- REQUIRED CHECKS ---
 
 	// 1. Check Product Exists
-	products, err := s.productSvc.List(ctx, productdomain.ListRequest{})
+	productsResp, err := s.productSvc.List(ctx, productdomain.ListRequest{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list products"})
 		return
 	}
 
 	activeProducts := 0
-	for _, p := range products {
+	for _, p := range productsResp.Products {
 		if p.Active {
 			activeProducts++
 		}
@@ -78,7 +79,7 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 	}
 
 	// 2. Check Price Exists
-	prices, err := s.priceSvc.List(ctx, pricedomain.ListOptions{})
+	pricesResp, err := s.priceSvc.List(ctx, pricedomain.ListOptions{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list prices"})
 		return
@@ -86,7 +87,7 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 
 	activePrices := 0
 	hasUsagePrice := false
-	for _, p := range prices {
+	for _, p := range pricesResp.Prices {
 		if p.Active {
 			activePrices++
 			if p.BillingMode == pricedomain.Metered {
@@ -114,14 +115,14 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 
 	// 3. Check Meter Exists (Condition: If Usage Price Exists)
 	if hasUsagePrice {
-		meters, err := s.meterSvc.List(ctx, meterdomain.ListRequest{})
+		metersResp, err := s.meterSvc.List(ctx, meterdomain.ListRequest{})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list meters"})
 			return
 		}
 
 		activeMeters := 0
-		for _, m := range meters {
+		for _, m := range metersResp.Meters {
 			if m.Active {
 				activeMeters++
 			}
@@ -150,34 +151,34 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 		})
 	}
 
-	// 4. Check Payment Provider Connected
-	providers, err := s.paymentProviderSvc.ListConfigs(ctx)
+	// 4. Check Payment Provider Connected (App Store)
+	conns, err := s.integrationSvc.ListConnections(ctx, orgID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list payment providers"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list integrations"})
 		return
 	}
-
-	hasActiveProvider := false
-	for _, p := range providers {
-		if p.IsActive && p.Configured {
-			hasActiveProvider = true
+	
+	hasActivePaymentProvider := false
+	for _, conn := range conns {
+		if conn.Integration.Type == integrationdomain.TypePayment && conn.Status == "active" {
+			hasActivePaymentProvider = true
 			break
 		}
 	}
-
-	if !hasActiveProvider {
+	
+	if !hasActivePaymentProvider {
 		isSystemReady = false
 		issues = append(issues, ReadinessIssue{
 			ID:         "payment_provider_connected",
 			Status:     ReadinessStateNotReady,
-			ActionHref: "/payment-providers",
-			Evidence:   map[string]string{"active_providers": "0"},
+			ActionHref: "/integrations", // App Store
+			Evidence:   map[string]string{"active_payment_integrations": "0"},
 		})
 	} else {
 		issues = append(issues, ReadinessIssue{
 			ID:         "payment_provider_connected",
 			Status:     ReadinessStateReady,
-			ActionHref: "/payment-providers",
+			ActionHref: "/integrations",
 		})
 	}
 
@@ -201,7 +202,7 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 		issues = append(issues, ReadinessIssue{
 			ID:             "payment_configuration_complete",
 			Status:         ReadinessStateNotReady,
-			ActionHref:     "/payment-method-configs",
+			ActionHref:     "/checkout-options",
 			DependencyHint: ptr("payment_provider_connected"),
 			Evidence:       map[string]string{"active_methods": "0"},
 		})
@@ -209,7 +210,7 @@ func (s *Server) GetOrganizationReadiness(c *gin.Context) {
 		issues = append(issues, ReadinessIssue{
 			ID:         "payment_configuration_complete",
 			Status:     ReadinessStateReady,
-			ActionHref: "/payment-method-configs",
+			ActionHref: "/checkout-options",
 		})
 	}
 

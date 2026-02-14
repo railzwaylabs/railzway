@@ -17,7 +17,7 @@ type Cursor struct {
 
 type PageInfo struct {
 	NextPageToken      string `json:"next_page_token"`
-	PreviousPageTooken string `json:"previous_page_token"`
+	PreviousPageToken  string `json:"previous_page_token"`
 	HasMore            bool   `json:"has_more"`
 }
 

@@ -76,6 +76,9 @@ type mockSubscriptionSvc struct{}
 func (m *mockSubscriptionSvc) List(context.Context, subscriptiondomain.ListSubscriptionRequest) (subscriptiondomain.ListSubscriptionResponse, error) {
 	return subscriptiondomain.ListSubscriptionResponse{}, nil
 }
+func (m *mockSubscriptionSvc) ListEntitlements(context.Context, subscriptiondomain.ListEntitlementsRequest) (subscriptiondomain.ListEntitlementsResponse, error) {
+	return subscriptiondomain.ListEntitlementsResponse{}, nil
+}
 func (m *mockSubscriptionSvc) Create(context.Context, subscriptiondomain.CreateSubscriptionRequest) (subscriptiondomain.CreateSubscriptionResponse, error) {
 	return subscriptiondomain.CreateSubscriptionResponse{}, nil
 }
@@ -356,17 +359,17 @@ func TestScheduler_RunOnce_FakeClock_30Days(t *testing.T) {
 	}
 
 	scheduler, err := New(Params{
-		DB:              db,
-		Log:             zap.NewNop(),
-		RatingSvc:       ratingSvc,
-		InvoiceSvc:      invoiceSvc,
-		LedgerSvc:       &mockLedgerSvc{},
-		SubscriptionSvc: &mockSubscriptionSvc{},
-		AuditSvc:        &mockAuditSvc{},
+		DB:                   db,
+		Log:                  zap.NewNop(),
+		RatingSvc:            ratingSvc,
+		InvoiceSvc:           invoiceSvc,
+		LedgerSvc:            &mockLedgerSvc{},
+		SubscriptionSvc:      &mockSubscriptionSvc{},
+		AuditSvc:             &mockAuditSvc{},
 		AuthzSvc:             &mockAuthzSvc{},
 		BillingOperationsSvc: &mockBillingOpsSvc{},
-		GenID:           node,
-		Clock:           fakeClock,
+		GenID:                node,
+		Clock:                fakeClock,
 		Config: Config{
 			BatchSize:           10,
 			MaxCloseBatchSize:   10,

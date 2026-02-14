@@ -1,12 +1,12 @@
 package server
 
 import (
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 type createPriceRequest struct {
@@ -37,8 +37,9 @@ type createPriceRequest struct {
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
+// @Param        Idempotency-Key  header  string  false  "Idempotency Key"
 // @Param        request body createPriceRequest true "Create Price Request"
-// @Success      200  {object}  pricedomain.Price
+// @Success      200  {object}  DataResponse
 // @Router       /prices [post]
 func (s *Server) CreatePrice(c *gin.Context) {
 	var req createPriceRequest
@@ -67,6 +68,7 @@ func (s *Server) CreatePrice(c *gin.Context) {
 		Active:               req.Active,
 		RetiredAt:            req.RetiredAt,
 		Metadata:             req.Metadata,
+		IdempotencyKey:       idempotencyKeyFromHeader(c),
 	})
 	if err != nil {
 		AbortWithError(c, err)
@@ -85,7 +87,7 @@ func (s *Server) CreatePrice(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 // @Summary      List Prices
@@ -94,11 +96,29 @@ func (s *Server) CreatePrice(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
-// @Success      200  {object}  []pricedomain.Price
+// @Param        product_id  query  string  false  "Product ID"
+// @Param        code        query  string  false  "Code"
+// @Param        page_token  query  string  false  "Page Token"
+// @Param        page_size   query  int     false  "Page Size"
+// @Success      200  {object}  ListResponse
 // @Router       /prices [get]
 func (s *Server) ListPrices(c *gin.Context) {
-	var opts pricedomain.ListOptions
-	if code := strings.TrimSpace(c.Query("code")); code != "" {
+	var query struct {
+		pagination.Pagination
+		Code      string `form:"code"`
+		ProductID string `form:"product_id"`
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		AbortWithError(c, invalidRequestError())
+		return
+	}
+
+	opts := pricedomain.ListOptions{
+		ProductID: strings.TrimSpace(query.ProductID),
+		PageToken: query.PageToken,
+		PageSize:  int32(query.PageSize),
+	}
+	if code := strings.TrimSpace(query.Code); code != "" {
 		opts.Code = &code
 	}
 
@@ -108,7 +128,7 @@ func (s *Server) ListPrices(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondList(c, resp.Prices, &resp.PageInfo)
 }
 
 // @Summary      Get Price
@@ -118,7 +138,7 @@ func (s *Server) ListPrices(c *gin.Context) {
 // @Produce      json
 // @Security     ApiKeyAuth
 // @Param        id   path      string  true  "Price ID"
-// @Success      200  {object}  pricedomain.Price
+// @Success      200  {object}  DataResponse
 // @Router       /prices/{id} [get]
 func (s *Server) GetPriceByID(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
@@ -128,7 +148,7 @@ func (s *Server) GetPriceByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 func isPriceValidationError(err error) bool {

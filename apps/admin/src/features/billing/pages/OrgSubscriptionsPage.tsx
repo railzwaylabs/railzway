@@ -1,4 +1,4 @@
-import { useCallback } from "react"
+import { useCallback, useEffect } from "react"
 import { Link, useParams, useSearchParams } from "react-router-dom"
 
 import { admin } from "@/api/client"
@@ -64,6 +64,7 @@ const statusTabs = [
   { value: "ENDED", label: "Ended" },
   { value: "ALL", label: "All" },
 ]
+const primaryTabs = ["subscriptions", "test-clocks"] as const
 
 const formatDate = (value?: string) => {
   if (!value) return "-"
@@ -139,10 +140,15 @@ export default function OrgSubscriptionsPage() {
   const role = useOrgStore((state) => state.currentOrg?.role)
   const canManage = canManageBilling(role)
   const [searchParams, setSearchParams] = useSearchParams()
-  const currentTab = searchParams.get("tab") ?? "subscriptions"
+  const rawTab = searchParams.get("tab")
+  const currentTab =
+    rawTab && primaryTabs.includes(rawTab as (typeof primaryTabs)[number])
+      ? rawTab
+      : "subscriptions"
 
   const createPath = orgId ? `/orgs/${orgId}/subscriptions/create` : "/orgs"
-  const statusParam = searchParams.get("status") ?? "ALL"
+  const rawStatus = searchParams.get("status")
+  const statusParam = rawStatus ?? "ALL"
   const statusFilter = statusTabs.some((tab) => tab.value === statusParam)
     ? statusParam
     : "ALL"
@@ -168,6 +174,34 @@ export default function OrgSubscriptionsPage() {
     next.set("tab", value)
     setSearchParams(next, { replace: true })
   }
+
+  useEffect(() => {
+    if (!rawTab) return
+    if (rawTab === "subscriptions") {
+      const next = new URLSearchParams(searchParams)
+      next.delete("tab")
+      setSearchParams(next, { replace: true })
+      return
+    }
+    if (primaryTabs.includes(rawTab as (typeof primaryTabs)[number])) return
+    const next = new URLSearchParams(searchParams)
+    next.delete("tab")
+    setSearchParams(next, { replace: true })
+  }, [rawTab, searchParams, setSearchParams])
+
+  useEffect(() => {
+    if (!rawStatus) return
+    if (rawStatus === "ALL") {
+      const next = new URLSearchParams(searchParams)
+      next.delete("status")
+      setSearchParams(next, { replace: true })
+      return
+    }
+    if (statusTabs.some((tab) => tab.value === rawStatus)) return
+    const next = new URLSearchParams(searchParams)
+    next.delete("status")
+    setSearchParams(next, { replace: true })
+  }, [rawStatus, searchParams, setSearchParams])
 
   const handleClearFilters = () => {
     const next = new URLSearchParams(searchParams)

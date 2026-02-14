@@ -1,7 +1,6 @@
 package server
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +16,7 @@ var _ = referencedomain.Country{}
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
-// @Success      200  {object}  []referencedomain.Country
+// @Success      200  {object}  ListResponse
 // @Router       /countries [get]
 func (s *Server) ListCountries(c *gin.Context) {
 	countries, err := s.refrepo.ListCountries(c.Request.Context())
@@ -26,7 +25,7 @@ func (s *Server) ListCountries(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": countries})
+	respondList(c, countries, nil)
 }
 
 // @Summary      List Timezones
@@ -36,7 +35,7 @@ func (s *Server) ListCountries(c *gin.Context) {
 // @Produce      json
 // @Security     ApiKeyAuth
 // @Param        country  query     string  true  "Country Code"
-// @Success      200      {object}  []string
+// @Success      200      {object}  ListResponse
 // @Router       /timezones [get]
 func (s *Server) ListTimezones(c *gin.Context) {
 	country := strings.TrimSpace(c.Query("country"))
@@ -51,7 +50,7 @@ func (s *Server) ListTimezones(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": timezones})
+	respondList(c, timezones, nil)
 }
 
 // @Summary      List Currencies
@@ -60,7 +59,7 @@ func (s *Server) ListTimezones(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
-// @Success      200  {object}  []referencedomain.Currency
+// @Success      200  {object}  ListResponse
 // @Router       /currencies [get]
 func (s *Server) ListCurrencies(c *gin.Context) {
 	currencies, err := s.refrepo.ListCurrencies(c.Request.Context())
@@ -69,5 +68,5 @@ func (s *Server) ListCurrencies(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": currencies})
+	respondList(c, currencies, nil)
 }

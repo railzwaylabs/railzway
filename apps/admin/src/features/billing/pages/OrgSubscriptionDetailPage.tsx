@@ -35,7 +35,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { useCursorPagination } from "@/hooks/useCursorPagination"
 import { getErrorMessage, isForbiddenError } from "@/lib/api-errors"
 import { cn } from "@/lib/utils"
 
@@ -75,9 +93,72 @@ type Customer = {
   Name?: string
 }
 
+type Entitlement = {
+  id?: string | number
+  ID?: string | number
+  subscription_id?: string | number
+  SubscriptionID?: string | number
+  product_id?: string | number
+  ProductID?: string | number
+  feature_code?: string
+  FeatureCode?: string
+  feature_name?: string
+  FeatureName?: string
+  feature_type?: string
+  FeatureType?: string
+  meter_id?: string | number | null
+  MeterID?: string | number | null
+  effective_from?: string
+  EffectiveFrom?: string
+  effective_to?: string | null
+  EffectiveTo?: string | null
+  created_at?: string
+  CreatedAt?: string
+}
+
+type Meter = {
+  id?: string | number
+  ID?: string | number
+  code?: string
+  Code?: string
+  name?: string
+  Name?: string
+  active?: boolean
+  Active?: boolean
+}
+
+type UsageEvent = {
+  id?: string | number
+  ID?: string | number
+  customer_id?: string | number
+  CustomerID?: string | number
+  subscription_id?: string | number
+  SubscriptionID?: string | number
+  subscription_item_id?: string | number
+  SubscriptionItemID?: string | number
+  meter_id?: string | number
+  MeterID?: string | number
+  meter_code?: string
+  MeterCode?: string
+  value?: number | string
+  Value?: number | string
+  recorded_at?: string
+  RecordedAt?: string
+  status?: string
+  Status?: string
+  error?: string | null
+  Error?: string | null
+  idempotency_key?: string
+  IdempotencyKey?: string
+  created_at?: string
+  CreatedAt?: string
+}
+
 type ActionType = "activate" | "pause" | "resume" | "cancel"
 
 const statusOrder = ["DRAFT", "ACTIVE", "PAUSED", "CANCELED", "ENDED"]
+const ENTITLEMENTS_PAGE_SIZE = 25
+const USAGE_PAGE_SIZE = 25
 
 const readField = <T,>(
   item: T | null | undefined,
@@ -129,6 +210,50 @@ const formatStatus = (value?: string) => {
   }
 }
 
+const formatUsageStatus = (value?: string) => {
+  if (!value) return "-"
+  switch (value.toLowerCase()) {
+    case "accepted":
+      return "Accepted"
+    case "invalid":
+      return "Invalid"
+    case "enriched":
+      return "Enriched"
+    case "rated":
+      return "Rated"
+    case "unmatched_meter":
+      return "Unmatched meter"
+    case "unmatched_subscription":
+      return "Unmatched subscription"
+    default:
+      return value
+  }
+}
+
+const usageStatusVariant = (value?: string) => {
+  switch (value?.toLowerCase()) {
+    case "accepted":
+    case "enriched":
+    case "rated":
+      return "secondary"
+    case "invalid":
+    case "unmatched_meter":
+    case "unmatched_subscription":
+      return "destructive"
+    default:
+      return "outline"
+  }
+}
+
+const formatUsageValue = (value?: string | number | null) => {
+  if (value === null || value === undefined) return "-"
+  const numeric = typeof value === "number" ? value : Number(value)
+  if (Number.isNaN(numeric)) return String(value)
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 6,
+  }).format(numeric)
+}
+
 const statusVariant = (value?: string) => {
   switch (value?.toUpperCase()) {
     case "ACTIVE":
@@ -143,6 +268,36 @@ const statusVariant = (value?: string) => {
     default:
       return "outline"
   }
+}
+
+const statusTone = (value?: string) => {
+  switch (value?.toUpperCase()) {
+    case "ACTIVE":
+      return "bg-status-success/10 text-status-success"
+    case "PAUSED":
+      return "bg-status-warning/10 text-status-warning"
+    case "CANCELED":
+    case "ENDED":
+      return "bg-status-error/10 text-status-error"
+    case "DRAFT":
+    default:
+      return "bg-bg-subtle text-text-muted"
+  }
+}
+
+const formatFeatureType = (value?: string) => {
+  if (!value) return "-"
+  const normalized = value.toLowerCase()
+  if (normalized === "metered") return "Usage-based"
+  if (normalized === "boolean") return "Boolean"
+  return value
+}
+
+const parseDate = (value?: string | null) => {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return date
 }
 
 // Helper Components
@@ -210,16 +365,20 @@ function DetailItem({
   children?: React.ReactNode
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-md border p-3 shadow-sm">
-      <div className="rounded-md bg-muted p-2">
-        <Icon className="h-4 w-4 text-muted-foreground" />
+    <div className="flex items-start gap-4 rounded-xl border border-border-subtle bg-bg-surface/50 p-4 shadow-sm transition-all duration-300 hover:border-border-strong hover:shadow-md group">
+      <div className="rounded-lg bg-bg-primary border border-border-subtle p-2 group-hover:bg-accent-primary/5 transition-colors">
+        <Icon className="h-4 w-4 text-text-muted group-hover:text-accent-primary" />
       </div>
-      <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <div className="flex flex-col gap-1.5 min-w-0">
+        <span className="text-[11px] font-semibold text-text-muted uppercase tracking-[0.18em] opacity-70 group-hover:opacity-100 transition-opacity">
+          {label}
+        </span>
         {children ? (
-          children
+          <div className="truncate">{children}</div>
         ) : (
-          <span className="text-sm font-semibold text-foreground">{value || "-"}</span>
+          <span className="text-sm font-semibold text-text-primary truncate">
+            {value || "-"}
+          </span>
         )}
       </div>
     </div>
@@ -262,6 +421,14 @@ export default function OrgSubscriptionDetailPage() {
   const [action, setAction] = useState<ActionType | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [isActing, setIsActing] = useState(false)
+  const [entitlementAsOf, setEntitlementAsOf] = useState("")
+  const [usageFrom, setUsageFrom] = useState("")
+  const [usageTo, setUsageTo] = useState("")
+  const [usageStatus, setUsageStatus] = useState("all")
+  const [usageMeter, setUsageMeter] = useState("")
+  const [meters, setMeters] = useState<Meter[]>([])
+  const [metersError, setMetersError] = useState<string | null>(null)
+  const [isMetersLoading, setIsMetersLoading] = useState(false)
 
   const loadSubscription = useCallback(async () => {
     if (!subscriptionId) return
@@ -305,6 +472,133 @@ export default function OrgSubscriptionDetailPage() {
     }
   }, [subscription])
 
+  useEffect(() => {
+    let active = true
+    setIsMetersLoading(true)
+    setMetersError(null)
+    admin
+      .get("/meters", {
+        params: {
+          active: true,
+          sort_by: "code",
+          order_by: "asc",
+          page_size: 250,
+        },
+      })
+      .then((response) => {
+        if (!active) return
+        const payload = response.data?.data
+        const items = Array.isArray(payload?.items)
+          ? payload.items
+          : Array.isArray(payload)
+            ? payload
+            : Array.isArray(payload?.meters)
+              ? payload.meters
+              : []
+        setMeters(Array.isArray(items) ? items : [])
+      })
+      .catch((err) => {
+        if (!active) return
+        setMetersError(getErrorMessage(err, "Unable to load meters."))
+        setMeters([])
+      })
+      .finally(() => {
+        if (!active) return
+        setIsMetersLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [orgId])
+
+  const fetchEntitlements = useCallback(
+    async (cursor: string | null) => {
+      if (!subscriptionId) {
+        return { items: [], page_info: null }
+      }
+
+      const response = await admin.get(`/subscriptions/${subscriptionId}/entitlements`, {
+        params: {
+          effective_at: entitlementAsOf || undefined,
+          page_token: cursor || undefined,
+          page_size: ENTITLEMENTS_PAGE_SIZE,
+        },
+      })
+
+      const payload = response.data?.data
+      const items = Array.isArray(payload?.items)
+        ? payload.items
+        : Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.entitlements)
+            ? payload.entitlements
+            : []
+      const pageInfo = response.data?.page_info ?? payload?.page_info ?? null
+
+      return { items, page_info: pageInfo }
+    },
+    [entitlementAsOf, subscriptionId]
+  )
+
+  const {
+    items: entitlements,
+    error: entitlementsError,
+    isLoading: isEntitlementsLoading,
+    isLoadingMore: isEntitlementsLoadingMore,
+    hasNext: entitlementsHasNext,
+    loadNext: loadMoreEntitlements,
+  } = useCursorPagination<Entitlement>(fetchEntitlements, {
+    enabled: Boolean(subscriptionId),
+    mode: "append",
+    dependencies: [subscriptionId, entitlementAsOf],
+  })
+
+  const fetchUsageEvents = useCallback(
+    async (cursor: string | null) => {
+      if (!subscriptionId) {
+        return { items: [], page_info: null }
+      }
+
+      const response = await admin.get("/usage", {
+        params: {
+          subscription_id: subscriptionId,
+          meter_code: usageMeter || undefined,
+          status: usageStatus === "all" ? undefined : usageStatus,
+          recorded_from: usageFrom || undefined,
+          recorded_to: usageTo || undefined,
+          page_token: cursor || undefined,
+          page_size: USAGE_PAGE_SIZE,
+        },
+      })
+
+      const payload = response.data?.data
+      const items = Array.isArray(payload?.items)
+        ? payload.items
+        : Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.usage_events)
+            ? payload.usage_events
+            : []
+      const pageInfo = response.data?.page_info ?? payload?.page_info ?? null
+
+      return { items, page_info: pageInfo }
+    },
+    [subscriptionId, usageFrom, usageMeter, usageStatus, usageTo]
+  )
+
+  const {
+    items: usageEvents,
+    error: usageError,
+    isLoading: isUsageLoading,
+    isLoadingMore: isUsageLoadingMore,
+    hasNext: usageHasNext,
+    loadNext: loadMoreUsage,
+  } = useCursorPagination<UsageEvent>(fetchUsageEvents, {
+    enabled: Boolean(subscriptionId),
+    mode: "append",
+    dependencies: [subscriptionId, usageFrom, usageMeter, usageStatus, usageTo],
+  })
+
   const subscriptionStatus = readField(subscription, ["status", "Status"], "DRAFT")
   const customerId = readField(subscription, ["customer_id", "CustomerID"], "")
   const customerName = readField(customer, ["name", "Name"], customerId || "Customer")
@@ -313,6 +607,7 @@ export default function OrgSubscriptionDetailPage() {
   const createdAt = readField(subscription, ["created_at", "CreatedAt"], "")
   const updatedAt = readField(subscription, ["updated_at", "UpdatedAt"], "")
   const startAt = readField(subscription, ["start_at", "StartAt"], "")
+  const entitlementAsOfDate = entitlementAsOf ? new Date(entitlementAsOf) : null
 
   const availableActions = useMemo(() => {
     const normalized = subscriptionStatus.toUpperCase()
@@ -328,22 +623,22 @@ export default function OrgSubscriptionDetailPage() {
       case "activate":
         return {
           title: "Activate subscription",
-          description: "Activating will start billing immediately and cannot be undone.",
+          description: "Start billing immediately and open the current cycle.",
         }
       case "pause":
         return {
           title: "Pause subscription",
-          description: "Pausing stops billing and usage accrual until resumed.",
+          description: "Stops billing and usage accrual until you resume.",
         }
       case "resume":
         return {
           title: "Resume subscription",
-          description: "Resuming restarts billing immediately and continues the current cycle.",
+          description: "Resume billing and continue the current cycle.",
         }
       case "cancel":
         return {
           title: "Cancel subscription",
-          description: "Canceling is irreversible and ends all future billing for this subscription.",
+          description: "Irreversible. Ends future billing for this subscription.",
         }
       default:
         return null
@@ -389,7 +684,12 @@ export default function OrgSubscriptionDetailPage() {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>{subscriptionId}</BreadcrumbPage>
+            <BreadcrumbPage
+              className="font-mono text-xs opacity-60"
+              title={String(subscriptionId ?? "")}
+            >
+              {String(subscriptionId).slice(0, 12)}...
+            </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -398,14 +698,20 @@ export default function OrgSubscriptionDetailPage() {
         {/* Header Section */}
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="space-y-1">
-            <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight">
+            <h1 className="flex items-center gap-4 text-3xl font-bold tracking-tight text-text-primary">
               Subscription
-              <Badge variant={statusVariant(subscriptionStatus)} className="ml-2 text-sm">
+              <Badge
+                variant={statusVariant(subscriptionStatus)}
+                className={cn(
+                  "text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border-none",
+                  statusTone(subscriptionStatus)
+                )}
+              >
                 {formatStatus(subscriptionStatus)}
               </Badge>
             </h1>
-            <p className="text-muted-foreground">
-              Manage subscription details and lifecycle for {customerName}.
+            <p className="text-sm text-text-muted opacity-80 max-w-2xl leading-relaxed">
+              Manage lifecycle and billing activity for {customerName}.
             </p>
           </div>
           <div className="flex gap-2">
@@ -443,7 +749,7 @@ export default function OrgSubscriptionDetailPage() {
         <Card className="bg-muted/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">
-              <Activity className="h-4 w-4" /> Subscription Lifecycle
+              <Activity className="h-4 w-4" /> Lifecycle
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -456,19 +762,19 @@ export default function OrgSubscriptionDetailPage() {
           <div className="space-y-6 lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Subscription Details</CardTitle>
+                <CardTitle>Details</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <DetailItem icon={User} label="Customer">
                   {customerId ? (
                     <Link
-                      className="text-sm font-semibold text-primary hover:underline"
+                      className="text-sm font-bold text-accent-primary hover:underline font-mono"
                       to={`/orgs/${orgId}/customers/${customerId}`}
                     >
                       {customerName}
                     </Link>
                   ) : (
-                    <span className="text-sm font-semibold">{customerName}</span>
+                    <span className="text-sm font-bold text-text-primary">{customerName}</span>
                   )}
                 </DetailItem>
                 <DetailItem
@@ -493,9 +799,359 @@ export default function OrgSubscriptionDetailPage() {
                 />
                 <DetailItem
                   icon={Calendar}
-                  label="Last Updated"
+                  label="Updated"
                   value={formatDateTime(updatedAt)}
                 />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <CardTitle>Entitlements</CardTitle>
+                    <p className="text-sm text-text-muted">
+                      Active feature access granted by this subscription.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-end gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="entitlements-as-of">Effective at</Label>
+                      <Input
+                        id="entitlements-as-of"
+                        type="date"
+                        value={entitlementAsOf}
+                        onChange={(event) => setEntitlementAsOf(event.target.value)}
+                      />
+                    </div>
+                    {entitlementAsOf && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEntitlementAsOf("")}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {Boolean(entitlementsError) && (
+                  <div className="text-status-error text-sm">
+                    {getErrorMessage(entitlementsError, "Unable to load entitlements.")}
+                  </div>
+                )}
+                {isEntitlementsLoading && entitlements.length === 0 && (
+                  <div className="text-text-muted text-sm">
+                    Loading entitlements...
+                  </div>
+                )}
+                {!isEntitlementsLoading && entitlements.length === 0 && !entitlementsError && (
+                  <div className="text-text-muted text-sm">
+                    No entitlements found for this subscription.
+                  </div>
+                )}
+                {entitlements.length > 0 && (
+                  <div className="rounded-lg border">
+                    <Table className="min-w-[760px]">
+                      <TableHeader className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-bg-surface">
+                        <TableRow>
+                          <TableHead>Feature</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Product</TableHead>
+                          <TableHead>Meter</TableHead>
+                          <TableHead>Effective</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {entitlements.map((entitlement, index) => {
+                          const rowId = readField(entitlement, ["id", "ID"], "")
+                          const rowKey = rowId || `entitlement-${index}`
+                          const featureName = readField(entitlement, ["feature_name", "FeatureName"], "")
+                          const featureCode = readField(entitlement, ["feature_code", "FeatureCode"], "")
+                          const featureType = readField(entitlement, ["feature_type", "FeatureType"], "")
+                          const productId = readField(entitlement, ["product_id", "ProductID"], "")
+                          const meterId = readField(entitlement, ["meter_id", "MeterID"], "")
+                          const effectiveFrom = readField(
+                            entitlement,
+                            ["effective_from", "EffectiveFrom"],
+                            ""
+                          )
+                          const effectiveTo = readField(
+                            entitlement,
+                            ["effective_to", "EffectiveTo"],
+                            ""
+                          )
+
+                          const asOf = entitlementAsOfDate ?? new Date()
+                          const startDate = parseDate(effectiveFrom)
+                          const endDate = parseDate(effectiveTo)
+                          const isActive =
+                            (!startDate || startDate <= asOf) &&
+                            (!endDate || endDate > asOf)
+
+                          return (
+                            <TableRow key={rowKey}>
+                              <TableCell>
+                                <div className="flex flex-col gap-1">
+                                  <span className="font-medium">
+                                    {featureName || "Untitled feature"}
+                                  </span>
+                                  {featureCode && (
+                                    <span className="text-xs text-text-muted font-mono">
+                                      {featureCode}
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{formatFeatureType(featureType)}</Badge>
+                              </TableCell>
+                              <TableCell className="font-mono text-xs text-text-muted">
+                                {productId ? String(productId).slice(0, 12) : "-"}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs text-text-muted">
+                                {meterId ? String(meterId).slice(0, 12) : "-"}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col gap-1 text-xs text-text-muted">
+                                  <span>From {formatDateTime(effectiveFrom)}</span>
+                                  <span>To {effectiveTo ? formatDateTime(effectiveTo) : "—"}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={isActive ? "secondary" : "outline"}>
+                                  {isActive ? "Active" : "Inactive"}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+                {entitlementsHasNext && (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={loadMoreEntitlements}
+                      disabled={isEntitlementsLoadingMore}
+                    >
+                      {isEntitlementsLoadingMore ? "Loading..." : "Load more"}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <CardTitle>Usage</CardTitle>
+                    <p className="text-sm text-text-muted">
+                      Recent usage events recorded for this subscription.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-end gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="usage-status">Status</Label>
+                      <Select value={usageStatus} onValueChange={setUsageStatus}>
+                        <SelectTrigger id="usage-status" className="w-[160px]">
+                          <SelectValue placeholder="All statuses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All statuses</SelectItem>
+                          <SelectItem value="accepted">Accepted</SelectItem>
+                          <SelectItem value="enriched">Enriched</SelectItem>
+                          <SelectItem value="rated">Rated</SelectItem>
+                          <SelectItem value="invalid">Invalid</SelectItem>
+                          <SelectItem value="unmatched_meter">Unmatched meter</SelectItem>
+                          <SelectItem value="unmatched_subscription">
+                            Unmatched subscription
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="usage-meter">Meter</Label>
+                      <Select
+                        value={usageMeter || "all"}
+                        onValueChange={(value) => {
+                          setUsageMeter(value === "all" ? "" : value)
+                        }}
+                        disabled={isMetersLoading}
+                      >
+                        <SelectTrigger id="usage-meter" className="w-[200px]">
+                          <SelectValue
+                            placeholder={isMetersLoading ? "Loading meters..." : "All meters"}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All meters</SelectItem>
+                          {meters.map((meter, index) => {
+                            const code = readField(meter, ["code", "Code"], "")
+                            if (!code) return null
+                            const name = readField(meter, ["name", "Name"], "")
+                            const label = name && name !== "-"
+                              ? `${name} (${code})`
+                              : code
+                            const key = code || readField(meter, ["id", "ID"], "") || `meter-${index}`
+                            return (
+                              <SelectItem key={key} value={code}>
+                                {label}
+                              </SelectItem>
+                            )
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="usage-from">From</Label>
+                      <Input
+                        id="usage-from"
+                        type="date"
+                        value={usageFrom}
+                        onChange={(event) => setUsageFrom(event.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="usage-to">To</Label>
+                      <Input
+                        id="usage-to"
+                        type="date"
+                        value={usageTo}
+                        onChange={(event) => setUsageTo(event.target.value)}
+                      />
+                    </div>
+                    {(usageFrom || usageTo) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setUsageFrom("")
+                          setUsageTo("")
+                        }}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                    {(usageStatus !== "all" || usageMeter) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setUsageStatus("all")
+                          setUsageMeter("")
+                        }}
+                      >
+                        Reset filters
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {metersError && (
+                  <div className="text-status-error text-sm">{metersError}</div>
+                )}
+                {Boolean(usageError) && (
+                  <div className="text-status-error text-sm">
+                    {getErrorMessage(usageError, "Unable to load usage events.")}
+                  </div>
+                )}
+                {isUsageLoading && usageEvents.length === 0 && (
+                  <div className="text-text-muted text-sm">Loading usage events...</div>
+                )}
+                {!isUsageLoading && usageEvents.length === 0 && !usageError && (
+                  <div className="text-text-muted text-sm">
+                    No usage events recorded yet.
+                  </div>
+                )}
+                {usageEvents.length > 0 && (
+                  <div className="rounded-lg border">
+                    <Table className="min-w-[760px]">
+                      <TableHeader className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-bg-surface">
+                        <TableRow>
+                          <TableHead>Meter</TableHead>
+                          <TableHead>Value</TableHead>
+                          <TableHead>Recorded At</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Error</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {usageEvents.map((event, index) => {
+                          const rowId = readField(event, ["id", "ID"], "")
+                          const rowKey = rowId || `usage-${index}`
+                          const meterCode = readField(event, ["meter_code", "MeterCode"], "")
+                          const meterId = readField(event, ["meter_id", "MeterID"], "")
+                          const rawValue =
+                            (event as { value?: number | string }).value ??
+                            (event as { Value?: number | string }).Value
+                          const recordedAt = readField(
+                            event,
+                            ["recorded_at", "RecordedAt"],
+                            ""
+                          )
+                          const status = readField(event, ["status", "Status"], "")
+                          const errorMessage = readField(event, ["error", "Error"], "")
+
+                          return (
+                            <TableRow key={rowKey}>
+                              <TableCell>
+                                <div className="flex flex-col gap-1">
+                                  <span className="font-medium">
+                                    {meterCode || "Unknown meter"}
+                                  </span>
+                                  {meterId && meterId !== "-" && (
+                                    <span className="text-xs text-text-muted font-mono">
+                                      {String(meterId).slice(0, 12)}
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-mono text-xs">
+                                {formatUsageValue(rawValue)}
+                              </TableCell>
+                              <TableCell className="text-xs text-text-muted">
+                                {recordedAt ? formatDateTime(recordedAt) : "-"}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={usageStatusVariant(status)}>
+                                  {formatUsageStatus(status)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs text-text-muted">
+                                {errorMessage && errorMessage !== "-" ? (
+                                  <span title={errorMessage}>{errorMessage}</span>
+                                ) : (
+                                  "-"
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+                {usageHasNext && (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={loadMoreUsage}
+                      disabled={isUsageLoadingMore}
+                    >
+                      {isUsageLoadingMore ? "Loading..." : "Load more"}
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -504,7 +1160,7 @@ export default function OrgSubscriptionDetailPage() {
           <div className="space-y-6">
             <Card className="h-full">
               <CardHeader>
-                <CardTitle>Lifecycle Timeline</CardTitle>
+                <CardTitle>Timeline</CardTitle>
               </CardHeader>
               <CardContent>
                 <VerticalTimeline items={timeline} />

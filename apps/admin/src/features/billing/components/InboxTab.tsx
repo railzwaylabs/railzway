@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/c
 import { useInbox, useClaimAssignment } from "../hooks/useIA"
 import { formatCurrency } from "../utils/formatting"
 import { IssueDetailSheet } from "./IssueDetailSheet"
+import { TableSkeleton } from "@/components/loading-skeletons"
 import { cn } from "@/lib/utils"
 
 export function InboxTab() {
@@ -42,11 +43,7 @@ export function InboxTab() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <TableSkeleton />
   }
 
   if (error) {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
 	pricetierdomain "github.com/railzwaylabs/railzway/internal/pricetier/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
@@ -49,6 +51,17 @@ func (s *Service) Create(ctx context.Context, req pricetierdomain.CreateRequest)
 		return nil, pricetierdomain.ErrInvalidOrganization
 	}
 
+	idempotencyKey := strings.TrimSpace(req.IdempotencyKey)
+	if idempotencyKey != "" {
+		existing, err := s.repo.FindByIdempotencyKey(ctx, s.db, orgID, idempotencyKey)
+		if err != nil {
+			return nil, err
+		}
+		if existing != nil {
+			return s.toResponse(existing), nil
+		}
+	}
+
 	priceID, unit, err := s.parseTierIdentifiers(req)
 	if err != nil {
 		return nil, err
@@ -76,34 +89,81 @@ func (s *Service) Create(ctx context.Context, req pricetierdomain.CreateRequest)
 		CreatedAt:       now,
 		UpdatedAt:       now,
 	}
+	if idempotencyKey != "" {
+		entity.IdempotencyKey = &idempotencyKey
+	}
 	if req.Metadata != nil {
 		entity.Metadata = datatypes.JSONMap(req.Metadata)
 	}
 
 	if err := s.repo.Insert(ctx, s.db, entity); err != nil {
+		if idempotencyKey != "" && errors.Is(err, gorm.ErrDuplicatedKey) {
+			existing, findErr := s.repo.FindByIdempotencyKey(ctx, s.db, orgID, idempotencyKey)
+			if findErr != nil {
+				return nil, findErr
+			}
+			if existing != nil {
+				return s.toResponse(existing), nil
+			}
+		}
 		return nil, err
 	}
 
 	return s.toResponse(entity), nil
 }
 
-func (s *Service) List(ctx context.Context) ([]pricetierdomain.Response, error) {
+func (s *Service) List(ctx context.Context, req pricetierdomain.ListRequest) (pricetierdomain.ListResponse, error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
-		return nil, pricetierdomain.ErrInvalidOrganization
+		return pricetierdomain.ListResponse{}, pricetierdomain.ErrInvalidOrganization
 	}
 
-	items, err := s.repo.List(ctx, s.db, orgID)
+	pageSize := req.PageSize
+	if pageSize < 0 {
+		pageSize = 0
+	} else if pageSize == 0 {
+		pageSize = 50
+	}
+
+	items, err := s.repo.List(ctx, s.db, orgID, pagination.Pagination{
+		PageToken: req.PageToken,
+		PageSize:  int(pageSize),
+	})
 	if err != nil {
-		return nil, err
+		return pricetierdomain.ListResponse{}, err
+	}
+
+	var pageInfo *pagination.PageInfo
+	if pageSize > 0 {
+		pageInfo = pagination.BuildCursorPageInfo(items, pageSize, func(item *pricetierdomain.PriceTier) string {
+			token, err := pagination.EncodeCursor(pagination.Cursor{
+				ID:        item.ID.String(),
+				CreatedAt: item.CreatedAt.Format(time.RFC3339),
+			})
+			if err != nil {
+				return ""
+			}
+			return token
+		})
+		if pageInfo != nil && pageInfo.HasMore && len(items) > int(pageSize) {
+			items = items[:pageSize]
+		}
 	}
 
 	resp := make([]pricetierdomain.Response, 0, len(items))
-	for i := range items {
-		resp = append(resp, *s.toResponse(&items[i]))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		resp = append(resp, *s.toResponse(item))
 	}
 
-	return resp, nil
+	out := pricetierdomain.ListResponse{Tiers: resp}
+	if pageInfo != nil {
+		out.PageInfo = *pageInfo
+	}
+
+	return out, nil
 }
 
 func (s *Service) Get(ctx context.Context, id string) (*pricetierdomain.Response, error) {

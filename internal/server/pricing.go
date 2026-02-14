@@ -1,7 +1,6 @@
 package server
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -14,8 +13,9 @@ import (
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
+// @Param        Idempotency-Key  header  string  false  "Idempotency Key"
 // @Param        request body pricedomain.CreateRequest true "Create Pricing Request"
-// @Success      200  {object}  pricedomain.Response
+// @Success      200  {object}  DataResponse
 // @Router       /pricings [post]
 func (s *Server) CreatePricing(c *gin.Context) {
 	var req pricedomain.CreateRequest
@@ -25,16 +25,17 @@ func (s *Server) CreatePricing(c *gin.Context) {
 	}
 
 	resp, err := s.priceSvc.Create(c.Request.Context(), pricedomain.CreateRequest{
-		Name:        strings.TrimSpace(req.Name),
-		Description: req.Description,
-		Active:      req.Active,
+		Name:           strings.TrimSpace(req.Name),
+		Description:    req.Description,
+		Active:         req.Active,
+		IdempotencyKey: idempotencyKeyFromHeader(c),
 	})
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 // @Summary      List Pricings
@@ -43,13 +44,17 @@ func (s *Server) CreatePricing(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
-// @Success      200  {object}  []pricedomain.Response
+// @Param        product_id  query  string  false  "Product ID"
+// @Param        code        query  string  false  "Code"
+// @Param        page_token  query  string  false  "Page Token"
+// @Param        page_size   query  int     false  "Page Size"
+// @Success      200  {object}  ListResponse
 // @Router       /pricings [get]
 func (s *Server) ListPricings(c *gin.Context) {
 
 	var query pricedomain.ListOptions
 	if err := c.ShouldBindQuery(&query); err != nil {
-		AbortWithError(c, err)
+		AbortWithError(c, invalidRequestError())
 		return
 	}
 
@@ -59,7 +64,7 @@ func (s *Server) ListPricings(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondList(c, resp.Prices, &resp.PageInfo)
 }
 
 // @Summary      Get Pricing
@@ -69,7 +74,7 @@ func (s *Server) ListPricings(c *gin.Context) {
 // @Produce      json
 // @Security     ApiKeyAuth
 // @Param        id   path      string  true  "Pricing ID"
-// @Success      200  {object}  pricedomain.Response
+// @Success      200  {object}  DataResponse
 // @Router       /pricings/{id} [get]
 func (s *Server) GetPricingByID(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
@@ -79,7 +84,7 @@ func (s *Server) GetPricingByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 func isPricingValidationError(err error) bool {

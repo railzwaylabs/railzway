@@ -1,7 +1,6 @@
 package server
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -20,8 +19,9 @@ type createCustomerRequest struct {
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
+// @Param        Idempotency-Key  header  string  false  "Idempotency Key"
 // @Param        request body createCustomerRequest true "Create Customer Request"
-// @Success      200  {object}  customerdomain.Customer
+// @Success      200  {object}  DataResponse
 // @Router       /customers [post]
 func (s *Server) CreateCustomer(c *gin.Context) {
 	var req createCustomerRequest
@@ -31,8 +31,9 @@ func (s *Server) CreateCustomer(c *gin.Context) {
 	}
 
 	resp, err := s.customerSvc.Create(c.Request.Context(), customerdomain.CreateCustomerRequest{
-		Name:  strings.TrimSpace(req.Name),
-		Email: strings.TrimSpace(req.Email),
+		Name:           strings.TrimSpace(req.Name),
+		Email:          strings.TrimSpace(req.Email),
+		IdempotencyKey: idempotencyKeyFromHeader(c),
 	})
 	if err != nil {
 		AbortWithError(c, err)
@@ -48,7 +49,7 @@ func (s *Server) CreateCustomer(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 // @Summary      List Customers
@@ -64,7 +65,7 @@ func (s *Server) CreateCustomer(c *gin.Context) {
 // @Param        created_to    query     string  false  "Created To"
 // @Param        page_token    query     string  false  "Page Token"
 // @Param        page_size     query     int     false  "Page Size"
-// @Success      200  {object}  []customerdomain.Customer
+// @Success      200  {object}  ListResponse
 // @Router       /customers [get]
 func (s *Server) ListCustomers(c *gin.Context) {
 	var query struct {
@@ -106,7 +107,7 @@ func (s *Server) ListCustomers(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondList(c, resp.Customers, &resp.PageInfo)
 }
 
 // @Summary      Get Customer
@@ -116,7 +117,7 @@ func (s *Server) ListCustomers(c *gin.Context) {
 // @Produce      json
 // @Security     ApiKeyAuth
 // @Param        id   path      string  true  "Customer ID"
-// @Success      200  {object}  customerdomain.Customer
+// @Success      200  {object}  DataResponse
 // @Router       /customers/{id} [get]
 func (s *Server) GetCustomerByID(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
@@ -128,7 +129,7 @@ func (s *Server) GetCustomerByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	respondData(c, resp)
 }
 
 func isCustomerValidationError(err error) bool {

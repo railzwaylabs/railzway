@@ -6,6 +6,7 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/railzwaylabs/railzway/internal/feature/domain"
 	"github.com/railzwaylabs/railzway/pkg/db/option"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"gorm.io/gorm"
 )
 
@@ -18,8 +19,8 @@ func Provide() domain.Repository {
 func (r *repo) Create(ctx context.Context, db *gorm.DB, feature *domain.Feature) error {
 	return db.WithContext(ctx).Exec(
 		`INSERT INTO features (
-			id, org_id, code, name, description, feature_type, meter_id, active, metadata, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			id, org_id, code, name, description, feature_type, meter_id, active, idempotency_key, metadata, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		feature.ID,
 		feature.OrgID,
 		feature.Code,
@@ -28,6 +29,7 @@ func (r *repo) Create(ctx context.Context, db *gorm.DB, feature *domain.Feature)
 		feature.Type,
 		feature.MeterID,
 		feature.Active,
+		feature.IdempotencyKey,
 		feature.Metadata,
 		feature.CreatedAt,
 		feature.UpdatedAt,
@@ -37,7 +39,7 @@ func (r *repo) Create(ctx context.Context, db *gorm.DB, feature *domain.Feature)
 func (r *repo) FindByID(ctx context.Context, db *gorm.DB, orgID, id int64) (*domain.Feature, error) {
 	var f domain.Feature
 	err := db.WithContext(ctx).Raw(
-		`SELECT id, org_id, code, name, description, feature_type, meter_id, active, metadata, created_at, updated_at
+		`SELECT id, org_id, code, name, description, feature_type, meter_id, active, idempotency_key, metadata, created_at, updated_at
 		 FROM features WHERE org_id = ? AND id = ?`,
 		orgID,
 		id,
@@ -51,8 +53,25 @@ func (r *repo) FindByID(ctx context.Context, db *gorm.DB, orgID, id int64) (*dom
 	return &f, nil
 }
 
-func (r *repo) List(ctx context.Context, db *gorm.DB, orgID int64, filter domain.ListRequest) ([]domain.Feature, error) {
-	var items []domain.Feature
+func (r *repo) FindByIdempotencyKey(ctx context.Context, db *gorm.DB, orgID int64, key string) (*domain.Feature, error) {
+	var f domain.Feature
+	err := db.WithContext(ctx).Raw(
+		`SELECT id, org_id, code, name, description, feature_type, meter_id, active, idempotency_key, metadata, created_at, updated_at
+		 FROM features WHERE org_id = ? AND idempotency_key = ? LIMIT 1`,
+		orgID,
+		key,
+	).Scan(&f).Error
+	if err != nil {
+		return nil, err
+	}
+	if f.ID == 0 {
+		return nil, nil
+	}
+	return &f, nil
+}
+
+func (r *repo) List(ctx context.Context, db *gorm.DB, orgID int64, filter domain.ListRequest, page pagination.Pagination) ([]*domain.Feature, error) {
+	var items []*domain.Feature
 	stmt := db.WithContext(ctx).
 		Model(&domain.Feature{}).
 		Where("org_id = ?", orgID)
@@ -70,11 +89,18 @@ func (r *repo) List(ctx context.Context, db *gorm.DB, orgID int64, filter domain
 		stmt = stmt.Where("active = ?", *filter.Active)
 	}
 
-	stmt = option.WithSortBy(option.WithQuerySortBy(filter.SortBy, filter.OrderBy, map[string]bool{
-		"created_at": true,
-		"updated_at": true,
-		"name":       true,
-	})).Apply(stmt)
+	if page.PageToken == "" {
+		stmt = option.WithSortBy(option.WithQuerySortBy(filter.SortBy, filter.OrderBy, map[string]bool{
+			"created_at": true,
+			"updated_at": true,
+			"name":       true,
+		})).Apply(stmt)
+	}
+
+	stmt = option.ApplyPagination(page).Apply(stmt)
+	if page.PageToken != "" || page.PageSize > 0 {
+		stmt = stmt.Order("created_at desc, id desc")
+	}
 
 	if err := stmt.Find(&items).Error; err != nil {
 		return nil, err

@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
 	"github.com/bwmarrin/snowflake"
 	meterdomain "github.com/railzwaylabs/railzway/internal/meter/domain"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -42,6 +44,17 @@ func (s *Service) Create(ctx context.Context, req meterdomain.CreateRequest) (*m
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
 		return nil, meterdomain.ErrInvalidOrganization
+	}
+
+	idempotencyKey := strings.TrimSpace(req.IdempotencyKey)
+	if idempotencyKey != "" {
+		existing, err := s.repo.FindByIdempotencyKey(ctx, s.db, orgID, idempotencyKey)
+		if err != nil {
+			return nil, err
+		}
+		if existing != nil {
+			return s.toResponse(existing), nil
+		}
 	}
 
 	code := strings.TrimSpace(req.Code)
@@ -81,18 +94,30 @@ func (s *Service) Create(ctx context.Context, req meterdomain.CreateRequest) (*m
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
+	if idempotencyKey != "" {
+		m.IdempotencyKey = &idempotencyKey
+	}
 
 	if err := s.repo.Insert(ctx, s.db, m); err != nil {
+		if idempotencyKey != "" && errors.Is(err, gorm.ErrDuplicatedKey) {
+			existing, findErr := s.repo.FindByIdempotencyKey(ctx, s.db, orgID, idempotencyKey)
+			if findErr != nil {
+				return nil, findErr
+			}
+			if existing != nil {
+				return s.toResponse(existing), nil
+			}
+		}
 		return nil, err
 	}
 
 	return s.toResponse(m), nil
 }
 
-func (s *Service) List(ctx context.Context, req meterdomain.ListRequest) ([]meterdomain.Response, error) {
+func (s *Service) List(ctx context.Context, req meterdomain.ListRequest) (meterdomain.ListResponse, error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
-		return nil, meterdomain.ErrInvalidOrganization
+		return meterdomain.ListResponse{}, meterdomain.ErrInvalidOrganization
 	}
 
 	filter := meterdomain.ListRequest{
@@ -101,19 +126,56 @@ func (s *Service) List(ctx context.Context, req meterdomain.ListRequest) ([]mete
 		Active:  req.Active,
 		SortBy:  strings.TrimSpace(req.SortBy),
 		OrderBy: strings.TrimSpace(req.OrderBy),
+		PageToken: req.PageToken,
+		PageSize:  req.PageSize,
 	}
 
-	items, err := s.repo.List(ctx, s.db, orgID, filter)
+	pageSize := req.PageSize
+	if pageSize < 0 {
+		pageSize = 0
+	} else if pageSize == 0 {
+		pageSize = 50
+	}
+
+	items, err := s.repo.List(ctx, s.db, orgID, filter, pagination.Pagination{
+		PageToken: req.PageToken,
+		PageSize:  int(pageSize),
+	})
 	if err != nil {
-		return nil, err
+		return meterdomain.ListResponse{}, err
+	}
+
+	var pageInfo *pagination.PageInfo
+	if pageSize > 0 {
+		pageInfo = pagination.BuildCursorPageInfo(items, pageSize, func(item *meterdomain.Meter) string {
+			token, err := pagination.EncodeCursor(pagination.Cursor{
+				ID:        item.ID.String(),
+				CreatedAt: item.CreatedAt.Format(time.RFC3339),
+			})
+			if err != nil {
+				return ""
+			}
+			return token
+		})
+		if pageInfo != nil && pageInfo.HasMore && len(items) > int(pageSize) {
+			items = items[:pageSize]
+		}
 	}
 
 	resp := make([]meterdomain.Response, 0, len(items))
-	for i := range items {
-		resp = append(resp, *s.toResponse(&items[i]))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		resp = append(resp, *s.toResponse(item))
 	}
 
-	return resp, nil
+	out := meterdomain.ListResponse{Meters: resp}
+	if pageInfo != nil {
+		out.PageInfo = *pageInfo
+	}
+
+	return out, nil
 }
 
 func (s *Service) Update(ctx context.Context, req meterdomain.UpdateRequest) (*meterdomain.Response, error) {

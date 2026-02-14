@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { NavLink } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 
 import {
   SidebarGroup,
@@ -16,22 +16,41 @@ export function NavMain({
     title: string
     url: string
     icon?: LucideIcon
+    isActive?: (pathname: string) => boolean
   }[]
 }) {
+  const { pathname } = useLocation()
+
+  const normalizePath = (value: string) => {
+    const trimmed = value.replace(/\/+$/, "")
+    return trimmed.length ? trimmed : "/"
+  }
+  const currentPath = normalizePath(pathname)
+
+  const resolveActive = (item: (typeof items)[number]) => {
+    if (item.isActive) return item.isActive(currentPath)
+    const target = normalizePath(item.url)
+    if (currentPath === target) return true
+    return currentPath.startsWith(`${target}/`)
+  }
+
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild tooltip={item.title}>
-                <NavLink to={item.url} end={true}>
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) => {
+            const isActive = resolveActive(item)
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
+                  <Link to={item.url} aria-current={isActive ? "page" : undefined}>
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

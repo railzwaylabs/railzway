@@ -5,6 +5,8 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	pricedomain "github.com/railzwaylabs/railzway/internal/price/domain"
+	"github.com/railzwaylabs/railzway/pkg/db/option"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"gorm.io/gorm"
 )
 
@@ -17,17 +19,18 @@ func Provide() pricedomain.Repository {
 func (r *repo) Insert(ctx context.Context, db *gorm.DB, p *pricedomain.Price) error {
 	return db.WithContext(ctx).Exec(
 		`INSERT INTO prices (
-			id, org_id, product_id, code, name, description,
+			id, org_id, product_id, code, name, description, idempotency_key,
 			pricing_model, billing_mode, billing_interval, billing_interval_count,
 			aggregate_usage, billing_unit, billing_threshold, tax_behavior, tax_code,
 			version, is_default, active, retired_at, metadata, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		p.ID,
 		p.OrgID,
 		p.ProductID,
 		p.Code,
 		p.Name,
 		p.Description,
+		p.IdempotencyKey,
 		p.PricingModel,
 		p.BillingMode,
 		p.BillingInterval,
@@ -51,6 +54,7 @@ func (r *repo) FindByID(ctx context.Context, db *gorm.DB, orgID, id snowflake.ID
 	var p pricedomain.Price
 	err := db.WithContext(ctx).Raw(
 		`SELECT id, org_id, product_id, code, name, description,
+		 idempotency_key,
 		 pricing_model, billing_mode, billing_interval, billing_interval_count,
 		 aggregate_usage, billing_unit, billing_threshold, tax_behavior, tax_code,
 		 version, is_default, active, retired_at, metadata, created_at, updated_at
@@ -67,8 +71,29 @@ func (r *repo) FindByID(ctx context.Context, db *gorm.DB, orgID, id snowflake.ID
 	return &p, nil
 }
 
-func (r *repo) List(ctx context.Context, db *gorm.DB, orgID snowflake.ID, opts pricedomain.ListOptions) ([]pricedomain.Price, error) {
-	var items []pricedomain.Price
+func (r *repo) FindByIdempotencyKey(ctx context.Context, db *gorm.DB, orgID snowflake.ID, key string) (*pricedomain.Price, error) {
+	var p pricedomain.Price
+	err := db.WithContext(ctx).Raw(
+		`SELECT id, org_id, product_id, code, name, description,
+		 idempotency_key,
+		 pricing_model, billing_mode, billing_interval, billing_interval_count,
+		 aggregate_usage, billing_unit, billing_threshold, tax_behavior, tax_code,
+		 version, is_default, active, retired_at, metadata, created_at, updated_at
+		 FROM prices WHERE org_id = ? AND idempotency_key = ? LIMIT 1`,
+		orgID,
+		key,
+	).Scan(&p).Error
+	if err != nil {
+		return nil, err
+	}
+	if p.ID == 0 {
+		return nil, nil
+	}
+	return &p, nil
+}
+
+func (r *repo) List(ctx context.Context, db *gorm.DB, orgID snowflake.ID, opts pricedomain.ListOptions, page pagination.Pagination) ([]*pricedomain.Price, error) {
+	var items []*pricedomain.Price
 
 	query := db.WithContext(ctx).
 		Model(&pricedomain.Price{}).
@@ -82,7 +107,14 @@ func (r *repo) List(ctx context.Context, db *gorm.DB, orgID snowflake.ID, opts p
 		query = query.Where("code = ?", *opts.Code)
 	}
 
-	err := query.Order("created_at ASC").Find(&items).Error
+	query = option.ApplyPagination(page).Apply(query)
+	if page.PageToken != "" || page.PageSize > 0 {
+		query = query.Order("created_at desc, id desc")
+	} else {
+		query = query.Order("created_at ASC")
+	}
+
+	err := query.Find(&items).Error
 
 	if err != nil {
 		return nil, err
