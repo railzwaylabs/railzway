@@ -50,27 +50,39 @@ func (v ValidationErrors) Error() string {
 	return "validation error"
 }
 
+// errorPayload represents the structure of error responses sent to clients.
 type errorPayload struct {
-	Type    string            `json:"type"`
-	Message string            `json:"message"`
-	Errors  []ValidationError `json:"errors,omitempty"`
+	Type    string            `json:"type"`    // High-level error category (e.g., "validation_error", "not_found")
+	Message string            `json:"message"` // Human-readable error message
+	Errors  []ValidationError `json:"errors,omitempty"` // Detailed validation errors (only for validation_error type)
 }
 
 type errorResponse struct {
 	Error errorPayload `json:"error"`
 }
 
+// Standard error types returned by the API.
+// These errors are mapped to appropriate HTTP status codes and error payloads.
 var (
-	ErrUnauthorized       = errors.New("unauthorized")
-	ErrForbidden          = errors.New("forbidden")
-	ErrConflict           = errors.New("conflict")
-	ErrInternal           = errors.New("internal_error")
-	ErrNotFound           = errors.New("not_found")
-	ErrInvalidRequest     = errors.New("invalid_request")
-	ErrServiceUnavailable = errors.New("service_unavailable")
-	ErrOrgRequired        = errors.New("org_required")
-	ErrRateLimited        = errors.New("rate_limited")
-	ErrInvoiceUnavailable = errors.New("invoice_unavailable")
+	// Authentication & Authorization Errors
+	ErrUnauthorized = errors.New("unauthorized")       // 401: Missing or invalid credentials
+	ErrForbidden    = errors.New("forbidden")          // 403: Authenticated but lacks permission
+	ErrOrgRequired  = errors.New("org_required")       // 428: Organization context required
+
+	// Resource Errors
+	ErrNotFound = errors.New("not_found") // 404: Resource does not exist
+	ErrConflict = errors.New("conflict")  // 409: Resource already exists or state conflict
+
+	// Validation Errors
+	ErrInvalidRequest = errors.New("invalid_request") // 400: Request validation failed
+
+	// Rate Limiting & Quotas
+	ErrRateLimited = errors.New("rate_limited") // 429: Too many requests
+
+	// System Errors
+	ErrInternal           = errors.New("internal_error")       // 500: Unexpected server error
+	ErrServiceUnavailable = errors.New("service_unavailable")  // 503: Service temporarily unavailable
+	ErrInvoiceUnavailable = errors.New("invoice_unavailable")  // 404: Invoice not available
 )
 
 func ErrorHandlingMiddleware() gin.HandlerFunc {

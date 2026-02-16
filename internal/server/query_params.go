@@ -7,9 +7,29 @@ import (
 	"time"
 
 	"github.com/bwmarrin/snowflake"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 const dateOnlyLayout = "2006-01-02"
+
+// parsePaginationParams extracts and validates pagination parameters from query string.
+// Returns page_token and validated page_size (defaults to 10, max 250).
+func parsePaginationParams(pageToken string, pageSizeStr string) (string, int, error) {
+	// Parse page size
+	pageSize := pagination.DefaultPageSize
+	if pageSizeStr != "" {
+		parsed, err := strconv.Atoi(strings.TrimSpace(pageSizeStr))
+		if err != nil {
+			return "", 0, newValidationError("page_size", "invalid_page_size", "page size must be a number")
+		}
+		if parsed < pagination.MinPageSize || parsed > pagination.MaxPageSize {
+			return "", 0, newValidationError("page_size", "invalid_page_size", "page size must be between 1 and 250")
+		}
+		pageSize = parsed
+	}
+
+	return strings.TrimSpace(pageToken), pageSize, nil
+}
 
 func parseOptionalBool(value string) (*bool, error) {
 	trimmed := strings.TrimSpace(value)

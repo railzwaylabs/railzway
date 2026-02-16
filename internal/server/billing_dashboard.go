@@ -1,9 +1,8 @@
 package server
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 func (s *Server) ListBillingCustomers(c *gin.Context) {
@@ -12,13 +11,19 @@ func (s *Server) ListBillingCustomers(c *gin.Context) {
 		return
 	}
 
-	resp, err := s.billingDashboardSvc.ListCustomerBalances(c.Request.Context())
+	var query pagination.Pagination
+	if err := c.ShouldBindQuery(&query); err != nil {
+		AbortWithError(c, invalidRequestError())
+		return
+	}
+
+	resp, err := s.billingDashboardSvc.ListCustomerBalances(c.Request.Context(), query.PageToken, int32(query.PageSize))
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"customers": resp.Customers})
+	respondList(c, resp.Customers, &resp.PageInfo)
 }
 
 func (s *Server) ListBillingCycles(c *gin.Context) {
@@ -27,13 +32,19 @@ func (s *Server) ListBillingCycles(c *gin.Context) {
 		return
 	}
 
-	resp, err := s.billingDashboardSvc.ListBillingCycles(c.Request.Context())
+	var query pagination.Pagination
+	if err := c.ShouldBindQuery(&query); err != nil {
+		AbortWithError(c, invalidRequestError())
+		return
+	}
+
+	resp, err := s.billingDashboardSvc.ListBillingCycles(c.Request.Context(), query.PageToken, int32(query.PageSize))
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"cycles": resp.Cycles})
+	respondList(c, resp.Cycles, &resp.PageInfo)
 }
 
 func (s *Server) ListBillingActivity(c *gin.Context) {
@@ -42,11 +53,17 @@ func (s *Server) ListBillingActivity(c *gin.Context) {
 		return
 	}
 
-	resp, err := s.billingDashboardSvc.ListBillingActivity(c.Request.Context(), 15)
+	var query pagination.Pagination
+	if err := c.ShouldBindQuery(&query); err != nil {
+		AbortWithError(c, invalidRequestError())
+		return
+	}
+
+	resp, err := s.billingDashboardSvc.ListBillingActivity(c.Request.Context(), query.PageToken, int32(query.PageSize))
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"activity": resp.Activity})
+	respondList(c, resp.Activity, &resp.PageInfo)
 }

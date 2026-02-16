@@ -136,6 +136,11 @@ func (s *Service) Disconnect(ctx context.Context, id snowflake.ID) error {
 	return nil
 }
 
+func (s *Service) GetConnection(ctx context.Context, id snowflake.ID) (*domain.Connection, error) {
+	return s.repo.GetConnection(ctx, id)
+}
+
+
 func (s *Service) GetConnectionConfig(ctx context.Context, id snowflake.ID) (map[string]any, error) {
 	conn, err := s.repo.GetConnection(ctx, id)
 	if err != nil {

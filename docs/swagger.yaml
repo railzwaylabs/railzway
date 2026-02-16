@@ -318,6 +318,7 @@ definitions:
     type: object
 info:
   contact: {}
+basePath: /api/v1
 paths:
   /countries:
     get:

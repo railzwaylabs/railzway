@@ -3,6 +3,7 @@ package domain
 import (
 	"time"
 
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"gorm.io/datatypes"
 )
 
@@ -18,7 +19,8 @@ type CustomerBalance struct {
 
 // CustomerBalancesResponse is the API response for customer balances.
 type CustomerBalancesResponse struct {
-	Customers []CustomerBalance `json:"customers"`
+	Customers []CustomerBalance   `json:"customers"`
+	PageInfo  pagination.PageInfo `json:"page_info"`
 }
 
 // BillingCycleSummary captures revenue and invoicing stats for a cycle.
@@ -32,7 +34,8 @@ type BillingCycleSummary struct {
 
 // BillingCycleSummaryResponse is the API response for billing cycles.
 type BillingCycleSummaryResponse struct {
-	Cycles []BillingCycleSummary `json:"cycles"`
+	Cycles   []BillingCycleSummary `json:"cycles"`
+	PageInfo pagination.PageInfo   `json:"page_info"`
 }
 
 // BillingActivity represents a human-readable billing event.
@@ -44,7 +47,8 @@ type BillingActivity struct {
 
 // BillingActivityResponse is the API response for billing activity.
 type BillingActivityResponse struct {
-	Activity []ActivityGroup `json:"activity"`
+	Activity []ActivityGroup     `json:"activity"`
+	PageInfo pagination.PageInfo `json:"page_info"`
 }
 
 type ActivityGroup struct {

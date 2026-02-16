@@ -39,8 +39,7 @@ Payments determine **how money moves**.
 Railzway owns billing and **orchestrates** payments.
 It delegates actual processing to specialized providers.
 
-→ `payment-services.md`
-→ `why-railzway-does-not-handle-payments.md`
+- [Why Railzway Does Not Handle Payments](why-railzway-does-not-handle-payments.md)
 
 ---
 
@@ -51,7 +50,7 @@ Billing results must be reproducible.
 Given the same inputs, Railzway will always produce the same outputs.
 No result depends on runtime side effects or external systems.
 
-→ `how-billing-stays-deterministic.md`
+- [How Billing Stays Deterministic](how-billing-stays-deterministic.md)
 
 ---
 
@@ -62,7 +61,7 @@ Pricing changes must not rewrite history.
 Railzway models pricing as versioned, append-only configuration
 with explicit effective dates.
 
-→ `pricing-versioning-and-effective-dates.md`
+- [Pricing Versioning and Effective Dates](pricing-versioning-and-effective-dates.md)
 
 ---
 
@@ -73,7 +72,7 @@ Billing data represents financial intent.
 Once recorded, intent is never mutated.
 Corrections are modeled explicitly.
 
-→ `why-billing-is-append-only.md`
+- [Why Billing Is Append-Only](why-billing-is-append-only.md)
 
 ---
 
@@ -87,7 +86,7 @@ Each cycle owns:
 - a stable set of inputs
 - a deterministic output
 
-→ `billing-cycle-as-a-first-class-concept.md`
+- [Billing Cycle as a First-Class Concept](billing-cycle-as-a-first-class-concept.md)
 
 ---
 
@@ -98,7 +97,7 @@ Usage may arrive late.
 Railzway evaluates usage by event time,
 and handles late data explicitly without mutating history.
 
-→ `handling-late-arriving-usage.md`
+- [Handling Late-Arriving Usage](handling-late-arriving-usage.md)
 
 ---
 
@@ -109,7 +108,7 @@ Usage ingestion must survive retries.
 Railzway enforces idempotency to ensure that
 retries never affect billing correctness.
 
-→ `idempotency-and-usage-ingestion.md`
+- [Idempotency and Usage Ingestion](idempotency-and-usage-ingestion.md)
 
 ---
 
@@ -120,7 +119,7 @@ Billing is not computed in real time.
 Usage is ingested continuously.
 Billing is computed once the context is complete.
 
-→ `why-billing-is-not-real-time.md`
+- [Why Billing Is Not Real-Time](why-billing-is-not-real-time.md)
 
 ---
 
@@ -135,7 +134,7 @@ Every invoice can be traced back to:
 - billing cycles
 - configuration state
 
-→ `observability-and-billing-explainability.md`
+- [Observability and Billing Explainability](observability-and-billing-explainability.md)
 
 ---
 
@@ -147,7 +146,29 @@ Silent mutation is not acceptable.
 Railzway models corrections as explicit adjustments
 that preserve historical integrity.
 
-→ `billing-corrections-and-adjustments.md`
+- [Billing Corrections and Adjustments](billing-corrections-and-adjustments.md)
+
+---
+
+## API & Operations
+
+Technical guides for integrating and operating Railzway.
+
+- [API Versioning Strategy](API_VERSIONING.md)
+- [Pagination Guide](PAGINATION.md)
+- [Error Taxonomy](ERROR_TAXONOMY.md)
+- [Quality Assessment](QUALITY_ASSESSMENT.md)
+- [Swagger Documentation](swagger.yaml)
+
+---
+
+## Architectural Decision Records (ADRs)
+
+Key architectural decisions and their rationale.
+
+- [ADR-001: Billing Truth & Source of Record](adr/ADR-001-billing-truth-and-source-of-record.md)
+- [ADR-002: Why usage_events.status.rated Is Deferred](adr/ADR-002-usage-status-rated-deferred.md)
+- [ADR-003: API Versioning Strategy](adr/ADR-003-api-versioning-strategy.md)
 
 ---
 

@@ -51,7 +51,7 @@ const READINESS_CONFIG: Record<string, ReadinessItemConfig> = {
   payment_provider_connected: {
     title: "Payment Provider",
     description: "Connect a payment provider to process payments.",
-    href: "/payment-providers",
+    href: "/integrations?type=payment",
     actionLabel: "Connect Provider",
   },
   payment_configuration_complete: {

@@ -3,12 +3,14 @@ import type { CatalogItem, Connection, ConnectInput } from "../types";
 
 export const listCatalog = async (): Promise<CatalogItem[]> => {
   const response = await admin.get("/integrations/catalog");
-  return response.data;
+  // Ensure we always return an array, never null/undefined
+  return Array.isArray(response.data) ? response.data : [];
 };
 
 export const listConnections = async (): Promise<Connection[]> => {
   const response = await admin.get("/integrations/connections");
-  return response.data;
+  // Ensure we always return an array, never null/undefined
+  return Array.isArray(response.data) ? response.data : [];
 };
 
 export const connectIntegration = async (input: ConnectInput): Promise<Connection> => {

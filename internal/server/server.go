@@ -404,7 +404,11 @@ func (s *Server) RegisterAuthRoutes() {
 }
 
 func (s *Server) RegisterAPIRoutes() {
-	api := s.engine.Group("/api")
+	rootAPI := s.engine.Group("/api")
+
+	// Version 1 of the API
+	v1 := rootAPI.Group("/v1")
+	api := v1 // Use v1 for all standard API routes
 
 	api.GET("/countries", s.APIKeyRequired(), s.ListCountries)
 	api.GET("/timezones", s.APIKeyRequired(), s.ListTimezones)
@@ -474,7 +478,8 @@ func (s *Server) RegisterAPIRoutes() {
 	api.POST("/features/:id/archive", s.APIKeyRequired(), s.authorizeOrgAction(authorization.ObjectProduct, authorization.ActionProductUpdate), s.ArchiveFeature)
 
 	// -------- Payment Webhooks --------
-	api.POST("/payments/webhooks/:provider", s.HandlePaymentWebhook)
+	// Webhooks remain at /api root for stability
+	rootAPI.POST("/payments/webhooks/:provider", s.HandlePaymentWebhook)
 
 	// -------- Payment Methods (Customer) --------
 	api.GET("/payment-methods/available", s.APIKeyRequired(), s.ListAvailablePaymentMethods) // Public lookup
@@ -809,6 +814,15 @@ func (s *Server) RegisterUIRoutes() {
 			paymentProviders := org.Group("/payment-providers")
 			{
 				paymentProviders.GET("", s.serveIndex)
+			}
+
+			integrations := org.Group("/integrations")
+			{
+				integrations.GET("", s.serveIndex)
+				integrations.GET("/catalog", s.serveIndex)
+				integrations.GET("/connections", s.serveIndex)
+				integrations.POST("/connect", s.serveIndex)
+				integrations.POST("/:id/disconnect", s.serveIndex)
 			}
 
 			settings := org.Group("/settings", s.RequireRole(organizationdomain.RoleOwner, organizationdomain.RoleAdmin))

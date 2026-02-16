@@ -1,5 +1,7 @@
 # **ADR-001: Billing Truth & Source of Record**
 
+[← Back to Documentation Index](../index.md)
+
 **Status:** Accepted
 
 **Date:** 2026-01-02

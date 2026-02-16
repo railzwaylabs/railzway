@@ -1,6 +1,8 @@
 
 # Handling Late-Arriving Usage
 
+[← Back to Documentation Index](index.md)
+
 Late-arriving usage is inevitable in distributed systems.
 
 Events can be delayed due to:

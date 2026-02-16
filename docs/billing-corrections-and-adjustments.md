@@ -1,5 +1,7 @@
 # Billing Corrections and Adjustments
 
+[← Back to Documentation Index](index.md)
+
 Billing systems must support corrections.
 
 What matters is **how corrections are modeled**.

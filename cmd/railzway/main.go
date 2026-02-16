@@ -37,6 +37,25 @@ import (
 	"go.uber.org/fx"
 )
 
+// @title           Railzway API
+// @version         1.0
+// @description     Railzway Billing Engine API
+// @termsOfService  http://railzway.com/terms/
+
+// @contact.name   API Support
+// @contact.url    https://www.railzway.com/support
+// @contact.email  support@railzway.com
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+
 func main() {
 	if err := newRootCmd().Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

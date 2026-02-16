@@ -1,5 +1,7 @@
 # Billing Operations and Collections
 
+[← Back to Documentation Index](index.md)
+
 Railzway isolates "Billing Operations" into a dedicated domain to handle the human-in-the-loop aspects of revenue recovery.
 
 While Railzway automates billing cycles and invoice generation, **Dunning (Collections)** is often a stateful, human-driven process for enterprise B2B.

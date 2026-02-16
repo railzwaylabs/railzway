@@ -1,6 +1,8 @@
 
 ## **ADR-002: Why `usage_events.status.rated` Is Deferred**
 
+[← Back to Documentation Index](../index.md)
+
 **Status:** Accepted
 
 **Date:** 2026-01-02

@@ -1,5 +1,7 @@
 # Why Billing Data Is Append-Only
 
+[← Back to Documentation Index](index.md)
+
 Billing systems manage financial intent.
 
 Once intent is recorded, mutating it introduces ambiguity and risk.
