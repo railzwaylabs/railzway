@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
 type OverdueInvoice struct {
@@ -20,9 +22,10 @@ type OverdueInvoice struct {
 }
 
 type OverdueInvoicesResponse struct {
-	Currency string           `json:"currency"`
-	Invoices []OverdueInvoice `json:"invoices"`
-	HasData  bool             `json:"has_data"`
+	Currency string              `json:"currency"`
+	Invoices []OverdueInvoice    `json:"invoices"`
+	HasData  bool                `json:"has_data"`
+	PageInfo pagination.PageInfo `json:"page_info"`
 }
 
 type OutstandingCustomer struct {
@@ -44,6 +47,7 @@ type OutstandingCustomersResponse struct {
 	Currency  string                `json:"currency"`
 	Customers []OutstandingCustomer `json:"customers"`
 	HasData   bool                  `json:"has_data"`
+	PageInfo  pagination.PageInfo   `json:"page_info"`
 }
 
 type PaymentIssue struct {
@@ -57,8 +61,9 @@ type PaymentIssue struct {
 }
 
 type PaymentIssuesResponse struct {
-	Issues  []PaymentIssue `json:"issues"`
-	HasData bool           `json:"has_data"`
+	Issues   []PaymentIssue      `json:"issues"`
+	HasData  bool                `json:"has_data"`
+	PageInfo pagination.PageInfo `json:"page_info"`
 }
 
 type ActionSummary struct {
@@ -111,6 +116,7 @@ type BillingOperationsResponse struct {
 	CollectionQueue []CollectionQueueEntry `json:"collection_queue"`
 	PaymentIssues   []PaymentIssue         `json:"payment_issues"`
 	GeneratedAt     time.Time              `json:"generated_at"`
+	PageInfo        pagination.PageInfo    `json:"page_info"`
 }
 
 type RecordActionRequest struct {
@@ -221,10 +227,10 @@ const (
 
 
 type Service interface {
-	ListOverdueInvoices(ctx context.Context, limit int) (OverdueInvoicesResponse, error)
-	ListOutstandingCustomers(ctx context.Context, limit int) (OutstandingCustomersResponse, error)
-	ListPaymentIssues(ctx context.Context, limit int) (PaymentIssuesResponse, error)
-	GetOperations(ctx context.Context, limit int) (BillingOperationsResponse, error)
+	ListOverdueInvoices(ctx context.Context, pageToken string, pageSize int) (OverdueInvoicesResponse, error)
+	ListOutstandingCustomers(ctx context.Context, pageToken string, pageSize int) (OutstandingCustomersResponse, error)
+	ListPaymentIssues(ctx context.Context, pageToken string, pageSize int) (PaymentIssuesResponse, error)
+	GetOperations(ctx context.Context, pageToken string, pageSize int) (BillingOperationsResponse, error)
 	RecordAction(ctx context.Context, req RecordActionRequest) (RecordActionResponse, error)
 	ClaimAssignment(ctx context.Context, req ClaimAssignmentRequest) (AssignmentResponse, error)
 	ReleaseAssignment(ctx context.Context, req ReleaseAssignmentRequest) error

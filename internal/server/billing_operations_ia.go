@@ -16,17 +16,15 @@ func (s *Server) GetBillingOperationsInbox(c *gin.Context) {
 		return
 	}
 
-	limit, err := parseBillingOperationsLimit(c)
-	if err != nil {
-		AbortWithError(c, err)
+	var query struct {
+		billingoperationsdomain.InboxRequest
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		AbortWithError(c, invalidRequestError())
 		return
 	}
 
-	req := billingoperationsdomain.InboxRequest{
-		Limit: limit,
-	}
-
-	resp, err := s.billingOperationsSvc.GetInbox(c.Request.Context(), req)
+	resp, err := s.billingOperationsSvc.GetInbox(c.Request.Context(), query.InboxRequest)
 	if err != nil {
 		AbortWithError(c, err)
 		return
@@ -48,17 +46,15 @@ func (s *Server) GetBillingOperationsMyWork(c *gin.Context) {
 		return
 	}
 
-	limit, err := parseBillingOperationsLimit(c)
-	if err != nil {
-		AbortWithError(c, err)
+	var query struct {
+		billingoperationsdomain.MyWorkRequest
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		AbortWithError(c, invalidRequestError())
 		return
 	}
 
-	req := billingoperationsdomain.MyWorkRequest{
-		Limit: limit,
-	}
-
-	resp, err := s.billingOperationsSvc.GetMyWork(c.Request.Context(), userID, req)
+	resp, err := s.billingOperationsSvc.GetMyWork(c.Request.Context(), userID, query.MyWorkRequest)
 	if err != nil {
 		AbortWithError(c, err)
 		return
@@ -80,17 +76,15 @@ func (s *Server) GetBillingOperationsRecentlyResolved(c *gin.Context) {
 		return
 	}
 
-	limit, err := parseBillingOperationsLimit(c)
-	if err != nil {
-		AbortWithError(c, err)
+	var query struct {
+		billingoperationsdomain.RecentlyResolvedRequest
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		AbortWithError(c, invalidRequestError())
 		return
 	}
 
-	req := billingoperationsdomain.RecentlyResolvedRequest{
-		Limit: limit,
-	}
-
-	resp, err := s.billingOperationsSvc.GetRecentlyResolved(c.Request.Context(), userID, req)
+	resp, err := s.billingOperationsSvc.GetRecentlyResolved(c.Request.Context(), userID, query.RecentlyResolvedRequest)
 	if err != nil {
 		AbortWithError(c, err)
 		return

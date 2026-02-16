@@ -116,7 +116,7 @@ func (s *Server) GetHomeDashboard(c *gin.Context) {
 
 	// 3. Alerts: Check for Overdue Invoices
 	opsCtx := c.Request.Context()
-	overdueInvoices, _ := s.billingOperationsSvc.ListOverdueInvoices(opsCtx, 5)
+	overdueInvoices, _ := s.billingOperationsSvc.ListOverdueInvoices(opsCtx, "", 5)
 
 	alerts := []AlertBase{}
 

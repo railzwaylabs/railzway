@@ -56,7 +56,8 @@ func (r *RepositoryImpl) ListOverdueInvoices(
 	orgID snowflake.ID,
 	currency string,
 	now time.Time,
-	limit int,
+	pageToken string,
+	pageSize int,
 ) ([]billingopsdomain.OverdueInvoiceRow, error) {
 	var rows []billingopsdomain.OverdueInvoiceRow
 	query := `
@@ -118,10 +119,6 @@ func (r *RepositoryImpl) ListOverdueInvoices(
 		string(ledgerdomain.AccountCodeAccountsReceivable),
 		orgID,
 		billingopsdomain.EntityTypeInvoice,
-		orgID,
-		currency,
-		now,
-		limit,
 	).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -133,7 +130,8 @@ func (r *RepositoryImpl) ListOutstandingCustomers(
 	orgID snowflake.ID,
 	currency string,
 	now time.Time,
-	limit int,
+	pageToken string,
+	pageSize int,
 ) ([]billingopsdomain.OutstandingCustomerRow, error) {
 	var rows []billingopsdomain.OutstandingCustomerRow
 	query := `
@@ -227,14 +225,14 @@ func (r *RepositoryImpl) ListOutstandingCustomers(
 		orgID,
 		billingopsdomain.EntityTypeCustomer,
 		orgID,
-		limit,
+		pageSize+1,
 	).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 	return rows, nil
 }
 
-func (r *RepositoryImpl) ListPaymentIssues(ctx context.Context, orgID snowflake.ID, now time.Time, limit int) ([]billingopsdomain.PaymentIssueRow, error) {
+func (r *RepositoryImpl) ListPaymentIssues(ctx context.Context, orgID snowflake.ID, now time.Time, pageToken string, pageSize int) ([]billingopsdomain.PaymentIssueRow, error) {
 	var rows []billingopsdomain.PaymentIssueRow
 	query := `
 		SELECT
@@ -260,7 +258,7 @@ func (r *RepositoryImpl) ListPaymentIssues(ctx context.Context, orgID snowflake.
 		WHERE pe.org_id = ?
 		  AND pe.event_type = ?
 		GROUP BY pe.customer_id, c.name, pe.event_type, boa.assigned_to, boa.assigned_at, boa.assignment_expires_at, boa.status, boa.released_at, boa.released_by, boa.release_reason, boa.last_action_at
-		ORDER BY last_attempt DESC
+		ORDER BY last_attempt DESC, pe.customer_id ASC
 		LIMIT ?`
 
 	if err := r.db.WithContext(ctx).Raw(
@@ -269,7 +267,7 @@ func (r *RepositoryImpl) ListPaymentIssues(ctx context.Context, orgID snowflake.
 		billingopsdomain.EntityTypeCustomer,
 		orgID,
 		paymentdomain.EventTypePaymentFailed,
-		limit,
+		pageSize+1,
 	).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -338,7 +336,8 @@ func (r *RepositoryImpl) ListCollectionQueue(
 	orgID snowflake.ID,
 	currency string,
 	now time.Time,
-	limit int,
+	pageToken string,
+	pageSize int,
 ) ([]billingopsdomain.CollectionQueueRow, error) {
 	var rows []billingopsdomain.CollectionQueueRow
 	query := `
@@ -443,7 +442,7 @@ func (r *RepositoryImpl) ListCollectionQueue(
 		orgID,
 		now,
 		now,
-		limit,
+		pageSize+1,
 	).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -455,7 +454,8 @@ func (r *RepositoryImpl) ListFailedPaymentActions(
 	orgID snowflake.ID,
 	currency string,
 	now time.Time,
-	limit int,
+	pageToken string,
+	pageSize int,
 ) ([]billingopsdomain.FailedPaymentActionRow, error) {
 	var rows []billingopsdomain.FailedPaymentActionRow
 	query := `
@@ -513,11 +513,10 @@ func (r *RepositoryImpl) ListFailedPaymentActions(
 		LEFT JOIN billing_operation_assignments boa
 			ON boa.org_id = ?
 			AND boa.entity_type = ?
-
 			AND boa.entity_id = f.customer_id
 			AND boa.status != 'released'
 		WHERE (i.id IS NULL OR GREATEST(i.subtotal_amount - COALESCE(s.settled_amount, 0), 0) > 0)
-		ORDER BY f.last_attempt DESC
+		ORDER BY f.last_attempt DESC, f.customer_id ASC
 		LIMIT ?`
 
 	if err := r.db.WithContext(ctx).Raw(
@@ -532,7 +531,7 @@ func (r *RepositoryImpl) ListFailedPaymentActions(
 		currency,
 		orgID,
 		billingopsdomain.EntityTypeCustomer,
-		limit,
+		pageSize+1,
 	).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -1029,7 +1028,8 @@ func computeRiskLevel(outstanding int64, oldestDays int) string {
 func (r *RepositoryImpl) ListInboxItems(
 	ctx context.Context,
 	orgID snowflake.ID,
-	limit int,
+	pageToken string,
+	pageSize int,
 	now time.Time,
 ) ([]billingopsdomain.InboxRow, error) {
 	query := `
@@ -1172,7 +1172,7 @@ func (r *RepositoryImpl) ListInboxItems(
 		orgID, currency, string(ledgerdomain.SourceTypePayment), string(ledgerdomain.AccountCodeAccountsReceivable),
 		orgID, currency, now,
 		orgID, orgID,
-		limit,
+		pageSize+1,
 	).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -1183,7 +1183,8 @@ func (r *RepositoryImpl) ListMyWorkItems(
 	ctx context.Context,
 	orgID snowflake.ID,
 	userID string,
-	limit int,
+	pageToken string,
+	pageSize int,
 	now time.Time,
 ) ([]billingopsdomain.MyWorkRow, error) {
 	query := `
@@ -1294,7 +1295,7 @@ func (r *RepositoryImpl) ListMyWorkItems(
 		WHERE boa.org_id = ?
 			AND boa.assigned_to = ?
 			AND boa.status IN ('assigned', 'in_progress')
-		ORDER BY boa.assigned_at ASC
+		ORDER BY boa.assigned_at ASC, boa.id ASC
 		LIMIT ?`
 
 	currency, err := r.FetchOrgCurrency(ctx, orgID)
@@ -1312,7 +1313,7 @@ func (r *RepositoryImpl) ListMyWorkItems(
 		orgID, currency, string(ledgerdomain.SourceTypePayment), string(ledgerdomain.AccountCodeAccountsReceivable),
 		orgID, currency, now,
 		orgID, userID,
-		limit,
+		pageSize+1,
 	).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -1323,7 +1324,8 @@ func (r *RepositoryImpl) ListRecentlyResolvedItems(
 	ctx context.Context,
 	orgID snowflake.ID,
 	userID string,
-	limit int,
+	pageToken string,
+	pageSize int,
 	since time.Time,
 ) ([]billingopsdomain.ResolvedRow, error) {
 	query := `
@@ -1342,14 +1344,14 @@ func (r *RepositoryImpl) ListRecentlyResolvedItems(
 			AND boa.assigned_to = ?
 			AND boa.status IN ('resolved', 'released', 'escalated')
 			AND boa.resolved_at > ?
-		ORDER BY boa.resolved_at DESC
+		ORDER BY boa.resolved_at DESC, boa.id DESC
 		LIMIT ?`
 
 	var rows []billingopsdomain.ResolvedRow
 	if err := r.db.WithContext(ctx).Raw(
 		query,
 		orgID, userID, since,
-		limit,
+		pageSize+1,
 	).Scan(&rows).Error; err != nil {
 		return nil, err
 	}

@@ -11,16 +11,15 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/railzwaylabs/railzway/internal/billingoperations/domain"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 )
 
-func (s *Service) ListOverdueInvoices(ctx context.Context, limit int) (domain.OverdueInvoicesResponse, error) {
+func (s *Service) ListOverdueInvoices(ctx context.Context, pageToken string, pageSize int) (domain.OverdueInvoicesResponse, error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
 		return domain.OverdueInvoicesResponse{}, domain.ErrInvalidOrganization
 	}
-	if limit <= 0 {
-		limit = 25
-	}
+	pageSize = pagination.ValidatePageSize(pageSize)
 
 	currency, err := s.repo.FetchOrgCurrency(ctx, snowflake.ID(orgID))
 	if err != nil {
@@ -28,7 +27,7 @@ func (s *Service) ListOverdueInvoices(ctx context.Context, limit int) (domain.Ov
 	}
 
 	now := s.clock.Now(ctx).UTC()
-	rows, err := s.repo.ListOverdueInvoices(ctx, snowflake.ID(orgID), currency, now, limit)
+	rows, err := s.repo.ListOverdueInvoices(ctx, snowflake.ID(orgID), currency, now, pageToken, pageSize)
 	if err != nil {
 		return domain.OverdueInvoicesResponse{}, err
 	}
@@ -99,21 +98,37 @@ func (s *Service) ListOverdueInvoices(ctx context.Context, limit int) (domain.Ov
 		})
 	}
 
+	hasMore := len(invoices) > pageSize
+	if hasMore {
+		invoices = invoices[:pageSize]
+	}
+
+	var nextPageToken string
+	if hasMore && len(invoices) > 0 {
+		last := invoices[len(invoices)-1]
+		nextPageToken, _ = pagination.EncodeCursor(pagination.Cursor{
+			ID:        last.InvoiceID,
+			CreatedAt: last.DueAt.Format(time.RFC3339),
+		})
+	}
+
 	return domain.OverdueInvoicesResponse{
 		Currency: currency,
 		Invoices: invoices,
 		HasData:  len(invoices) > 0,
+		PageInfo: pagination.PageInfo{
+			NextPageToken: nextPageToken,
+			HasMore:       hasMore,
+		},
 	}, nil
 }
 
-func (s *Service) ListOutstandingCustomers(ctx context.Context, limit int) (domain.OutstandingCustomersResponse, error) {
+func (s *Service) ListOutstandingCustomers(ctx context.Context, pageToken string, pageSize int) (domain.OutstandingCustomersResponse, error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
 		return domain.OutstandingCustomersResponse{}, domain.ErrInvalidOrganization
 	}
-	if limit <= 0 {
-		limit = 25
-	}
+	pageSize = pagination.ValidatePageSize(pageSize)
 
 	currency, err := s.repo.FetchOrgCurrency(ctx, snowflake.ID(orgID))
 	if err != nil {
@@ -121,7 +136,7 @@ func (s *Service) ListOutstandingCustomers(ctx context.Context, limit int) (doma
 	}
 
 	now := s.clock.Now(ctx).UTC()
-	rows, err := s.repo.ListOutstandingCustomers(ctx, snowflake.ID(orgID), currency, now, limit)
+	rows, err := s.repo.ListOutstandingCustomers(ctx, snowflake.ID(orgID), currency, now, pageToken, pageSize)
 	if err != nil {
 		return domain.OutstandingCustomersResponse{}, err
 	}
@@ -214,24 +229,39 @@ func (s *Service) ListOutstandingCustomers(ctx context.Context, limit int) (doma
 		})
 	}
 
+	hasMore := len(customers) > pageSize
+	if hasMore {
+		customers = customers[:pageSize]
+	}
+
+	var nextPageToken string
+	if hasMore && len(customers) > 0 {
+		last := customers[len(customers)-1]
+		nextPageToken, _ = pagination.EncodeCursor(pagination.Cursor{
+			ID: last.CustomerID,
+		})
+	}
+
 	return domain.OutstandingCustomersResponse{
 		Currency:  currency,
 		Customers: customers,
 		HasData:   len(customers) > 0,
+		PageInfo: pagination.PageInfo{
+			NextPageToken: nextPageToken,
+			HasMore:       hasMore,
+		},
 	}, nil
 }
 
-func (s *Service) ListPaymentIssues(ctx context.Context, limit int) (domain.PaymentIssuesResponse, error) {
+func (s *Service) ListPaymentIssues(ctx context.Context, pageToken string, pageSize int) (domain.PaymentIssuesResponse, error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
 		return domain.PaymentIssuesResponse{}, domain.ErrInvalidOrganization
 	}
-	if limit <= 0 {
-		limit = 25
-	}
+	pageSize = pagination.ValidatePageSize(pageSize)
 
 	now := s.clock.Now(ctx).UTC()
-	rows, err := s.repo.ListPaymentIssues(ctx, snowflake.ID(orgID), now, limit)
+	rows, err := s.repo.ListPaymentIssues(ctx, snowflake.ID(orgID), now, pageToken, pageSize)
 	if err != nil {
 		return domain.PaymentIssuesResponse{}, err
 	}
@@ -294,20 +324,37 @@ func (s *Service) ListPaymentIssues(ctx context.Context, limit int) (domain.Paym
 		})
 	}
 
+	hasMore := len(issues) > pageSize
+	if hasMore {
+		issues = issues[:pageSize]
+	}
+
+	var nextPageToken string
+	if hasMore && len(issues) > 0 {
+		last := issues[len(issues)-1]
+		cursor := pagination.Cursor{ID: last.CustomerID}
+		if last.LastAttempt != nil {
+			cursor.CreatedAt = last.LastAttempt.Format(time.RFC3339)
+		}
+		nextPageToken, _ = pagination.EncodeCursor(cursor)
+	}
+
 	return domain.PaymentIssuesResponse{
 		Issues:  issues,
 		HasData: len(issues) > 0,
+		PageInfo: pagination.PageInfo{
+			NextPageToken: nextPageToken,
+			HasMore:       hasMore,
+		},
 	}, nil
 }
 
-func (s *Service) GetOperations(ctx context.Context, limit int) (domain.BillingOperationsResponse, error) {
+func (s *Service) GetOperations(ctx context.Context, pageToken string, pageSize int) (domain.BillingOperationsResponse, error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
 		return domain.BillingOperationsResponse{}, domain.ErrInvalidOrganization
 	}
-	if limit <= 0 {
-		limit = 25
-	}
+	pageSize = pagination.ValidatePageSize(pageSize)
 
 	currency, err := s.repo.FetchOrgCurrency(ctx, snowflake.ID(orgID))
 	if err != nil {
@@ -320,19 +367,19 @@ func (s *Service) GetOperations(ctx context.Context, limit int) (domain.BillingO
 		return domain.BillingOperationsResponse{}, err
 	}
 
-	overdueRows, err := s.repo.ListOverdueInvoices(ctx, snowflake.ID(orgID), currency, now, limit)
+	overdueRows, err := s.repo.ListOverdueInvoices(ctx, snowflake.ID(orgID), currency, now, pageToken, pageSize)
 	if err != nil {
 		return domain.BillingOperationsResponse{}, err
 	}
-	failedRows, err := s.repo.ListFailedPaymentActions(ctx, snowflake.ID(orgID), currency, now, limit)
+	failedRows, err := s.repo.ListFailedPaymentActions(ctx, snowflake.ID(orgID), currency, now, pageToken, pageSize)
 	if err != nil {
 		return domain.BillingOperationsResponse{}, err
 	}
-	queueRows, err := s.repo.ListCollectionQueue(ctx, snowflake.ID(orgID), currency, now, limit)
+	queueRows, err := s.repo.ListCollectionQueue(ctx, snowflake.ID(orgID), currency, now, pageToken, pageSize)
 	if err != nil {
 		return domain.BillingOperationsResponse{}, err
 	}
-	paymentRows, err := s.repo.ListPaymentIssues(ctx, snowflake.ID(orgID), now, limit)
+	paymentRows, err := s.repo.ListPaymentIssues(ctx, snowflake.ID(orgID), now, pageToken, pageSize)
 	if err != nil {
 		return domain.BillingOperationsResponse{}, err
 	}
@@ -671,10 +718,8 @@ func (s *Service) GetInbox(ctx context.Context, req domain.InboxRequest) (domain
 		return domain.InboxResponse{}, domain.ErrInvalidOrganization
 	}
 
-	limit := req.Limit
-	if limit <= 0 {
-		limit = 25
-	}
+	pageSize := pagination.ValidatePageSize(req.PageSize)
+	pageToken := req.PageToken
 
 	currency, err := s.repo.FetchOrgCurrency(ctx, snowflake.ID(orgID))
 	if err != nil {
@@ -682,7 +727,7 @@ func (s *Service) GetInbox(ctx context.Context, req domain.InboxRequest) (domain
 	}
 
 	now := s.clock.Now(ctx).UTC()
-	rows, err := s.repo.ListInboxItems(ctx, snowflake.ID(orgID), limit, now)
+	rows, err := s.repo.ListInboxItems(ctx, snowflake.ID(orgID), pageToken, pageSize, now)
 	if err != nil {
 		return domain.InboxResponse{}, err
 	}
@@ -709,9 +754,26 @@ func (s *Service) GetInbox(ctx context.Context, req domain.InboxRequest) (domain
 		})
 	}
 
+	hasMore := len(items) > pageSize
+	if hasMore {
+		items = items[:pageSize]
+	}
+
+	var nextPageToken string
+	if hasMore && len(items) > 0 {
+		last := items[len(items)-1]
+		nextPageToken, _ = pagination.EncodeCursor(pagination.Cursor{
+			ID: last.EntityID,
+		})
+	}
+
 	return domain.InboxResponse{
 		Items:    items,
 		Currency: currency,
+		PageInfo: pagination.PageInfo{
+			NextPageToken: nextPageToken,
+			HasMore:       hasMore,
+		},
 	}, nil
 }
 
@@ -721,10 +783,8 @@ func (s *Service) GetMyWork(ctx context.Context, userID string, req domain.MyWor
 		return domain.MyWorkResponse{}, domain.ErrInvalidOrganization
 	}
 
-	limit := req.Limit
-	if limit <= 0 {
-		limit = 25
-	}
+	pageSize := pagination.ValidatePageSize(req.PageSize)
+	pageToken := req.PageToken
 
 	currency, err := s.repo.FetchOrgCurrency(ctx, snowflake.ID(orgID))
 	if err != nil {
@@ -732,7 +792,7 @@ func (s *Service) GetMyWork(ctx context.Context, userID string, req domain.MyWor
 	}
 
 	now := s.clock.Now(ctx).UTC()
-	rows, err := s.repo.ListMyWorkItems(ctx, snowflake.ID(orgID), userID, limit, now)
+	rows, err := s.repo.ListMyWorkItems(ctx, snowflake.ID(orgID), userID, pageToken, pageSize, now)
 	if err != nil {
 		return domain.MyWorkResponse{}, err
 	}
@@ -784,9 +844,27 @@ func (s *Service) GetMyWork(ctx context.Context, userID string, req domain.MyWor
 		})
 	}
 
+	hasMore := len(items) > pageSize
+	if hasMore {
+		items = items[:pageSize]
+	}
+
+	var nextPageToken string
+	if hasMore && len(items) > 0 {
+		last := items[len(items)-1]
+		nextPageToken, _ = pagination.EncodeCursor(pagination.Cursor{
+			ID:        last.AssignmentID,
+			CreatedAt: last.ClaimedAt.Format(time.RFC3339),
+		})
+	}
+
 	return domain.MyWorkResponse{
 		Items:    items,
 		Currency: currency,
+		PageInfo: pagination.PageInfo{
+			NextPageToken: nextPageToken,
+			HasMore:       hasMore,
+		},
 	}, nil
 }
 
@@ -796,14 +874,12 @@ func (s *Service) GetRecentlyResolved(ctx context.Context, userID string, req do
 		return domain.RecentlyResolvedResponse{}, domain.ErrInvalidOrganization
 	}
 
-	limit := req.Limit
-	if limit <= 0 {
-		limit = 25
-	}
+	pageSize := pagination.ValidatePageSize(req.PageSize)
+	pageToken := req.PageToken
 
 	since := s.clock.Now(ctx).UTC().AddDate(0, 0, -7) // Last 7 days by default
 
-	rows, err := s.repo.ListRecentlyResolvedItems(ctx, snowflake.ID(orgID), userID, limit, since)
+	rows, err := s.repo.ListRecentlyResolvedItems(ctx, snowflake.ID(orgID), userID, pageToken, pageSize, since)
 	if err != nil {
 		return domain.RecentlyResolvedResponse{}, err
 	}
@@ -845,8 +921,26 @@ func (s *Service) GetRecentlyResolved(ctx context.Context, userID string, req do
 		})
 	}
 
+	hasMore := len(items) > pageSize
+	if hasMore {
+		items = items[:pageSize]
+	}
+
+	var nextPageToken string
+	if hasMore && len(items) > 0 {
+		last := items[len(items)-1]
+		nextPageToken, _ = pagination.EncodeCursor(pagination.Cursor{
+			ID:        last.AssignmentID,
+			CreatedAt: last.ResolvedAt.Format(time.RFC3339),
+		})
+	}
+
 	return domain.RecentlyResolvedResponse{
-		Items: items,
+		Items:    items,
+		PageInfo: pagination.PageInfo{
+			NextPageToken: nextPageToken,
+			HasMore:       hasMore,
+		},
 	}, nil
 }
 

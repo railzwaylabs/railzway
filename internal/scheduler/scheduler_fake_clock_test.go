@@ -122,16 +122,16 @@ func (m *mockAuthzSvc) Authorize(ctx context.Context, subject, domain, object, a
 
 type mockBillingOpsSvc struct{}
 
-func (m *mockBillingOpsSvc) ListOverdueInvoices(ctx context.Context, limit int) (billingopsdomain.OverdueInvoicesResponse, error) {
+func (m *mockBillingOpsSvc) ListOverdueInvoices(ctx context.Context, pageToken string, pageSize int) (billingopsdomain.OverdueInvoicesResponse, error) {
 	return billingopsdomain.OverdueInvoicesResponse{}, nil
 }
-func (m *mockBillingOpsSvc) ListOutstandingCustomers(ctx context.Context, limit int) (billingopsdomain.OutstandingCustomersResponse, error) {
+func (m *mockBillingOpsSvc) ListOutstandingCustomers(ctx context.Context, pageToken string, pageSize int) (billingopsdomain.OutstandingCustomersResponse, error) {
 	return billingopsdomain.OutstandingCustomersResponse{}, nil
 }
-func (m *mockBillingOpsSvc) ListPaymentIssues(ctx context.Context, limit int) (billingopsdomain.PaymentIssuesResponse, error) {
+func (m *mockBillingOpsSvc) ListPaymentIssues(ctx context.Context, pageToken string, pageSize int) (billingopsdomain.PaymentIssuesResponse, error) {
 	return billingopsdomain.PaymentIssuesResponse{}, nil
 }
-func (m *mockBillingOpsSvc) GetOperations(ctx context.Context, limit int) (billingopsdomain.BillingOperationsResponse, error) {
+func (m *mockBillingOpsSvc) GetOperations(ctx context.Context, pageToken string, pageSize int) (billingopsdomain.BillingOperationsResponse, error) {
 	return billingopsdomain.BillingOperationsResponse{}, nil
 }
 func (m *mockBillingOpsSvc) RecordAction(ctx context.Context, req billingopsdomain.RecordActionRequest) (billingopsdomain.RecordActionResponse, error) {

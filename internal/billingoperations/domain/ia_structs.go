@@ -1,11 +1,15 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
+)
 
 // Inbox View (Unassigned / Needs Action)
 
 type InboxRequest struct {
-	Limit int `json:"limit" form:"limit"`
+	pagination.Pagination
 }
 
 type InboxItem struct {
@@ -22,14 +26,15 @@ type InboxItem struct {
 }
 
 type InboxResponse struct {
-	Items    []InboxItem `json:"items"`
-	Currency string      `json:"currency"`
+	Items    []InboxItem         `json:"items"`
+	Currency string              `json:"currency"`
+	PageInfo pagination.PageInfo `json:"page_info"`
 }
 
 // My Work View (Claimed by Me)
 
 type MyWorkRequest struct {
-	Limit int `json:"limit" form:"limit"`
+	pagination.Pagination
 }
 
 type MyWorkItem struct {
@@ -58,14 +63,15 @@ type MyWorkItem struct {
 }
 
 type MyWorkResponse struct {
-	Items    []MyWorkItem `json:"items"`
-	Currency string       `json:"currency"`
+	Items    []MyWorkItem        `json:"items"`
+	Currency string              `json:"currency"`
+	PageInfo pagination.PageInfo `json:"page_info"`
 }
 
 // Recently Resolved View
 
 type RecentlyResolvedRequest struct {
-	Limit int `json:"limit" form:"limit"`
+	pagination.Pagination
 }
 
 type ResolvedItem struct {
@@ -84,7 +90,8 @@ type ResolvedItem struct {
 }
 
 type RecentlyResolvedResponse struct {
-	Items []ResolvedItem `json:"items"`
+	Items    []ResolvedItem      `json:"items"`
+	PageInfo pagination.PageInfo `json:"page_info"`
 }
 
 // Team View (Manager Only)
