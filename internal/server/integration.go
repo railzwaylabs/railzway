@@ -16,6 +16,11 @@ func (s *Server) ListIntegrationCatalog(c *gin.Context) {
 		return
 	}
 
+	// Ensure we always return an array, never null
+	if items == nil {
+		items = []domain.CatalogItem{}
+	}
+
 	c.JSON(http.StatusOK, items)
 }
 
@@ -26,12 +31,17 @@ func (s *Server) ListIntegrationConnections(c *gin.Context) {
 		return
 	}
 
-
 	conns, err := s.integrationSvc.ListConnections(c.Request.Context(), orgID)
 	if err != nil {
 		c.Error(err)
 		return
 	}
+
+	// Ensure we always return an array, never null
+	if conns == nil {
+		conns = []domain.Connection{}
+	}
+
 	c.JSON(http.StatusOK, conns)
 }
 
@@ -71,6 +81,12 @@ func (s *Server) ConnectIntegration(c *gin.Context) {
 }
 
 func (s *Server) DisconnectIntegration(c *gin.Context) {
+	orgID, ok := orgcontext.OrgIDFromContext(c.Request.Context())
+	if !ok {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
 	idStr := c.Param("id")
 	id, err := snowflake.ParseString(idStr)
 	if err != nil {
@@ -78,13 +94,23 @@ func (s *Server) DisconnectIntegration(c *gin.Context) {
 		return
 	}
 
-	// TODO: Verify ownership of connection (OrgID check)
-	// The service disconnect just takes ID.
-	// Ideally service should take OrgID to verify or GetConnection should return OrgID and we check.
-	// For now, let's assume service handles authorization or we fetch and check.
-	// For safety, let's look at implementation. 
-	// The service gets connection by ID. 
-	// We should probably check if it belongs to current context OrgID here in handler or pass OrgID to service.
+	// Verify ownership: fetch the connection and check if it belongs to the current org
+	conn, err := s.integrationSvc.GetConnection(c.Request.Context(), id)
+	if err != nil {
+		// If connection not found or any other error, return appropriate error
+		if err == domain.ErrConnectionNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "connection not found"})
+			return
+		}
+		c.Error(err)
+		return
+	}
+
+	// Verify that the connection belongs to the current organization
+	if conn.OrgID != orgID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
 
 	if err := s.integrationSvc.Disconnect(c.Request.Context(), id); err != nil {
 		c.Error(err)

@@ -10,6 +10,7 @@ import (
 	billingdashboard "github.com/railzwaylabs/railzway/internal/billingdashboard/domain"
 	"github.com/railzwaylabs/railzway/internal/clock"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	"github.com/railzwaylabs/railzway/pkg/db/pagination"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
@@ -46,10 +47,23 @@ type customerBalanceRow struct {
 	LastInvoiceID *snowflake.ID `gorm:"column:last_invoice_id"`
 }
 
-func (s *Service) ListCustomerBalances(ctx context.Context) (billingdashboard.CustomerBalancesResponse, error) {
+func (s *Service) ListCustomerBalances(ctx context.Context, pageToken string, pageSize int32) (billingdashboard.CustomerBalancesResponse, error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
 		return billingdashboard.CustomerBalancesResponse{}, billingdashboard.ErrInvalidOrganization
+	}
+
+	limit := int(pageSize)
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	cursor, err := pagination.DecodeCursor(pageToken)
+	if err != nil {
+		return billingdashboard.CustomerBalancesResponse{}, err
 	}
 
 	var rows []customerBalanceRow
@@ -69,16 +83,30 @@ func (s *Service) ListCustomerBalances(ctx context.Context) (billingdashboard.Cu
 		LEFT JOIN customer_balances cb ON cb.customer_id = c.id AND cb.org_id = ?
 		LEFT JOIN latest_invoice li ON li.customer_id = c.id
 		WHERE c.org_id = ?
-		ORDER BY c.name ASC
-		LIMIT 10`
+	`
 
-	if err := s.db.WithContext(ctx).Raw(
-		query,
-		orgID,
-		orgID,
-		orgID,
-	).Scan(&rows).Error; err != nil {
+	args := []interface{}{orgID, orgID, orgID}
+
+	if cursor != nil && cursor.Name != "" && cursor.ID != "" {
+		query += " AND (c.name > ? OR (c.name = ? AND c.id > ?))"
+		args = append(args, cursor.Name, cursor.Name, cursor.ID)
+	}
+
+	query += " ORDER BY c.name ASC, c.id ASC LIMIT ?"
+	args = append(args, limit+1)
+
+	if err := s.db.WithContext(ctx).Raw(query, args...).Scan(&rows).Error; err != nil {
 		return billingdashboard.CustomerBalancesResponse{}, err
+	}
+
+	var nextCursor string
+	if len(rows) > limit {
+		last := rows[limit-1]
+		nextCursor, _ = pagination.EncodeCursor(pagination.Cursor{
+			ID:   last.CustomerID.String(),
+			Name: last.Name,
+		})
+		rows = rows[:limit]
 	}
 
 	customers := make([]billingdashboard.CustomerBalance, 0, len(rows))
@@ -108,7 +136,13 @@ func (s *Service) ListCustomerBalances(ctx context.Context) (billingdashboard.Cu
 		})
 	}
 
-	return billingdashboard.CustomerBalancesResponse{Customers: customers}, nil
+	return billingdashboard.CustomerBalancesResponse{
+		Customers: customers,
+		PageInfo: pagination.PageInfo{
+			NextPageToken: nextCursor,
+			HasMore:       nextCursor != "",
+		},
+	}, nil
 }
 
 type billingCycleRow struct {
@@ -119,7 +153,7 @@ type billingCycleRow struct {
 	InvoiceCount int64        `gorm:"column:invoice_count"`
 }
 
-func (s *Service) ListBillingCycles(ctx context.Context) (billingdashboard.BillingCycleSummaryResponse, error) {
+func (s *Service) ListBillingCycles(ctx context.Context, pageToken string, pageSize int32) (billingdashboard.BillingCycleSummaryResponse, error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
 		return billingdashboard.BillingCycleSummaryResponse{}, billingdashboard.ErrInvalidOrganization
@@ -162,13 +196,23 @@ func (s *Service) ListBillingCycles(ctx context.Context) (billingdashboard.Billi
 	return billingdashboard.BillingCycleSummaryResponse{Cycles: cycles}, nil
 }
 
-func (s *Service) ListBillingActivity(ctx context.Context, limit int) (billingdashboard.BillingActivityResponse, error) {
+func (s *Service) ListBillingActivity(ctx context.Context, pageToken string, pageSize int32) (billingdashboard.BillingActivityResponse, error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == 0 {
 		return billingdashboard.BillingActivityResponse{}, billingdashboard.ErrInvalidOrganization
 	}
+
+	limit := int(pageSize)
 	if limit <= 0 {
-		limit = 15
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	cursor, err := pagination.DecodeCursor(pageToken)
+	if err != nil && pageToken != "" {
+		return billingdashboard.BillingActivityResponse{}, err
 	}
 
 	actions := []string{
@@ -177,18 +221,47 @@ func (s *Service) ListBillingActivity(ctx context.Context, limit int) (billingda
 		"payment.received",
 	}
 
-	var rows []billingdashboard.ActivityRow
-	if err := s.db.WithContext(ctx).Raw(
-		`SELECT action, metadata, created_at
+	type activityScanRow struct {
+		ID        snowflake.ID      `gorm:"column:id"`
+		Action    string            `gorm:"column:action"`
+		Metadata  datatypes.JSONMap `gorm:"column:metadata"`
+		CreatedAt time.Time         `gorm:"column:created_at"`
+	}
+
+	query := `SELECT id, action, metadata, created_at
 		 FROM audit_logs
-		 WHERE org_id = ? AND action IN ?
-		 ORDER BY created_at DESC
-		 LIMIT ?`,
-		orgID,
-		actions,
-		limit,
-	).Scan(&rows).Error; err != nil {
+		 WHERE org_id = ? AND action IN ?`
+
+	args := []interface{}{orgID, actions}
+
+	if cursor != nil && cursor.CreatedAt != "" && cursor.ID != "" {
+		// keyset pagination on (created_at DESC, id DESC)
+		cursorTime, err := time.Parse(time.RFC3339Nano, cursor.CreatedAt)
+		if err == nil {
+			query += " AND (created_at < ? OR (created_at = ? AND id < ?))"
+			args = append(args, cursorTime, cursorTime, cursor.ID)
+		}
+	}
+
+	query += " ORDER BY created_at DESC, id DESC LIMIT ?"
+	args = append(args, limit+1)
+
+	var scanRows []activityScanRow
+	if err := s.db.WithContext(ctx).Raw(query, args...).Scan(&scanRows).Error; err != nil {
 		return billingdashboard.BillingActivityResponse{}, err
+	}
+
+	var nextCursor string
+	hasNextPage := false
+
+	if len(scanRows) > limit {
+		hasNextPage = true
+		last := scanRows[limit-1]
+		nextCursor, _ = pagination.EncodeCursor(pagination.Cursor{
+			ID:        last.ID.String(),
+			CreatedAt: last.CreatedAt.Format(time.RFC3339Nano),
+		})
+		scanRows = scanRows[:limit]
 	}
 
 	loc, err := time.LoadLocation("Asia/Jakarta") // change based on org location/customer
@@ -203,7 +276,7 @@ func (s *Service) ListBillingActivity(ctx context.Context, limit int) (billingda
 	groups := make(map[string][]billingdashboard.BillingActivity)
 	order := []string{}
 
-	for _, row := range rows {
+	for _, row := range scanRows {
 		message := buildActivityMessage(row.Action, row.Metadata)
 		if message == "" {
 			continue
@@ -241,7 +314,13 @@ func (s *Service) ListBillingActivity(ctx context.Context, limit int) (billingda
 		})
 	}
 
-	return billingdashboard.BillingActivityResponse{Activity: result}, nil
+	return billingdashboard.BillingActivityResponse{
+		Activity: result,
+		PageInfo: pagination.PageInfo{
+			NextPageToken: nextCursor,
+			HasMore:       hasNextPage,
+		},
+	}, nil
 }
 
 func buildActivityMessage(action string, metadata datatypes.JSONMap) string {

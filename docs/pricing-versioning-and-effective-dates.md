@@ -1,5 +1,7 @@
 # Pricing Versioning and Effective Dates
 
+[← Back to Documentation Index](index.md)
+
 Pricing changes are inevitable.
 
 What matters is whether pricing changes are:

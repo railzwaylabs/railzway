@@ -1,5 +1,7 @@
 # How Billing Stays Deterministic in Railzway
 
+[← Back to Documentation Index](index.md)
+
 Determinism is a core property of Railzway.
 
 In Railzway, billing results are not inferred from runtime behavior,

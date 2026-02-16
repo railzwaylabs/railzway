@@ -1,5 +1,7 @@
 # Idempotency and Usage Ingestion
 
+[← Back to Documentation Index](index.md)
+
 Usage ingestion is the entry point of billing correctness.
 
 If usage ingestion is not idempotent,

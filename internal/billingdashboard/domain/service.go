@@ -7,9 +7,9 @@ import (
 
 // Service exposes admin billing dashboard data.
 type Service interface {
-	ListCustomerBalances(ctx context.Context) (CustomerBalancesResponse, error)
-	ListBillingCycles(ctx context.Context) (BillingCycleSummaryResponse, error)
-	ListBillingActivity(ctx context.Context, limit int) (BillingActivityResponse, error)
+	ListCustomerBalances(ctx context.Context, pageToken string, pageSize int32) (CustomerBalancesResponse, error)
+	ListBillingCycles(ctx context.Context, pageToken string, pageSize int32) (BillingCycleSummaryResponse, error)
+	ListBillingActivity(ctx context.Context, pageToken string, pageSize int32) (BillingActivityResponse, error)
 }
 
 var (

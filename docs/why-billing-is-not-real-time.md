@@ -1,5 +1,7 @@
 # Why Billing Is Not Real-Time
 
+[← Back to Documentation Index](index.md)
+
 Railzway does not attempt to compute billing in real time.
 
 This is a deliberate trade-off.

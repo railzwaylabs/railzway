@@ -1,5 +1,7 @@
 # Billing Cycle as a First-Class Concept
 
+[← Back to Documentation Index](index.md)
+
 In Railzway, the billing cycle is not a background job.
 It is a **first-class domain concept**.
 

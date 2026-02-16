@@ -407,9 +407,7 @@ func normalizeRoles(roles []string) map[string]struct{} {
 
 func normalizeRole(role string) string {
 	normalized := strings.ToUpper(strings.TrimSpace(role))
-	if strings.HasPrefix(normalized, "ORG_") {
-		normalized = strings.TrimPrefix(normalized, "ORG_")
-	}
+normalized = strings.TrimPrefix(normalized, "ORG_")
 	return normalized
 }
 

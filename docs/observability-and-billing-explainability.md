@@ -1,5 +1,7 @@
 # Observability and Billing Explainability
 
+[← Back to Documentation Index](index.md)
+
 Billing systems are trusted only when their outputs can be explained.
 
 In Railzway, observability is not limited to metrics and logs.

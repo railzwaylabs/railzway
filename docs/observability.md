@@ -1,5 +1,7 @@
 # Observability (Railzway )
 
+[← Back to Documentation Index](index.md)
+
 Railzway ships structured logging, OpenTelemetry tracing, and low-cardinality metrics with trace/log correlation.
 
 ## Environment variables

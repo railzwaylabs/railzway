@@ -37,19 +37,29 @@ func (s *Server) GetBillingOperationsOverdueInvoices(c *gin.Context) {
 		return
 	}
 
-	limit, err := parseBillingOperationsLimit(c)
+	pageToken, pageSize, err := parsePaginationParams(c.Query("page_token"), c.Query("page_size"))
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	resp, err := s.billingOperationsSvc.ListOverdueInvoices(c.Request.Context(), limit)
+	resp, err := s.billingOperationsSvc.ListOverdueInvoices(c.Request.Context(), pageSize)
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	// For now, billing operations doesn't support cursor pagination at service layer
+	// Return data with empty page_info until service layer is updated
+	c.JSON(http.StatusOK, gin.H{
+		"data": resp,
+		"page_info": gin.H{
+			"next_page_token":     "",
+			"previous_page_token": "",
+			"has_more":            false,
+		},
+	})
+	_ = pageToken // TODO: Use pageToken when service layer supports pagination
 }
 
 func (s *Server) GetBillingOperationsOutstandingCustomers(c *gin.Context) {
@@ -58,19 +68,27 @@ func (s *Server) GetBillingOperationsOutstandingCustomers(c *gin.Context) {
 		return
 	}
 
-	limit, err := parseBillingOperationsLimit(c)
+	pageToken, pageSize, err := parsePaginationParams(c.Query("page_token"), c.Query("page_size"))
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	resp, err := s.billingOperationsSvc.ListOutstandingCustomers(c.Request.Context(), limit)
+	resp, err := s.billingOperationsSvc.ListOutstandingCustomers(c.Request.Context(), pageSize)
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, gin.H{
+		"data": resp,
+		"page_info": gin.H{
+			"next_page_token":     "",
+			"previous_page_token": "",
+			"has_more":            false,
+		},
+	})
+	_ = pageToken // TODO: Use pageToken when service layer supports pagination
 }
 
 func (s *Server) GetBillingOperationsPaymentIssues(c *gin.Context) {
@@ -79,19 +97,27 @@ func (s *Server) GetBillingOperationsPaymentIssues(c *gin.Context) {
 		return
 	}
 
-	limit, err := parseBillingOperationsLimit(c)
+	pageToken, pageSize, err := parsePaginationParams(c.Query("page_token"), c.Query("page_size"))
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	resp, err := s.billingOperationsSvc.ListPaymentIssues(c.Request.Context(), limit)
+	resp, err := s.billingOperationsSvc.ListPaymentIssues(c.Request.Context(), pageSize)
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, gin.H{
+		"data": resp,
+		"page_info": gin.H{
+			"next_page_token":     "",
+			"previous_page_token": "",
+			"has_more":            false,
+		},
+	})
+	_ = pageToken // TODO: Use pageToken when service layer supports pagination
 }
 
 func (s *Server) GetBillingOperations(c *gin.Context) {
@@ -100,19 +126,27 @@ func (s *Server) GetBillingOperations(c *gin.Context) {
 		return
 	}
 
-	limit, err := parseBillingOperationsLimit(c)
+	pageToken, pageSize, err := parsePaginationParams(c.Query("page_token"), c.Query("page_size"))
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	resp, err := s.billingOperationsSvc.GetOperations(c.Request.Context(), limit)
+	resp, err := s.billingOperationsSvc.GetOperations(c.Request.Context(), pageSize)
 	if err != nil {
 		AbortWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, gin.H{
+		"data": resp,
+		"page_info": gin.H{
+			"next_page_token":     "",
+			"previous_page_token": "",
+			"has_more":            false,
+		},
+	})
+	_ = pageToken // TODO: Use pageToken when service layer supports pagination
 }
 
 func (s *Server) PostBillingOperationsAction(c *gin.Context) {

@@ -88,6 +88,7 @@ type Service interface {
 	Connect(ctx context.Context, input ConnectInput) (*Connection, error)
 	Disconnect(ctx context.Context, id snowflake.ID) error
 	
+	GetConnection(ctx context.Context, id snowflake.ID) (*Connection, error)
 	GetConnectionConfig(ctx context.Context, id snowflake.ID) (map[string]any, error)
 }
 

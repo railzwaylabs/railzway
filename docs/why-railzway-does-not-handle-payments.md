@@ -1,6 +1,8 @@
 
 # Why Railzway Does Not Handle Payments
 
+[← Back to Documentation Index](index.md)
+
 Railzway intentionally does **not** handle payment execution.
 
 This is not a missing feature.
