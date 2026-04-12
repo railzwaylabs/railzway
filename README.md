@@ -15,7 +15,7 @@ Railzway is in active development. Some flows are still being refined, and you m
 
 ## Quick Start (Docker Compose)
 
-This path uses prebuilt images and is the fastest way to run Railzway locally.
+This path uses prebuilt images when they are available.
 
 1. Copy environment files:
 
@@ -65,10 +65,24 @@ cd deployment/docker
 docker compose up -d postgres redis
 ```
 
-### 3) Run migrations
+### 3) Run migrations (manual)
+
+Install the `migrate` CLI (golang-migrate) if you do not have it yet:
 
 ```bash
-docker compose run --rm migrate
+brew install golang-migrate
+```
+
+or:
+
+```bash
+go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+```
+
+Then run migrations:
+
+```bash
+migrate -path db/migrations -database "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" up
 ```
 
 ### 4) Run admin backend
