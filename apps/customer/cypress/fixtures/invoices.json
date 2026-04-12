@@ -1,0 +1,19 @@
+{
+  "invoices": [
+    {
+      "id": "inv_1",
+      "org_id": "org_1",
+      "customer_id": "cust_1",
+      "number": "INV-200",
+      "status": "open",
+      "currency": "USD",
+      "total_cents": 50000,
+      "amount_due_cents": 50000,
+      "issued_at": "2026-04-01T00:00:00Z",
+      "due_at": "2026-04-10T00:00:00Z",
+      "period_start": "2026-04-01T00:00:00Z",
+      "period_end": "2026-04-30T23:59:59Z"
+    }
+  ],
+  "has_more": false
+}

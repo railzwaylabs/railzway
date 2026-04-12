@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS plan_tiers;
+DROP TABLE IF EXISTS plan_amounts;
+DROP TABLE IF EXISTS plan_prices;
+DROP TABLE IF EXISTS plans;

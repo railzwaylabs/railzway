@@ -1,0 +1,1878 @@
+{
+  "warnings": {
+    "session_secret_missing": "SESSION_SECRET belum diatur; sesi admin tidak aman.",
+    "session_secret_default": "SESSION_SECRET masih default. Ganti sebelum production.",
+    "session_secret_weak": "SESSION_SECRET terlalu pendek. Gunakan minimal 16 karakter.",
+    "tls_disabled": "TLS dimatikan di production. Aktifkan APP_TLS_MODE=proxy atau direct.",
+    "apps_credentials_key_missing": "APPS_CREDENTIALS_KEY belum diatur; kredensial app tidak bisa dienkripsi.",
+    "apps_credentials_key_invalid": "APPS_CREDENTIALS_KEY harus 32 byte atau base64 dari 32 byte.",
+    "api_key_missing": "Belum ada API key. Buat key sebelum integrasi public API.",
+    "invoice_format_missing": "Format invoice belum dikonfigurasi untuk organisasi ini.",
+    "tax_rate_missing": "Belum ada tax rate. Invoice akan dibuat tanpa pajak.",
+    "payment_app_missing": "Belum ada payment provider terpasang. Pembayaran tidak bisa diproses otomatis.",
+    "reconciliation_mismatch": "Rekonsiliasi mendeteksi {{count}} mismatch dalam {{window_days}} hari terakhir. Cek ringkasan rekonsiliasi."
+  },
+  "common": {
+    "review": "Tinjau",
+    "edit": "Edit",
+    "reset": "Reset",
+    "apply_filters": "Terapkan Filter",
+    "searching": "Mencari…",
+    "loading": "Memuat…",
+    "load_more": "Muat lebih banyak",
+    "manage": "Kelola",
+    "enable": "Aktifkan",
+    "disable": "Nonaktifkan",
+    "all": "Semua",
+    "page_size": "Ukuran Halaman",
+    "empty_dash": "—",
+    "loading_dash": "—",
+    "cancel": "Batal",
+    "creating": "Membuat…",
+    "updating": "Memperbarui…",
+    "saving": "Menyimpan…",
+    "save": "Simpan",
+    "save_changes": "Simpan Perubahan",
+    "no_change": "Tanpa perubahan",
+    "sending": "Mengirim…",
+    "closing": "Menutup…",
+    "select_placeholder": "Pilih…",
+    "search_placeholder": "Cari…",
+    "no_results": "Tidak ada hasil"
+  },
+  "app": {
+    "loading_module": "Memuat modul…"
+  },
+  "topbar": {
+    "eyebrow": "Billing Engine",
+    "search_placeholder": "Cari {{label}}…",
+    "logout": "Keluar",
+    "admin_user": "Admin"
+  },
+  "org_switcher": {
+    "workspace": "Workspace",
+    "workspaces": "Workspaces",
+    "select": "Pilih organisasi",
+    "loading": "Memuat…",
+    "fetching_access": "Mengambil akses…",
+    "no_role": "Tidak ada peran",
+    "empty": "Tidak ada organisasi",
+    "new_org": "+ Organisasi baru"
+  },
+  "nav": {
+    "groups": {
+      "core": "Utama",
+      "billing": "Penagihan",
+      "finance": "Keuangan",
+      "system": "Sistem",
+      "developer": "Pengembang"
+    },
+    "items": {
+      "dashboard": "Dasbor",
+      "customers": "Pelanggan",
+      "plans": "Paket",
+      "subscriptions": "Langganan",
+      "usage": "Pemakaian",
+      "meters": "Meter",
+      "rating": "Rating",
+      "ledger": "Buku Besar",
+      "invoices": "Invoice",
+      "payments": "Pembayaran",
+      "taxes": "Pajak",
+      "audit_logs": "Audit Log",
+      "apps": "Aplikasi",
+      "test_clock": "Jam Uji",
+      "settings": "Pengaturan"
+    }
+  },
+  "toast": {
+    "org_switch_failed": "Gagal mengganti organisasi"
+  },
+  "dashboard": {
+    "header": {
+      "title": "Ringkasan Pendapatan",
+      "description": "Ringkasan sinyal billing aktif dan momentum arus kas."
+    },
+    "error": {
+      "title": "Gagal memuat dasbor"
+    },
+    "kpis": {
+      "mrr": {
+        "label": "Pendapatan Berulang",
+        "sub": "MRR periode ini"
+      },
+      "usage": {
+        "label": "Biaya Pemakaian",
+        "sub": "Akumulasi biaya pemakaian"
+      },
+      "open_invoices": {
+        "label": "Invoice Terbuka",
+        "sub": "Menunggu pembayaran"
+      },
+      "late_events": {
+        "label": "Event Terlambat",
+        "sub": "Event pemakaian out-of-order"
+      }
+    },
+    "reconciliation": {
+      "title": "Rekonsiliasi",
+      "description": "Mismatch terbaru dalam {{days}} hari terakhir.",
+      "badge_all_matched": "Semua cocok",
+      "badge_mismatch": "{{count}} mismatch",
+      "columns": {
+        "type": "Tipe",
+        "invoice": "Invoice",
+        "detected": "Terdeteksi"
+      },
+      "badges": {
+        "usage": "Mismatch pemakaian",
+        "ledger": "Mismatch ledger"
+      },
+      "kpis": {
+        "usage": {
+          "label": "Mismatch Pemakaian",
+          "sub": "Pemakaian invoice vs rating"
+        },
+        "ledger": {
+          "label": "Mismatch Ledger",
+          "sub": "Ledger vs total invoice"
+        },
+        "total": {
+          "label": "Total Mismatch",
+          "sub": "Perlu ditinjau"
+        }
+      },
+      "empty_title": "Tidak ada mismatch",
+      "empty_desc": "Cek rekonsiliasi bersih."
+    },
+    "alerts": {
+      "columns": {
+        "signal": "Sinyal",
+        "tag": "Tag"
+      },
+      "empty_title": "Tidak ada alert aktif",
+      "empty_desc": "Semua terlihat stabil saat ini."
+    }
+  },
+  "customers": {
+    "header": {
+      "title": "Pelanggan",
+      "description": "Pantau kesehatan akun, tren pemakaian, dan postur billing."
+    },
+    "actions": {
+      "new": "Pelanggan Baru"
+    },
+    "toast_load_failed": "Gagal memuat pelanggan",
+    "kpis": {
+      "active": {
+        "label": "Akun Aktif"
+      },
+      "at_risk": {
+        "label": "Beresiko"
+      },
+      "nrr": {
+        "label": "Net Revenue Retention",
+        "sub": "NRR bergulir"
+      }
+    },
+    "filters": {
+      "name": "Nama",
+      "email": "Email",
+      "currency": "Mata Uang",
+      "currency_placeholder": "USD, EUR…",
+      "created_from": "Dibuat Dari",
+      "created_to": "Dibuat Sampai"
+    },
+    "table": {
+      "columns": {
+        "customer": "Pelanggan",
+        "currency": "Mata Uang",
+        "external_id": "External ID",
+        "created": "Dibuat"
+      },
+      "empty_title": "Tidak ada pelanggan",
+      "empty_desc": "Coba ubah filter atau buat pelanggan baru."
+    }
+  },
+  "plans": {
+    "header": {
+      "title": "Paket & Harga",
+      "description": "Rancang penawaran flat, usage, dan tiered dengan versi harga."
+    },
+    "actions": {
+      "new": "Paket Baru"
+    },
+    "toast_load_failed": "Gagal memuat paket",
+    "kpis": {
+      "active": "Paket Aktif",
+      "draft": "Perubahan Draft",
+      "tiered": "Harga Bertingkat"
+    },
+    "filters": {
+      "code": "Kode",
+      "name": "Nama",
+      "active_status": "Status Aktif"
+    },
+    "table": {
+      "columns": {
+        "plan": "Paket",
+        "description": "Deskripsi",
+        "pricing": "Harga",
+        "status": "Status",
+        "created": "Dibuat"
+      },
+      "status": {
+        "active": "Aktif",
+        "inactive": "Nonaktif"
+      },
+      "no_prices": "Tidak ada harga",
+      "no_amount": "Tidak ada nominal",
+      "tiers": "{{count}} tier",
+      "more_prices": "+{{count}} harga lainnya",
+      "empty_title": "Tidak ada paket",
+      "empty_desc": "Buat paket untuk memulai, atau ubah filter."
+    }
+  },
+  "subscriptions": {
+    "header": {
+      "title": "Langganan",
+      "description": "Pantau pendapatan berulang dan status siklus pelanggan."
+    },
+    "actions": {
+      "new": "Langganan Baru"
+    },
+    "toast_load_failed": "Gagal memuat langganan",
+    "kpis": {
+      "active": "Aktif",
+      "trialing": "Trialing",
+      "past_due": "Past Due"
+    },
+    "filters": {
+      "customer": "Pelanggan",
+      "customer_placeholder": "Cari pelanggan berdasarkan nama atau email",
+      "status": "Status"
+    },
+    "status": {
+      "trial": "Trial",
+      "active": "Aktif",
+      "past_due": "Past Due",
+      "canceled": "Dibatalkan"
+    },
+    "table": {
+      "columns": {
+        "subscription_id": "ID Langganan",
+        "customer": "Pelanggan",
+        "plan": "Paket",
+        "currency": "Mata Uang",
+        "status": "Status",
+        "period_end": "Akhir Periode"
+      },
+      "empty_title": "Tidak ada langganan",
+      "empty_desc": "Ubah filter atau buat langganan baru."
+    }
+  },
+  "usage": {
+    "header": {
+      "title": "Arus Pemakaian",
+      "description": "Pantau throughput ingest, event terlambat, dan kesehatan meter."
+    },
+    "actions": {
+      "ingest": "Impor Pemakaian"
+    },
+    "toast_load_failed": "Gagal memuat event",
+    "kpis": {
+      "events_per_hr": "Event / jam",
+      "late_events": "Event Terlambat",
+      "active_meters": "Meter Aktif"
+    },
+    "filters": {
+      "meter": "Meter",
+      "meter_placeholder": "Cari meter berdasarkan nama",
+      "customer": "Pelanggan",
+      "customer_placeholder": "Cari pelanggan berdasarkan nama atau email",
+      "status": "Status",
+      "recorded_from": "Dicatat Dari",
+      "recorded_to": "Dicatat Sampai"
+    },
+    "status": {
+      "accepted": "Diterima",
+      "enriched": "Diperkaya",
+      "rated": "Dirating"
+    },
+    "table": {
+      "columns": {
+        "event_id": "ID Event",
+        "meter": "Meter",
+        "customer": "Pelanggan",
+        "value": "Nilai",
+        "status": "Status",
+        "recorded_at": "Waktu Catat"
+      },
+      "empty_title": "Tidak ada event pemakaian",
+      "empty_desc": "Ubah filter atau unggah CSV untuk ingest event."
+    }
+  },
+  "meters": {
+    "header": {
+      "title": "Meter",
+      "description": "Definisikan dimensi meter untuk billing berbasis usage."
+    },
+    "actions": {
+      "new": "Meter Baru"
+    },
+    "toast_load_failed": "Gagal memuat meter",
+    "toast_toggle_failed": "Gagal mengubah status",
+    "toast_enabled": "Meter diaktifkan",
+    "toast_disabled": "Meter dinonaktifkan",
+    "filters": {
+      "code": "Kode",
+      "name": "Nama",
+      "status": "Status"
+    },
+    "table": {
+      "columns": {
+        "meter": "Meter",
+        "aggregation": "Agregasi",
+        "unit": "Unit",
+        "status": "Status",
+        "created": "Dibuat"
+      },
+      "status": {
+        "active": "Aktif",
+        "inactive": "Nonaktif"
+      },
+      "empty_title": "Tidak ada meter",
+      "empty_desc": "Ubah filter atau buat meter baru."
+    }
+  },
+  "rating": {
+    "header": {
+      "title": "Mesin Rating",
+      "description": "Pantau usage yang sudah dirating, agregat, dan pergeseran versi harga."
+    },
+    "toast_results_failed": "Gagal memuat hasil rating",
+    "toast_aggregates_failed": "Gagal memuat agregat",
+    "kpis": {
+      "rated_events": "Event Dirating",
+      "avg_latency": "Rata-rata Latensi",
+      "replays_today": "Replay Hari Ini"
+    },
+    "tabs": {
+      "results": "Hasil Rating",
+      "aggregates": "Agregat Pemakaian"
+    },
+    "filters": {
+      "customer": "Pelanggan",
+      "customer_placeholder": "Cari pelanggan berdasarkan nama atau email",
+      "subscription": "Langganan",
+      "subscription_placeholder": "Cari langganan berdasarkan ID",
+      "plan_price_id": "ID Harga Paket",
+      "meter": "Meter",
+      "meter_placeholder": "Cari meter berdasarkan nama",
+      "usage_event_id": "ID Event Pemakaian",
+      "window_start_from": "Mulai Jendela Dari",
+      "window_start_to": "Mulai Jendela Sampai",
+      "period_start_from": "Mulai Periode Dari",
+      "period_start_to": "Mulai Periode Sampai"
+    },
+    "results": {
+      "title": "Hasil Rating",
+      "columns": {
+        "usage_event": "Event Pemakaian",
+        "customer": "Pelanggan",
+        "meter": "Meter",
+        "quantity": "Qty",
+        "amount": "Jumlah",
+        "window_start": "Mulai Jendela"
+      },
+      "empty_title": "Tidak ada hasil rating",
+      "empty_desc": "Jalankan mesin rating untuk melihat hasil di sini."
+    },
+    "aggregates": {
+      "title": "Agregat Pemakaian",
+      "columns": {
+        "customer": "Pelanggan",
+        "meter": "Meter",
+        "period": "Periode",
+        "quantity": "Jumlah",
+        "amount": "Nilai"
+      },
+      "empty_title": "Tidak ada agregat pemakaian",
+      "empty_desc": "Agregat muncul setelah usage dirating."
+    }
+  },
+  "ledger": {
+    "header": {
+      "title": "Buku Besar",
+      "description": "Catat transaksi seimbang dan tinjau aliran akuntansi."
+    },
+    "actions": {
+      "new": "Catat Transaksi"
+    },
+    "toast_load_failed": "Gagal memuat ledger",
+    "filters": {
+      "source_type": "Tipe Sumber",
+      "source_id": "ID Sumber",
+      "customer": "Pelanggan",
+      "customer_placeholder": "Cari pelanggan berdasarkan nama atau email",
+      "subscription": "Langganan",
+      "subscription_placeholder": "Cari langganan berdasarkan ID",
+      "invoice": "Invoice",
+      "invoice_placeholder": "Cari invoice berdasarkan nomor",
+      "occurred_from": "Terjadi Dari",
+      "occurred_to": "Terjadi Sampai"
+    },
+    "table": {
+      "columns": {
+        "source_type": "Tipe Sumber",
+        "source_id": "ID Sumber",
+        "currency": "Mata Uang",
+        "customer": "Pelanggan",
+        "occurred_at": "Waktu Terjadi"
+      },
+      "empty_title": "Tidak ada transaksi ledger",
+      "empty_desc": "Catat transaksi untuk memulai aliran akuntansi."
+    }
+  },
+  "payments": {
+    "header": {
+      "title": "Pembayaran",
+      "description": "Lacak intent pembayaran, rekonsiliasi, dan window settlement."
+    },
+    "toast_load_failed": "Gagal memuat pembayaran",
+    "kpis": {
+      "collected": "Terkumpul",
+      "failed": "Gagal",
+      "retries": "Ulangi"
+    },
+    "filters": {
+      "customer": "Pelanggan",
+      "customer_placeholder": "Cari pelanggan berdasarkan nama atau email",
+      "invoice": "Invoice",
+      "invoice_placeholder": "Cari invoice berdasarkan nomor",
+      "status": "Status",
+      "provider": "Provider",
+      "created_from": "Dibuat Dari",
+      "created_to": "Dibuat Sampai"
+    },
+    "status": {
+      "pending": "Menunggu",
+      "succeeded": "Berhasil",
+      "failed": "Gagal",
+      "refunded": "Refund"
+    },
+    "table": {
+      "columns": {
+        "payment_id": "ID Pembayaran",
+        "customer": "Pelanggan",
+        "provider": "Provider",
+        "amount": "Jumlah",
+        "status": "Status",
+        "created": "Dibuat"
+      },
+      "empty_title": "Tidak ada pembayaran",
+      "empty_desc": "Ubah filter untuk menemukan catatan pembayaran."
+    }
+  },
+  "taxes": {
+    "header": {
+      "title": "Pajak",
+      "description": "Konfigurasikan profil pajak, region, dan logika pengecualian."
+    },
+    "actions": {
+      "new": "Tarif Pajak Baru"
+    },
+    "toast_load_failed": "Gagal memuat tarif pajak",
+    "kpis": {
+      "active_profiles": "Profil Aktif",
+      "exempt_customers": "Pelanggan Bebas Pajak"
+    },
+    "filters": {
+      "code": "Kode",
+      "name": "Nama",
+      "status": "Status",
+      "created_from": "Dibuat Dari",
+      "created_to": "Dibuat Sampai"
+    },
+    "table": {
+      "columns": {
+        "name": "Nama",
+        "code": "Kode",
+        "rate": "Tarif",
+        "type": "Tipe",
+        "status": "Status",
+        "created": "Dibuat"
+      },
+      "type": {
+        "inclusive": "Inklusif",
+        "exclusive": "Eksklusif"
+      },
+      "status": {
+        "active": "Aktif",
+        "inactive": "Nonaktif"
+      },
+      "empty_title": "Tidak ada tarif pajak",
+      "empty_desc": "Ubah filter untuk menemukan tarif yang sesuai."
+    }
+  },
+  "invoices": {
+    "header": {
+      "title": "Invoice",
+      "description": "Catatan tagihan draft, open, dan paid."
+    },
+    "actions": {
+      "generate": "Generate"
+    },
+    "toast_load_failed": "Gagal memuat invoice",
+    "kpis": {
+      "draft": "Draft",
+      "open": "Open",
+      "paid_amount": "Jumlah Terbayar"
+    },
+    "filters": {
+      "customer": "Pelanggan",
+      "customer_placeholder": "Cari pelanggan berdasarkan nama atau email",
+      "subscription": "Langganan",
+      "subscription_placeholder": "Cari langganan berdasarkan ID",
+      "status": "Status",
+      "number": "Nomor Invoice"
+    },
+    "status": {
+      "draft": "Draft",
+      "open": "Open",
+      "paid": "Paid",
+      "void": "Void",
+      "uncollectible": "Uncollectible"
+    },
+    "table": {
+      "columns": {
+        "invoice": "Invoice",
+        "status": "Status",
+        "amount": "Jumlah",
+        "customer": "Pelanggan",
+        "period": "Periode"
+      },
+      "empty_title": "Tidak ada invoice",
+      "empty_desc": "Buat invoice untuk memulai, atau ubah filter."
+    }
+  },
+  "not_found": {
+    "title": "Halaman tidak ditemukan",
+    "description": "Halaman ini tidak tersedia. Kembali ke dasbor untuk melanjutkan.",
+    "back": "Kembali ke Dasbor"
+  },
+  "routes": {
+    "dashboard": {
+      "label": "Dasbor",
+      "desc": "Ringkasan pendapatan dan sinyal penagihan"
+    },
+    "organizations": {
+      "label": "Organisasi",
+      "desc": "Kelola tenant dan akun organisasi"
+    },
+    "organizations_new": {
+      "label": "Organisasi Baru",
+      "desc": "Buat tenant baru"
+    },
+    "organizations_edit": {
+      "label": "Edit Organisasi",
+      "desc": "Konfigurasi dan preferensi"
+    },
+    "customers": {
+      "label": "Pelanggan",
+      "desc": "Pantau akun, kesehatan, dan postur penagihan"
+    },
+    "customers_new": {
+      "label": "Pelanggan Baru",
+      "desc": "Buat pelanggan penagihan baru"
+    },
+    "customers_edit": {
+      "label": "Edit Pelanggan",
+      "desc": "Perbarui informasi pelanggan"
+    },
+    "products": {
+      "label": "Produk",
+      "desc": ""
+    },
+    "features": {
+      "label": "Fitur",
+      "desc": ""
+    },
+    "plans": {
+      "label": "Paket & Harga",
+      "desc": "Rancang harga flat, usage, dan tiered"
+    },
+    "plans_new": {
+      "label": "Paket Baru",
+      "desc": "Buat paket penagihan utama"
+    },
+    "plans_edit": {
+      "label": "Edit Paket",
+      "desc": "Atur opsi harga dan katalog"
+    },
+    "subscriptions": {
+      "label": "Langganan",
+      "desc": "Kelola siklus langganan"
+    },
+    "subscriptions_new": {
+      "label": "Langganan Baru",
+      "desc": "Buat langganan baru"
+    },
+    "subscriptions_edit": {
+      "label": "Edit Langganan",
+      "desc": "Ubah detail langganan"
+    },
+    "usage": {
+      "label": "Pemakaian",
+      "desc": "Lihat event pemakaian bermeter"
+    },
+    "usage_new": {
+      "label": "Impor Pemakaian",
+      "desc": "Unggah event pemakaian"
+    },
+    "meters": {
+      "label": "Meter",
+      "desc": "Konfigurasi meter pemakaian"
+    },
+    "meters_new": {
+      "label": "Meter Baru",
+      "desc": "Buat dimensi meter baru"
+    },
+    "meters_edit": {
+      "label": "Edit Meter",
+      "desc": "Perbarui dimensi meter"
+    },
+    "rating": {
+      "label": "Rating",
+      "desc": "Hasil kalkulasi usage ke biaya"
+    },
+    "ledger": {
+      "label": "Buku Besar",
+      "desc": "Log transaksi finansial yang immutable"
+    },
+    "ledger_new": {
+      "label": "Catat Transaksi",
+      "desc": "Tulis entri immutable"
+    },
+    "invoices": {
+      "label": "Invoice",
+      "desc": "Catatan tagihan draft, open, dan paid"
+    },
+    "invoices_new": {
+      "label": "Buat Invoice",
+      "desc": "Generate invoice secara manual"
+    },
+    "invoices_manage": {
+      "label": "Kelola Invoice",
+      "desc": "Catat pembayaran dan ubah status"
+    },
+    "payments": {
+      "label": "Pembayaran",
+      "desc": "Lacak upaya dan status pembayaran"
+    },
+    "taxes": {
+      "label": "Pajak",
+      "desc": "Konfigurasi profil pajak dan tarif"
+    },
+    "taxes_new": {
+      "label": "Tarif Pajak Baru",
+      "desc": "Buat tarif pajak untuk invoice"
+    },
+    "audit_logs": {
+      "label": "Audit Log",
+      "desc": "Jejak event dan aktivitas sistem"
+    },
+    "apps": {
+      "label": "Aplikasi",
+      "desc": "Integrasi marketplace dan provider"
+    },
+    "test_clock": {
+      "label": "Jam Uji",
+      "desc": "Simulasikan waktu untuk alur billing"
+    },
+    "settings": {
+      "label": "Pengaturan",
+      "desc": "Konfigurasi dan preferensi sistem"
+    },
+    "default": {
+      "label": "Billing Admin",
+      "desc": "Panel kontrol Railzway"
+    }
+  },
+  "organizations": {
+    "header": {
+      "title": "Organisasi",
+      "description": "Kelola organisasi, preferensi billing, dan format invoice."
+    },
+    "actions": {
+      "new": "Organisasi Baru"
+    },
+    "table": {
+      "columns": {
+        "name": "Nama",
+        "role": "Peran",
+        "created": "Dibuat"
+      },
+      "empty_title": "Belum ada organisasi",
+      "empty_desc": "Buat organisasi untuk memulai."
+    },
+    "toast_load_failed": "Gagal memuat organisasi"
+  },
+  "organizations_create": {
+    "header": {
+      "title": "Buat organisasi",
+      "subtitle": "Ini menjadi workspace billing dan batas data Anda."
+    },
+    "fields": {
+      "name_label": "Nama organisasi *",
+      "name_placeholder": "Example Labs",
+      "country_label": "Kode Negara",
+      "country_placeholder": "Pilih negara",
+      "country_input_placeholder": "ID",
+      "country_hint": "Digunakan untuk pajak dan lokal billing.",
+      "timezone_label": "Zona waktu",
+      "timezone_placeholder": "Pilih zona waktu",
+      "timezone_input_placeholder": "UTC",
+      "timezone_hint": "Mengatur periode invoice dan batas laporan."
+    },
+    "actions": {
+      "create": "Buat Organisasi"
+    },
+    "validation": {
+      "name_required": "Nama wajib diisi."
+    },
+    "toast": {
+      "countries_failed": "Gagal memuat negara",
+      "timezones_failed": "Gagal memuat zona waktu",
+      "create_failed": "Gagal membuat organisasi",
+      "created": "Organisasi dibuat"
+    }
+  },
+  "organizations_edit": {
+    "header": {
+      "title": "Ubah Organisasi",
+      "title_with_name": "Ubah {{name}}"
+    },
+    "rename": {
+      "title": "Ubah Nama Organisasi",
+      "name_label": "Nama Baru *"
+    },
+    "locale": {
+      "title": "Locale Organisasi",
+      "country_label": "Kode Negara",
+      "country_placeholder": "Pilih negara",
+      "country_input_placeholder": "ID",
+      "timezone_label": "Zona waktu",
+      "timezone_placeholder": "Pilih zona waktu",
+      "timezone_input_placeholder": "UTC",
+      "save": "Simpan Locale"
+    },
+    "billing": {
+      "title": "Preferensi Billing",
+      "currency_label": "Mata uang",
+      "currency_placeholder": "USD",
+      "timezone_label": "Zona waktu",
+      "timezone_placeholder": "Pilih zona waktu",
+      "timezone_input_placeholder": "UTC",
+      "invoice_prefix_label": "Prefix Invoice",
+      "invoice_prefix_placeholder": "INV",
+      "invoice_format_label": "Format Invoice",
+      "invoice_format_placeholder": "{PREFIX}-{YYYY}{MM}-{SEQ:6}",
+      "invoice_format_preview_label": "Pratinjau:",
+      "sequence_scope_label": "Cakupan Urutan",
+      "sequence_scope_placeholder": "org_month",
+      "save": "Simpan Preferensi"
+    },
+    "invite": {
+      "title": "Undang Anggota",
+      "email_label": "Email *",
+      "role_label": "Peran",
+      "role_placeholder": "Pilih peran",
+      "roles": {
+        "owner": "Pemilik",
+        "admin": "Admin",
+        "member": "Anggota"
+      },
+      "send": "Kirim Undangan"
+    },
+    "members": {
+      "title": "Anggota Organisasi",
+      "selected": "Dipilih",
+      "empty_title": "Belum ada anggota",
+      "empty_desc": "Undang tim untuk mengelola organisasi ini.",
+      "table": {
+        "columns": {
+          "member": "Anggota",
+          "role": "Peran",
+          "added": "Ditambahkan"
+        }
+      }
+    },
+    "formats": {
+      "title": "Format & Urutan Nomor Invoice",
+      "table": {
+        "columns": {
+          "format": "Format",
+          "effective_from": "Berlaku Dari",
+          "status": "Status"
+        }
+      },
+      "status": {
+        "active": "Aktif",
+        "closed": "Ditutup"
+      },
+      "create_title": "Buat Format",
+      "create": "Buat Format",
+      "close_title": "Tutup Format",
+      "close": "Tutup Format",
+      "fields": {
+        "format_label": "Format *",
+        "format_placeholder": "{prefix}-{YYYY}-{seq}",
+        "sequence_scope_label": "Cakupan Urutan",
+        "sequence_scope_placeholder": "org_month",
+        "effective_from_label": "Berlaku Dari",
+        "effective_to_label": "Berlaku Sampai",
+        "format_id_label": "Format ID *",
+        "close_effective_to_label": "Berlaku Sampai *"
+      }
+    },
+    "toast": {
+      "load_failed": "Gagal memuat organisasi",
+      "countries_failed": "Gagal memuat negara",
+      "timezones_failed": "Gagal memuat zona waktu",
+      "updated": "Organisasi diperbarui",
+      "update_failed": "Gagal memperbarui organisasi",
+      "locale_updated": "Locale organisasi diperbarui",
+      "locale_failed": "Gagal memperbarui locale",
+      "billing_saved": "Preferensi billing tersimpan",
+      "billing_failed": "Gagal menyimpan preferensi billing",
+      "format_created": "Format invoice dibuat",
+      "format_create_failed": "Gagal membuat format",
+      "format_closed": "Format invoice ditutup",
+      "format_close_failed": "Gagal menutup format",
+      "invite_sent": "Undangan dikirim ke {{email}}",
+      "invite_failed": "Gagal mengirim undangan"
+    },
+    "validation": {
+      "name_required": "Nama wajib diisi.",
+      "invalid_currency": "Mata uang tidak valid.",
+      "country_required": "Kode negara wajib diisi.",
+      "timezone_required": "Zona waktu wajib diisi.",
+      "format_required": "Format wajib diisi.",
+      "effective_from_required": "Berlaku dari wajib diisi.",
+      "format_id_required": "Format ID wajib diisi.",
+      "effective_to_required": "Berlaku sampai wajib diisi.",
+      "invite_email_required": "Email yang valid wajib diisi."
+    }
+  },
+  "customers_create": {
+    "header": {
+      "title": "Pelanggan Baru",
+      "description": "Buat data pelanggan untuk langganan dan usage."
+    },
+    "section": {
+      "title": "Detail Pelanggan"
+    },
+    "fields": {
+      "name": "Nama",
+      "email": "Email",
+      "external_id": "External ID",
+      "currency": "Mata uang",
+      "currency_placeholder": "USD"
+    },
+    "actions": {
+      "create": "Buat Pelanggan"
+    },
+    "validation": {
+      "name_required": "Nama wajib diisi.",
+      "email_required": "Email wajib diisi.",
+      "email_invalid": "Format email tidak valid.",
+      "currency_invalid": "Mata uang harus kode ISO 4217."
+    },
+    "toast": {
+      "created": "Pelanggan dibuat: {{id}}",
+      "create_failed": "Gagal membuat pelanggan"
+    },
+    "errors": {
+      "prefix": "Error"
+    }
+  },
+  "customers_edit": {
+    "header": {
+      "title": "Ubah Pelanggan",
+      "description": "Perbarui identitas dan metadata billing."
+    },
+    "section": {
+      "title": "Detail Pelanggan"
+    },
+    "fields": {
+      "id": "Customer ID",
+      "name": "Nama",
+      "email": "Email",
+      "external_id": "External ID",
+      "currency": "Mata uang",
+      "currency_placeholder": "USD"
+    },
+    "actions": {
+      "back": "Kembali ke daftar"
+    },
+    "validation": {
+      "id_required": "Customer ID wajib diisi.",
+      "no_changes": "Perbarui setidaknya satu field.",
+      "email_invalid": "Format email tidak valid.",
+      "currency_invalid": "Mata uang harus kode ISO 4217."
+    },
+    "toast": {
+      "load_failed": "Gagal memuat pelanggan",
+      "update_failed": "Gagal memperbarui pelanggan",
+      "updated": "Pelanggan diperbarui: {{id}}"
+    },
+    "errors": {
+      "prefix": "Error"
+    }
+  },
+  "plans_create": {
+    "header": {
+      "title": "Buat Plan",
+      "description": "Atur produk dan harga dasar dalam satu langkah."
+    },
+    "sections": {
+      "product": "Informasi Produk",
+      "pricing": "Konfigurasi Harga"
+    },
+    "pricing": {
+      "flat": "Harga Tetap",
+      "usage": "Harga Berdasarkan Pemakaian"
+    },
+    "fields": {
+      "plan_name": "Nama Plan *",
+      "plan_name_placeholder": "contoh Pro Tier",
+      "plan_code": "Kode Plan *",
+      "plan_code_placeholder": "contoh plan_pro_m",
+      "description": "Deskripsi",
+      "description_placeholder": "Deskripsi marketing (opsional)",
+      "meter_label": "Pilih Meter *",
+      "meter_placeholder": "Cari meter berdasarkan nama",
+      "amount_label": "Jumlah (sen) *",
+      "currency_label": "Mata uang *",
+      "interval_label": "Interval Penagihan *",
+      "interval_placeholder": "Pilih interval",
+      "interval_options": {
+        "month": "Bulanan",
+        "year": "Tahunan",
+        "week": "Mingguan",
+        "day": "Harian"
+      },
+      "interval_count_label": "Jumlah Interval *"
+    },
+    "actions": {
+      "save": "Simpan plan"
+    },
+    "defaults": {
+      "base_price": "Harga Dasar"
+    },
+    "toast": {
+      "created_title": "Plan dibuat",
+      "created_desc": "Plan dan harga berhasil dikonfigurasi.",
+      "create_failed": "Gagal membuat plan"
+    },
+    "validation": {
+      "code_required": "Kode plan wajib diisi.",
+      "name_required": "Nama plan wajib diisi.",
+      "currency_required": "Mata uang wajib diisi.",
+      "currency_invalid": "Mata uang harus ISO 4217.",
+      "interval_count": "Jumlah interval harus >= 1.",
+      "amount_min": "Jumlah harus >= 0.",
+      "meter_required": "Meter wajib untuk harga berbasis pemakaian."
+    }
+  },
+  "plans_edit": {
+    "header": {
+      "title": "Ubah Plan",
+      "title_with_name": "Ubah Plan: {{name}}"
+    },
+    "sections": {
+      "current_pricing": "Harga Saat Ini",
+      "amounts": "Amount",
+      "tiers": "Tier",
+      "update_details": "Perbarui Detail",
+      "attach_price": "Tambahkan Price"
+    },
+    "actions": {
+      "add_amount": "Tambah Amount",
+      "add_tier": "Tambah Tier",
+      "update": "Perbarui Plan",
+      "create_price": "Buat Price"
+    },
+    "status": {
+      "active": "Aktif",
+      "inactive": "Tidak Aktif"
+    },
+    "empty": {
+      "prices": "Belum ada harga. Tambahkan price di bawah.",
+      "amounts": "Tidak ada amount",
+      "tiers": "Tidak ada tier"
+    },
+    "amount_form": {
+      "title": "Buat Amount",
+      "currency": "Mata uang",
+      "unit_amount": "Jumlah per unit (sen)",
+      "minimum": "Minimum (sen)",
+      "maximum": "Maksimum (sen)",
+      "effective_from": "Berlaku Dari",
+      "effective_to": "Berlaku Sampai",
+      "create": "Buat Amount"
+    },
+    "tier_form": {
+      "title": "Buat Tier",
+      "mode": "Mode Tier",
+      "mode_placeholder": "Pilih mode tier",
+      "mode_options": {
+        "volume": "volume",
+        "graduated": "graduated"
+      },
+      "quantities": "Jumlah Awal/Akhir",
+      "end_placeholder": "Akhir (opsional)",
+      "amount": "Jumlah (sen)",
+      "unit_placeholder": "Per Unit",
+      "flat_placeholder": "Tetap",
+      "unit": "Unit",
+      "create": "Buat Tier"
+    },
+    "price_fields": {
+      "code": "Kode Price",
+      "name": "Nama",
+      "type": "Tipe Price",
+      "type_placeholder": "Pilih tipe",
+      "type_options": {
+        "flat": "flat",
+        "usage": "usage",
+        "tiered": "tiered"
+      },
+      "interval": "Interval Penagihan",
+      "interval_placeholder": "Pilih interval",
+      "interval_options": {
+        "day": "Hari",
+        "week": "Minggu",
+        "month": "Bulan",
+        "year": "Tahun"
+      },
+      "interval_count": "Jumlah Interval",
+      "meter": "Meter",
+      "meter_placeholder": "Cari meter berdasarkan nama"
+    },
+    "update_fields": {
+      "name": "Nama",
+      "description": "Deskripsi",
+      "status": "Status"
+    },
+    "validation": {
+      "no_changes": "Isi setidaknya satu field untuk diperbarui.",
+      "price_code_required": "Kode price wajib.",
+      "price_type_required": "Tipe price wajib.",
+      "interval_required": "Interval penagihan wajib.",
+      "interval_count": "Jumlah interval harus >= 1.",
+      "meter_required": "ID atau kode meter wajib untuk harga non-flat.",
+      "amount_price_required": "Price ID wajib.",
+      "currency_required": "Mata uang wajib.",
+      "currency_invalid": "Mata uang harus ISO 4217.",
+      "unit_amount_min": "Jumlah per unit harus >= 0.",
+      "effective_range": "Berlaku sampai harus setelah berlaku dari.",
+      "min_max": "Maksimum harus >= minimum.",
+      "tier_price_required": "Price ID wajib.",
+      "tier_mode_required": "Mode tier wajib.",
+      "tier_start_min": "Jumlah awal harus >= 0.",
+      "tier_end_min": "Jumlah akhir harus >= jumlah awal.",
+      "tier_amount_required": "Unit amount atau flat amount wajib."
+    },
+    "toast": {
+      "load_failed": "Gagal memuat plan",
+      "updated": "Plan diperbarui",
+      "update_failed": "Gagal memperbarui",
+      "price_created": "Price dibuat",
+      "price_create_failed": "Gagal membuat price",
+      "amount_created": "Amount dibuat",
+      "amount_create_failed": "Gagal membuat amount",
+      "tier_created": "Tier dibuat",
+      "tier_create_failed": "Gagal membuat tier"
+    }
+  },
+  "products": {
+    "header": {
+      "title": "Produk",
+      "description": "Abstraksi logis dari apa yang Anda jual, terhubung dengan fitur."
+    },
+    "actions": {
+      "new": "Produk Baru"
+    },
+    "table": {
+      "columns": {
+        "prices": "Harga"
+      },
+      "price_count": "{{count}} harga"
+    },
+    "empty_title": "Produk tidak ditemukan",
+    "empty_desc": "Buat produk untuk mulai membangun katalog Anda."
+  },
+  "products_create": {
+    "header": {
+      "title": "Produk Baru",
+      "description": "Buat produk baru yang mendefinisikan nama, kode, dan rencana komersialnya."
+    },
+    "actions": {
+      "save": "Buat Produk",
+      "submit": "Buat Produk",
+      "toggle_plan": "Buat paket utama",
+      "add_price": "Tambah Harga",
+      "add_multi_currency": "+ Tambah Nominal Multi-Mata Uang"
+    },
+    "sections": {
+      "product": "Detail Produk",
+      "pricing": "Konfigurasi Harga"
+    },
+    "fields": {
+      "price_code": "Kode Harga",
+      "pricing_tiers": "Tingkatan Harga",
+      "tier_start": "Mulai",
+      "tier_end": "Akhir (kosongkan untuk ∞)",
+      "tier_base_rate": "Tarif Dasar (Sen)",
+      "amount": "Nominal",
+      "idempotency": "Idempotensi"
+    },
+    "placeholders": {
+      "product_code": "mis. cloud-hosting",
+      "product_name": "mis. Cloud Hosting",
+      "plan_name": "mis. Professional",
+      "plan_code": "mis. pro-monthly",
+      "price_code": "mis. monthly-recurring",
+      "amount_cents": "Nominal dalam sen"
+    },
+    "hints": {
+      "idempotency": "Key pembuatan root untuk keamanan transaksional.",
+      "no_plans": "Belum ada paket. Pelanggan tidak bisa berlangganan produk ini tanpa minimal satu paket.",
+      "price_recommendation": "Minimal satu harga direkomendasikan agar paket bersifat komersial."
+    },
+    "validation": {
+      "required": "Wajib diisi"
+    },
+    "toast": {
+      "create_failed": "Gagal membuat produk",
+      "created": "Produk berhasil dibuat"
+    }
+  },
+  "products_edit": {
+    "header": {
+      "title": "Ubah Produk",
+      "title_with_name": "Ubah Produk: {{name}}"
+    },
+    "actions": {
+      "save": "Perbarui Produk",
+      "submit": "Simpan Detail Produk",
+      "update_features": "Perbarui Fitur"
+    },
+    "tabs": {
+      "details": "Detail",
+      "features": "Fitur",
+      "plans": "Paket"
+    },
+    "plans": {
+      "title": "Paket",
+      "description": "Paket komersial yang terhubung dengan produk ini.",
+      "boundary_title": "Batas Penagihan:",
+      "boundary_desc": "Paket dan harga dikelola sebagai unit penagihan terpisah untuk menjaga integritas langganan. Gunakan tautan di atas untuk mengelola paket individu. 0 paket ditemukan biasanya berarti produk ini hanya metadata yang digunakan untuk hak fitur tanpa biaya langganan komersial."
+    },
+    "toast": {
+      "load_failed": "Gagal memuat data produk",
+      "update_failed": "Gagal memperbarui produk"
+    }
+  },
+  "features": {
+    "header": {
+      "title": "Fitur",
+      "description": "Kapabilitas logis dan hak akses yang terhubung dengan produk Anda."
+    },
+    "actions": {
+      "new": "Fitur Baru"
+    },
+    "type": {
+      "boolean": "Boolean (Aktif/Nonaktif)",
+      "metered": "Bermeter (Berbasis Kuota)"
+    },
+    "empty_title": "Fitur tidak ditemukan",
+    "empty_desc": "Buat fitur untuk mulai membangun katalog Anda."
+  },
+  "features_create": {
+    "header": {
+      "title": "Fitur Baru",
+      "description": "Buat kapabilitas baru untuk penetapan fitur."
+    },
+    "sections": {
+      "feature": "Detail Fitur"
+    },
+    "actions": {
+      "save": "Buat Fitur"
+    },
+    "placeholders": {
+      "code": "mis. sso_integration",
+      "name": "mis. Single Sign-On",
+      "meter_hint": "Kosongkan atau masukkan ID meter"
+    },
+    "hints": {
+      "meter_required": "wajib diisi untuk tipe harga {{type}}"
+    },
+    "toast": {
+      "create_failed": "Gagal membuat fitur",
+      "created": "Fitur berhasil dibuat"
+    }
+  },
+  "features_edit": {
+    "header": {
+      "title": "Ubah Fitur",
+      "title_with_name": "Ubah Fitur: {{name}}"
+    },
+    "actions": {
+      "update": "Perbarui Fitur"
+    },
+    "toast": {
+      "load_failed": "Gagal memuat fitur",
+      "update_failed": "Gagal memperbarui fitur",
+      "updated": "Fitur berhasil diperbarui"
+    }
+  },
+  "taxes_create": {
+    "header": {
+      "title": "Tax Rate Baru",
+      "description": "Tambahkan tax rate yang dapat diterapkan ke invoice."
+    },
+    "fields": {
+      "code": "Kode *",
+      "name": "Nama *",
+      "rate": "Rate (%) *",
+      "inclusive": "Inclusive",
+      "inclusive_placeholder": "Pilih mode",
+      "inclusive_options": {
+        "exclusive": "Exclusive",
+        "inclusive": "Inclusive"
+      },
+      "status": "Status",
+      "status_placeholder": "Pilih status",
+      "status_options": {
+        "active": "Aktif",
+        "inactive": "Tidak Aktif"
+      },
+      "metadata": "Metadata",
+      "metadata_hint": "Opsional. Isi objek JSON (mis. {\"region\":\"APAC\"}).",
+      "metadata_placeholder": "{\"region\":\"APAC\"}"
+    },
+    "actions": {
+      "create": "Buat Tax Rate"
+    },
+    "toast": {
+      "created": "Tax rate dibuat",
+      "create_failed": "Gagal membuat tax rate"
+    },
+    "validation": {
+      "code_required": "Kode wajib diisi.",
+      "name_required": "Nama wajib diisi.",
+      "rate_required": "Rate wajib diisi.",
+      "rate_number": "Rate harus berupa angka.",
+      "rate_min": "Rate harus >= 0.",
+      "metadata_object": "Metadata harus berupa objek JSON.",
+      "metadata_invalid": "Metadata harus JSON valid."
+    }
+  },
+  "invoices_create": {
+    "header": {
+      "title": "Generate Invoice",
+      "description": "Generate invoice manual untuk subscription dan periode tertentu."
+    },
+    "fields": {
+      "subscription_label": "Subscription ID *",
+      "subscription_placeholder": "Pilih subscription",
+      "period_start": "Period Start *",
+      "period_start_placeholder": "2026-03-01",
+      "period_end": "Period End *",
+      "period_end_placeholder": "2026-04-01",
+      "issue_at": "Issue At",
+      "due_at": "Due At",
+      "optional_placeholder": "Override opsional"
+    },
+    "actions": {
+      "generate": "Generate Invoice",
+      "generating": "Generating…"
+    },
+    "toast": {
+      "generated": "Invoice berhasil dibuat",
+      "generate_failed": "Gagal membuat invoice"
+    },
+    "validation": {
+      "subscription_required": "Subscription ID wajib diisi.",
+      "period_start_required": "Period start wajib diisi.",
+      "period_end_required": "Period end wajib diisi.",
+      "period_end_after": "Period end harus setelah start."
+    }
+  },
+  "invoices_manage": {
+    "line_item": "Item",
+    "not_found": "Invoice tidak ditemukan",
+    "actions": {
+      "back": "Kembali ke invoice",
+      "download": "Unduh PDF",
+      "resend": "Kirim Ulang Email",
+      "title": "Aksi",
+      "open": "Buka Invoice",
+      "pay": "Coba Bayar",
+      "mark_paid": "Tandai Lunas",
+      "void": "Void"
+    },
+    "fields": {
+      "reason": "Alasan",
+      "reason_placeholder": "Digunakan untuk void/pay",
+      "attachment": "URL Lampiran",
+      "attachment_placeholder": "Bukti/ PDF eksternal",
+      "note": "Catatan",
+      "note_placeholder": "Catatan konteks"
+    },
+    "toast": {
+      "load_failed": "Gagal memuat invoice",
+      "action_success": "Invoice {{action}} berhasil",
+      "action_failed": "Gagal {{action}} invoice",
+      "resend_copied": "Email invoice diantrikan. Link publik disalin.",
+      "resend_generated": "Email invoice diantrikan. Link publik dibuat.",
+      "resend_queued": "Email invoice diantrikan",
+      "resend_failed": "Gagal mengirim ulang invoice"
+    }
+  },
+  "subscriptions_create": {
+    "header": {
+      "title": "Subscription Baru",
+      "description": "Buat subscription dan tetapkan periode billing."
+    },
+    "sections": {
+      "customer_pricing": "Pelanggan & Harga",
+      "schedule": "Jadwal"
+    },
+    "fields": {
+      "customer": "Pelanggan",
+      "customer_placeholder": "Cari pelanggan berdasarkan nama atau email",
+      "plan": "Plan",
+      "plan_placeholder": "Cari plan berdasarkan nama",
+      "plan_price": "Plan Price",
+      "plan_price_placeholder": "Pilih plan price",
+      "plan_price_placeholder_empty": "Pilih plan terlebih dahulu",
+      "quantity": "Jumlah",
+      "currency": "Mata uang",
+      "start_at": "Mulai",
+      "period_start": "Awal Periode",
+      "period_end": "Akhir Periode",
+      "trial_end": "Akhir Trial",
+      "cancel_at": "Batal Pada",
+      "status": "Status",
+      "status_placeholder": "Pilih status",
+      "status_options": {
+        "active": "active",
+        "trialing": "trialing",
+        "past_due": "past_due",
+        "paused": "paused",
+        "canceled": "canceled"
+      }
+    },
+    "actions": {
+      "create": "Buat Subscription"
+    },
+    "toast": {
+      "created": "Subscription dibuat: {{id}}",
+      "create_failed": "Gagal membuat subscription",
+      "load_options_failed": "Gagal memuat opsi"
+    },
+    "errors": {
+      "prefix": "Error",
+      "options_prefix": "Opsi"
+    },
+    "validation": {
+      "customer_required": "Customer ID wajib diisi.",
+      "plan_required": "Plan ID wajib diisi.",
+      "price_required": "Plan price wajib diisi.",
+      "quantity_min": "Jumlah harus > 0.",
+      "currency_required": "Mata uang wajib diisi.",
+      "currency_invalid": "Mata uang harus kode ISO 4217.",
+      "period_start_required": "Awal periode wajib diisi.",
+      "period_end_required": "Akhir periode wajib diisi.",
+      "period_end_after": "Akhir periode harus setelah awal."
+    }
+  },
+  "subscriptions_edit": {
+    "header": {
+      "title": "Subscription",
+      "description": "Tinjau status dan atur siklus billing."
+    },
+    "actions": {
+      "back": "Kembali ke daftar",
+      "cancel_now": "Batalkan Sekarang",
+      "cancel_end": "Batalkan di Akhir"
+    },
+    "sections": {
+      "current_status": "Status Saat Ini",
+      "period_ends": "Periode berakhir: {{date}}",
+      "update": "Perbarui Subscription",
+      "items": "Tambah Item Subscription"
+    },
+    "fields": {
+      "status": "Status",
+      "status_placeholder": "Tanpa perubahan",
+      "status_options": {
+        "active": "active",
+        "trialing": "trialing",
+        "past_due": "past_due",
+        "paused": "paused",
+        "canceled": "canceled"
+      },
+      "cancel_at": "Batal Pada",
+      "canceled_at": "Dibatalkan Pada",
+      "ended_at": "Berakhir Pada"
+    },
+    "items": {
+      "price_id": "Plan Price ID",
+      "quantity": "Jumlah",
+      "start_at": "Mulai",
+      "end_at": "Berakhir",
+      "add": "Tambah Item",
+      "adding": "Menambah…"
+    },
+    "confirm": {
+      "cancel_now": "Batalkan subscription ini sekarang?",
+      "cancel_end": "Batalkan di akhir periode?"
+    },
+    "toast": {
+      "load_failed": "Gagal memuat subscription",
+      "updated": "Subscription diperbarui: {{id}}",
+      "update_failed": "Gagal memperbarui subscription",
+      "item_created": "Item dibuat: {{id}}",
+      "item_create_failed": "Gagal membuat item"
+    },
+    "validation": {
+      "id_required": "Subscription ID wajib diisi.",
+      "no_changes": "Isi setidaknya satu field untuk diperbarui.",
+      "price_required": "Plan price ID wajib diisi.",
+      "quantity_min": "Jumlah harus lebih dari 0.",
+      "item_end_after": "Akhir item harus setelah awal.",
+      "period_end_required": "Akhir periode wajib"
+    },
+    "errors": {
+      "prefix": "Error"
+    }
+  },
+  "meters_create": {
+    "header": {
+      "title": "Meter Baru",
+      "description": "Definisikan metering untuk billing berbasis pemakaian."
+    },
+    "fields": {
+      "code": "Kode *",
+      "name": "Nama *",
+      "aggregation": "Agregasi *",
+      "aggregation_placeholder": "Pilih agregasi",
+      "aggregation_options": {
+        "sum": "sum",
+        "count": "count",
+        "max": "max",
+        "last": "last",
+        "avg": "avg"
+      },
+      "unit": "Unit *",
+      "unit_placeholder": "requests, tokens, GB…",
+      "status": "Aktif",
+      "status_placeholder": "Pilih status",
+      "status_options": {
+        "active": "Aktif",
+        "inactive": "Tidak Aktif"
+      }
+    },
+    "actions": {
+      "create": "Buat Meter"
+    },
+    "toast": {
+      "created": "Meter dibuat",
+      "create_failed": "Gagal membuat meter"
+    },
+    "validation": {
+      "code_required": "Kode wajib diisi.",
+      "name_required": "Nama wajib diisi.",
+      "aggregation_required": "Agregasi wajib diisi.",
+      "unit_required": "Unit wajib diisi."
+    }
+  },
+  "meters_edit": {
+    "header": {
+      "title": "Ubah Meter",
+      "title_with_name": "Ubah Meter: {{name}}"
+    },
+    "section": {
+      "title": "Perbarui Meter"
+    },
+    "fields": {
+      "name": "Nama",
+      "aggregation": "Agregasi",
+      "aggregation_options": {
+        "sum": "sum",
+        "count": "count",
+        "max": "max",
+        "last": "last",
+        "avg": "avg"
+      },
+      "unit": "Unit",
+      "unit_placeholder": "requests, tokens, GB…",
+      "status": "Aktif",
+      "status_options": {
+        "active": "Aktif",
+        "inactive": "Tidak Aktif"
+      }
+    },
+    "actions": {
+      "update": "Perbarui Meter"
+    },
+    "toast": {
+      "load_failed": "Gagal memuat meter",
+      "updated": "Meter diperbarui",
+      "update_failed": "Gagal memperbarui meter"
+    },
+    "validation": {
+      "no_changes": "Isi setidaknya satu field untuk diperbarui."
+    }
+  },
+  "usage_create": {
+    "header": {
+      "title": "Impor Usage Events",
+      "description": "Unggah massal usage events via CSV."
+    },
+    "csv_hint": "Kolom CSV:",
+    "fields": {
+      "file": "File CSV"
+    },
+    "progress": "Progres: {{done}}/{{total}} ({{success}} ok, {{failed}} gagal)",
+    "actions": {
+      "upload": "Unggah CSV",
+      "uploading": "Mengunggah…"
+    },
+    "toast": {
+      "select_file": "Pilih file CSV terlebih dahulu",
+      "empty_csv": "CSV kosong atau tidak ada data",
+      "complete_title": "Upload selesai",
+      "complete_desc": "{{success}} berhasil, {{failed}} gagal",
+      "failed": "Upload gagal"
+    }
+  },
+  "ledger_create": {
+    "header": {
+      "title": "Posting Transaksi Ledger",
+      "description": "Catat transaksi multi-entry yang immutable."
+    },
+    "sections": {
+      "details": "Detail Transaksi",
+      "entries": "Journal Entries (minimum 2)"
+    },
+    "fields": {
+      "currency": "Mata uang",
+      "source_type": "Tipe Sumber",
+      "source_type_placeholder": "mis. payout, refund",
+      "source_id": "Source ID",
+      "customer": "Pelanggan",
+      "customer_placeholder": "Cari pelanggan berdasarkan nama atau email",
+      "subscription": "Subscription",
+      "subscription_placeholder": "Pilih subscription",
+      "invoice": "Invoice",
+      "invoice_placeholder": "Cari invoice berdasarkan nomor",
+      "occurred_at": "Terjadi Pada"
+    },
+    "entries": {
+      "account_code": "Kode Akun",
+      "entry_type": "Tipe Entri",
+      "entry_type_placeholder": "Pilih tipe entri",
+      "entry_type_options": {
+        "debit": "Debit",
+        "credit": "Credit"
+      },
+      "amount": "Jumlah (sen)",
+      "currency": "Mata uang",
+      "description": "Deskripsi"
+    },
+    "actions": {
+      "add_entry": "+ Tambah Entri",
+      "post": "Posting Transaksi",
+      "posting": "Memposting…"
+    },
+    "toast": {
+      "posted": "Transaksi diposting",
+      "post_failed": "Gagal memposting transaksi"
+    },
+    "validation": {
+      "entries_min": "Minimal 2 entri valid diperlukan"
+    }
+  },
+  "audit_logs": {
+    "header": {
+      "title": "Audit Logs",
+      "description": "Jejak konfigurasi dan perubahan billing yang immutable."
+    },
+    "highlights": {
+      "columns": {
+        "entry": "Entri",
+        "tag": "Tag"
+      },
+      "empty_title": "Tidak ada highlight",
+      "empty_desc": "Audit trail kosong."
+    },
+    "filters": {
+      "title": "Filter Audit Stream",
+      "action": "Aksi",
+      "actor_type": "Tipe Aktor",
+      "actor_type_placeholder": "admin_user",
+      "resource_type": "Tipe Resource",
+      "resource_type_placeholder": "invoice",
+      "resource_id": "Resource ID",
+      "request_id": "Request ID",
+      "created_from": "Dibuat Dari",
+      "created_to": "Dibuat Sampai"
+    },
+    "table": {
+      "columns": {
+        "action": "Aksi",
+        "resource": "Resource",
+        "actor": "Aktor",
+        "reason": "Alasan",
+        "when": "Waktu"
+      },
+      "empty_title": "Tidak ada audit log",
+      "empty_desc": "Sesuaikan filter untuk menemukan event."
+    },
+    "toast_load_failed": "Gagal memuat audit log"
+  },
+  "settings": {
+    "header": {
+      "title": "Pengaturan",
+      "description": "Preferensi organisasi, format invoice, dan kontrol fitur."
+    },
+    "cards": {
+      "api_keys": "API Keys",
+      "invoice_format": "Format Invoice",
+      "timezone": "Zona waktu"
+    },
+    "invoice_format": {
+      "title": "Format Invoice",
+      "description": "Kelola format penomoran invoice, urutan, dan tanggal efektif per organisasi.",
+      "edit": "Ubah Format Invoice"
+    },
+    "api_keys": {
+      "title": "API Keys",
+      "description": "Buat key berscope untuk integrasi public. Key hanya ditampilkan sekali.",
+      "fields": {
+        "name": "Nama key",
+        "type": "Tipe key",
+        "type_placeholder": "Pilih tipe",
+        "scopes": "Scopes (pisah dengan koma)",
+        "allowed_ips": "IP yang diizinkan (pisah dengan koma)",
+        "allowed_domains": "Domain yang diizinkan (pisah dengan koma)"
+      },
+      "placeholders": {
+        "name": "mis. Backend Produksi"
+      },
+      "types": {
+        "secret": "Secret",
+        "public": "Public",
+        "webhook": "Webhook"
+      },
+      "actions": {
+        "create": "Buat key",
+        "revoke": "Cabut"
+      },
+      "columns": {
+        "name": "Key",
+        "prefix": "Prefix",
+        "scopes": "Scopes",
+        "status": "Status"
+      },
+      "empty_title": "Belum ada API key",
+      "empty_desc": "Buat key untuk mulai integrasi public API.",
+      "created": {
+        "title": "Key dibuat",
+        "description": "Salin key sekarang. Key tidak akan ditampilkan lagi.",
+        "key_label": "API Key",
+        "copy": "Salin key"
+      },
+      "validation": {
+        "name_required": "Nama wajib diisi."
+      },
+      "toast": {
+        "created": "API key dibuat",
+        "create_failed": "Gagal membuat API key",
+        "revoked": "API key dicabut",
+        "revoke_failed": "Gagal mencabut API key",
+        "copied": "API key disalin"
+      }
+    },
+    "flags": {
+      "title": "Feature Flags",
+      "description": "Atur override per tenant atau rollout global. Perubahan berlaku segera.",
+      "scope_label": "Scope",
+      "scope_placeholder": "Pilih scope",
+      "scope_options": {
+        "org": "Override org",
+        "global": "Global"
+      },
+      "actor_label": "Actor ID",
+      "columns": {
+        "key": "Flag Key",
+        "status": "Status",
+        "rollout": "Rollout %",
+        "source": "Source: {{source}}"
+      },
+      "empty_title": "Tidak ada feature flag",
+      "empty_desc": "Tambahkan default di features.yml atau set via API."
+    },
+    "status": {
+      "enabled": "Aktif",
+      "disabled": "Nonaktif"
+    },
+    "toast": {
+      "load_failed": "Gagal memuat pengaturan",
+      "flag_updated": "Flag {{key}} {{status}}",
+      "flag_update_failed": "Gagal memperbarui flag",
+      "rollout_saved": "Rollout disimpan untuk {{key}}",
+      "rollout_failed": "Gagal menyimpan rollout",
+      "org_not_selected": "Organisasi belum dipilih"
+    }
+  },
+  "test_clock": {
+    "header": {
+      "title": "Test Clock",
+      "description": "Simulasikan waktu per organisasi untuk menguji siklus billing."
+    },
+    "actions": {
+      "view_audit": "Lihat Audit Logs",
+      "pause": "Jeda",
+      "resume": "Lanjutkan"
+    },
+    "current": {
+      "title": "Clock Saat Ini",
+      "loading": "Memuat test clock…",
+      "status": "Status",
+      "time": "Waktu Saat Ini",
+      "updated": "Diperbarui",
+      "empty": "Belum ada test clock untuk organisasi ini."
+    },
+    "update": {
+      "title": "Set / Update Clock",
+      "current_time": "Waktu Saat Ini",
+      "status": "Status",
+      "status_placeholder": "Pilih status",
+      "save": "Simpan Test Clock"
+    },
+    "status": {
+      "active": "Aktif",
+      "paused": "Paused"
+    },
+    "advance": {
+      "title": "Majukan Waktu",
+      "label": "Majukan (detik)",
+      "cta": "Majukan",
+      "advancing": "Memajukan…"
+    },
+    "toast": {
+      "load_failed": "Gagal memuat test clock",
+      "saved": "Test clock disimpan",
+      "save_failed": "Gagal menyimpan test clock",
+      "advance_invalid": "Advance harus berupa angka positif",
+      "advanced": "Test clock dimajukan",
+      "advance_failed": "Gagal memajukan test clock",
+      "paused": "Test clock dijeda",
+      "pause_failed": "Gagal menjeda test clock",
+      "resumed": "Test clock dilanjutkan",
+      "resume_failed": "Gagal melanjutkan test clock"
+    },
+    "validation": {
+      "current_time_required": "Waktu saat ini wajib diisi."
+    }
+  },
+  "apps": {
+    "catalog": {
+      "title": "Katalog Aplikasi",
+      "description": "Pasang penyedia pembayaran per organisasi.",
+      "columns": {
+        "app": "Aplikasi",
+        "category": "Kategori",
+        "provider": "Penyedia",
+        "auth": "Metode Autentikasi",
+        "status": "Status"
+      },
+      "select_auth": "Pilih metode autentikasi",
+      "install": "Pasang",
+      "empty_title": "Katalog aplikasi kosong",
+      "empty_desc": "Katalog aplikasi masih kosong."
+    },
+    "installed": {
+      "title": "Aplikasi Terpasang",
+      "description": "Aplikasi yang terpasang untuk organisasi ini.",
+      "columns": {
+        "app": "Aplikasi",
+        "status": "Status",
+        "updated": "Diperbarui"
+      },
+      "configure": "Konfigurasi",
+      "empty_title": "Belum ada aplikasi terpasang",
+      "empty_desc": "Pasang aplikasi untuk memulai."
+    },
+    "dialog": {
+      "title": "Konfigurasi {{app}}",
+      "description": "Pilih metode autentikasi dan simpan kredensial.",
+      "auth_method": "Metode Autentikasi",
+      "select_auth_method": "Pilih metode autentikasi",
+      "stripe": {
+        "title": "Stripe Connect",
+        "description": "Hubungkan dengan OAuth Stripe untuk mengelola pembayaran.",
+        "connect": "Hubungkan",
+        "redirecting": "Mengalihkan…",
+        "oauth_hint": "Selesaikan Stripe Connect untuk menyelesaikan instalasi."
+      },
+      "publishable_key": "Publishable key",
+      "publishable_placeholder": "pk_live_...",
+      "secret_key": "Secret key",
+      "secret_placeholder": "sk_live_...",
+      "api_key": "API key",
+      "api_key_placeholder": "api_...",
+      "username": "Username",
+      "username_placeholder": "nama-pengguna",
+      "password": "Password",
+      "password_placeholder": "kata-sandi",
+      "host": "Host",
+      "host_placeholder": "smtp.contoh.com",
+      "port": "Port",
+      "port_placeholder": "587",
+      "save": "Simpan",
+      "webhook_secret": "Webhook secret",
+      "webhook_placeholder": "whsec_..."
+    },
+    "toast_load_failed": "Gagal memuat aplikasi",
+    "toast_installed": "Aplikasi terpasang",
+    "toast_install_failed": "Gagal memasang aplikasi",
+    "toast_installation_updated": "Instalasi aplikasi diperbarui",
+    "toast_update_failed": "Gagal memperbarui aplikasi",
+    "toast_config_saved": "Konfigurasi tersimpan",
+    "toast_config_failed": "Gagal menyimpan konfigurasi",
+    "toast_stripe_connected": "Stripe terhubung",
+    "toast_stripe_connected_desc": "OAuth Stripe berhasil terhubung.",
+    "toast_stripe_failed": "Gagal menghubungkan Stripe",
+    "status": {
+      "active": "Aktif",
+      "inactive": "Nonaktif"
+    },
+    "validation": {
+      "credentials_required": "Kredensial wajib belum lengkap.",
+      "oauth_required": "Gunakan Stripe Connect untuk menyelesaikan instalasi."
+    }
+  },
+  "reference": {
+    "toast": {
+      "currencies_failed": "Gagal memuat mata uang"
+    }
+  }
+}

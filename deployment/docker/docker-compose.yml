@@ -1,0 +1,65 @@
+name: railzway
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  migrate:
+    image: migrate/migrate:v4
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../../db/migrations:/migrations:ro
+    command: ["-path", "/migrations", "-database", "postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable", "up"]
+    restart: "no"
+
+  admin:
+    image: ghcr.io/railzwaylabs/railzway-admin:latest
+    env_file:
+      - ../../config/docker/admin.env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    ports:
+      - "8080:8080"
+
+  scheduler:
+    image: ghcr.io/railzwaylabs/railzway-scheduler:latest
+    env_file:
+      - ../../config/docker/scheduler.env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    profiles: ["api"]
+    image: ghcr.io/railzwaylabs/railzway-api:latest
+    env_file:
+      - ../../config/docker/admin.env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:

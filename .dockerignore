@@ -1,0 +1,56 @@
+# Git
+.git
+.gitignore
+
+# GO
+.gocache
+
+# Node / JS
+**/node_modules
+**/.pnpm-store
+**/.pnpm
+**/.npm
+**/.yarn
+**/.cache
+**/.vite
+**/.turbo
+**/.nx
+**/.eslintcache
+**/.stylelintcache
+**/*.tsbuildinfo
+
+# Build outputs
+**/dist
+**/build
+**/.next
+**/.nuxt
+**/out
+public
+
+# Monorepo / tooling
+**/.turbo
+**/.nx
+**/.storybook
+
+# Docs & site generators
+docs/.docusaurus
+docs/build
+
+# Logs & OS
+**/*.log
+**/.DS_Store
+
+# Docker
+docker-compose.yml
+
+# Utilities
+*.md
+/k6
+/.github
+apps/admin/cypress
+apps/admin/cypress.config.ts
+apps/admin/playwright-report
+
+# Secrets must never be baked into images
+.env
+.env.*

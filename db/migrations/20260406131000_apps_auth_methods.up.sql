@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS apps_auth_methods (
+    id UUID PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

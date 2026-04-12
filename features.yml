@@ -1,0 +1,13 @@
+feature_flags:
+  - key: "rating_realtime"
+    enabled: true
+    rollout: 100
+  - key: "invoice_v2"
+    enabled: false
+    rollout: 0
+  - key: "audit_logs"
+    enabled: true
+    rollout: 25
+  - key: "ledger_custom_accounts"
+    enabled: false
+    rollout: 0

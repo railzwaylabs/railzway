@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS product_features;
+DROP TABLE IF EXISTS features;
+DROP TABLE IF EXISTS products;

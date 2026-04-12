@@ -1,0 +1,74 @@
+# Node modules
+node_modules/
+.pnpm-store/
+.pnpm/
+.npm/
+.yarn/
+.cache/
+.vite/
+.turbo/
+.nx/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+build/
+out/
+build_output.txt
+
+# Environment variables
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Cypress artifacts
+cypress/videos/
+cypress/screenshots/
+cypress/results/   # kalau ada folder hasil report lain
+
+# Coverage
+coverage/
+*.lcov
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Misc
+*.tmp
+*.swp
+*.swo
+*.bak
+tmp/
+
+# Go
+.gocache
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.prof
+*.coverprofile
+AGENTS.md
+main
+.instance_id

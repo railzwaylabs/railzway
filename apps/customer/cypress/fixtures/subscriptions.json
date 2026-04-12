@@ -1,0 +1,15 @@
+{
+  "subscriptions": [
+    {
+      "id": "sub_1",
+      "org_id": "org_1",
+      "customer_id": "cust_1",
+      "plan_id": "plan_starter",
+      "status": "active",
+      "currency": "USD",
+      "current_period_start": "2026-04-01T00:00:00Z",
+      "current_period_end": "2026-04-30T23:59:59Z"
+    }
+  ],
+  "has_more": false
+}

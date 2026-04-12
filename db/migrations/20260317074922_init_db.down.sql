@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS organization_links;
+DROP TABLE IF EXISTS organization_invoice_number_formats;
+DROP TABLE IF EXISTS invoice_sequences;
+DROP TABLE IF EXISTS organization_billing_preferences;
+DROP TABLE IF EXISTS organization_invites;
+DROP TABLE IF EXISTS organization_members;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS organizations;
+DROP TABLE IF EXISTS users;

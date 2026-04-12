@@ -1,0 +1,1894 @@
+{
+  "warnings": {
+    "session_secret_missing": "SESSION_SECRET is not set; admin sessions are insecure.",
+    "session_secret_default": "SESSION_SECRET is still the default. Replace it before production use.",
+    "session_secret_weak": "SESSION_SECRET is too short. Use at least 16 characters.",
+    "tls_disabled": "TLS is disabled in production. Enable APP_TLS_MODE=proxy or direct.",
+    "apps_credentials_key_missing": "APPS_CREDENTIALS_KEY is not set; app credentials cannot be encrypted.",
+    "apps_credentials_key_invalid": "APPS_CREDENTIALS_KEY must be 32 bytes or base64-encoded 32 bytes.",
+    "api_key_missing": "No API keys generated yet. Create keys before integrating public APIs.",
+    "invoice_format_missing": "Invoice format is not configured for this organization.",
+    "tax_rate_missing": "No tax rates configured. Invoices will be created without tax.",
+    "payment_app_missing": "No payment provider installed. Payments cannot be processed automatically.",
+    "reconciliation_mismatch": "Reconciliation detected {{count}} mismatches in the last {{window_days}} days. Review reconciliation summary."
+  },
+  "common": {
+    "review": "Review",
+    "edit": "Edit",
+    "reset": "Reset",
+    "apply_filters": "Apply Filters",
+    "searching": "Searching…",
+    "loading": "Loading…",
+    "load_more": "Load more",
+    "manage": "Manage",
+    "enable": "Enable",
+    "disable": "Disable",
+    "all": "All",
+    "page_size": "Page Size",
+    "empty_dash": "—",
+    "loading_dash": "—",
+    "cancel": "Cancel",
+    "creating": "Creating…",
+    "updating": "Updating…",
+    "saving": "Saving…",
+    "save": "Save",
+    "save_changes": "Save Changes",
+    "no_change": "No change",
+    "sending": "Sending…",
+    "closing": "Closing…",
+    "select_placeholder": "Select…",
+    "search_placeholder": "Search…",
+    "no_results": "No results"
+  },
+  "app": {
+    "loading_module": "Loading module…"
+  },
+  "topbar": {
+    "eyebrow": "Billing Engine",
+    "search_placeholder": "Search {{label}}…",
+    "logout": "Logout",
+    "admin_user": "Admin user"
+  },
+  "org_switcher": {
+    "workspace": "Workspace",
+    "workspaces": "Workspaces",
+    "select": "Select organization",
+    "loading": "Loading…",
+    "fetching_access": "Fetching access…",
+    "no_role": "No role",
+    "empty": "No organizations available",
+    "new_org": "+ New organization"
+  },
+  "nav": {
+    "groups": {
+      "core": "Core",
+      "billing": "Billing",
+      "finance": "Finance",
+      "system": "System",
+      "developer": "Developer"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "customers": "Customers",
+      "plans": "Plans",
+      "subscriptions": "Subscriptions",
+      "usage": "Usage",
+      "meters": "Meters",
+      "rating": "Rating",
+      "ledger": "Ledger",
+      "invoices": "Invoices",
+      "payments": "Payments",
+      "taxes": "Taxes",
+      "audit_logs": "Audit Logs",
+      "apps": "Apps",
+      "test_clock": "Test Clock",
+      "settings": "Settings"
+    }
+  },
+  "toast": {
+    "org_switch_failed": "Failed to switch organization"
+  },
+  "dashboard": {
+    "header": {
+      "title": "Revenue Pulse",
+      "description": "Snapshot of active billing signals and cashflow momentum."
+    },
+    "error": {
+      "title": "Failed to load dashboard"
+    },
+    "kpis": {
+      "mrr": {
+        "label": "Monthly Recurring",
+        "sub": "MRR this period"
+      },
+      "usage": {
+        "label": "Usage Charges",
+        "sub": "Accrued usage billing"
+      },
+      "open_invoices": {
+        "label": "Open Invoices",
+        "sub": "Awaiting payment"
+      },
+      "late_events": {
+        "label": "Late Events",
+        "sub": "Out-of-order usage events"
+      }
+    },
+    "reconciliation": {
+      "title": "Reconciliation",
+      "description": "Latest mismatches in the last {{days}} days.",
+      "badge_all_matched": "All matched",
+      "badge_mismatch": "{{count}} mismatches",
+      "columns": {
+        "type": "Type",
+        "invoice": "Invoice",
+        "detected": "Detected"
+      },
+      "badges": {
+        "usage": "Usage mismatch",
+        "ledger": "Ledger mismatch"
+      },
+      "kpis": {
+        "usage": {
+          "label": "Usage Mismatches",
+          "sub": "Invoice usage vs rating"
+        },
+        "ledger": {
+          "label": "Ledger Mismatches",
+          "sub": "Ledger vs invoice total"
+        },
+        "total": {
+          "label": "Total Mismatches",
+          "sub": "Requires review"
+        }
+      },
+      "empty_title": "No mismatches detected",
+      "empty_desc": "Reconciliation checks are clean."
+    },
+    "alerts": {
+      "columns": {
+        "signal": "Signal",
+        "tag": "Tag"
+      },
+      "empty_title": "No active alerts",
+      "empty_desc": "Everything looks stable right now."
+    }
+  },
+  "customers": {
+    "header": {
+      "title": "Customers",
+      "description": "Track account health, usage trends, and billing posture."
+    },
+    "actions": {
+      "new": "New Customer"
+    },
+    "toast_load_failed": "Failed to load customers",
+    "kpis": {
+      "active": {
+        "label": "Active Accounts"
+      },
+      "at_risk": {
+        "label": "At Risk"
+      },
+      "nrr": {
+        "label": "Net Revenue Retention",
+        "sub": "Rolling NRR"
+      }
+    },
+    "filters": {
+      "name": "Name",
+      "email": "Email",
+      "currency": "Currency",
+      "currency_placeholder": "USD, EUR…",
+      "created_from": "Created From",
+      "created_to": "Created To"
+    },
+    "table": {
+      "columns": {
+        "customer": "Customer",
+        "currency": "Currency",
+        "external_id": "External ID",
+        "created": "Created"
+      },
+      "empty_title": "No customers found",
+      "empty_desc": "Try adjusting the filters or create a new customer."
+    }
+  },
+  "plans": {
+    "header": {
+      "title": "Plans & Pricing",
+      "description": "Design flat, usage, and tiered offers with versioned pricing."
+    },
+    "actions": {
+      "new": "New Plan"
+    },
+    "toast_load_failed": "Failed to load plans",
+    "kpis": {
+      "active": "Active Plans",
+      "draft": "Draft Changes",
+      "tiered": "Tiered Prices"
+    },
+    "filters": {
+      "code": "Code",
+      "name": "Name",
+      "active_status": "Active Status"
+    },
+    "table": {
+      "columns": {
+        "plan": "Plan",
+        "description": "Description",
+        "pricing": "Pricing",
+        "status": "Status",
+        "created": "Created"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "no_prices": "No prices",
+      "no_amount": "No amount",
+      "tiers": "{{count}} tiers",
+      "more_prices": "+{{count}} more prices",
+      "empty_title": "No plans found",
+      "empty_desc": "Create a plan to get started, or change your filters."
+    }
+  },
+  "subscriptions": {
+    "header": {
+      "title": "Subscriptions",
+      "description": "Monitor recurring revenue and customer lifecycle status."
+    },
+    "actions": {
+      "new": "New Subscription"
+    },
+    "toast_load_failed": "Failed to load subscriptions",
+    "kpis": {
+      "active": "Active",
+      "trialing": "Trialing",
+      "past_due": "Past Due"
+    },
+    "filters": {
+      "customer": "Customer",
+      "customer_placeholder": "Search customer by name or email",
+      "status": "Status"
+    },
+    "status": {
+      "trial": "Trial",
+      "active": "Active",
+      "past_due": "Past Due",
+      "canceled": "Canceled"
+    },
+    "table": {
+      "columns": {
+        "subscription_id": "Subscription ID",
+        "customer": "Customer",
+        "plan": "Plan",
+        "currency": "Currency",
+        "status": "Status",
+        "period_end": "Period End"
+      },
+      "empty_title": "No subscriptions found",
+      "empty_desc": "Adjust filters or create a new subscription."
+    }
+  },
+  "usage": {
+    "header": {
+      "title": "Usage Stream",
+      "description": "Inspect ingestion throughput, late events, and metering health."
+    },
+    "actions": {
+      "ingest": "Ingest Usage"
+    },
+    "toast_load_failed": "Failed to load events",
+    "kpis": {
+      "events_per_hr": "Events / hr",
+      "late_events": "Late Events",
+      "active_meters": "Active Meters"
+    },
+    "filters": {
+      "meter": "Meter",
+      "meter_placeholder": "Search meter by name",
+      "customer": "Customer",
+      "customer_placeholder": "Search customer by name or email",
+      "status": "Status",
+      "recorded_from": "Recorded From",
+      "recorded_to": "Recorded To"
+    },
+    "status": {
+      "accepted": "Accepted",
+      "enriched": "Enriched",
+      "rated": "Rated"
+    },
+    "table": {
+      "columns": {
+        "event_id": "Event ID",
+        "meter": "Meter",
+        "customer": "Customer",
+        "value": "Value",
+        "status": "Status",
+        "recorded_at": "Recorded At"
+      },
+      "empty_title": "No usage events",
+      "empty_desc": "Adjust filters or upload a CSV file to ingest events."
+    }
+  },
+  "meters": {
+    "header": {
+      "title": "Meters",
+      "description": "Define metering dimensions for usage-based billing."
+    },
+    "actions": {
+      "new": "New Meter"
+    },
+    "toast_load_failed": "Failed to load meters",
+    "toast_toggle_failed": "Toggle failed",
+    "toast_enabled": "Meter enabled",
+    "toast_disabled": "Meter disabled",
+    "filters": {
+      "code": "Code",
+      "name": "Name",
+      "status": "Status"
+    },
+    "table": {
+      "columns": {
+        "meter": "Meter",
+        "aggregation": "Aggregation",
+        "unit": "Unit",
+        "status": "Status",
+        "created": "Created"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "empty_title": "No meters found",
+      "empty_desc": "Try adjusting filters or create a new meter."
+    }
+  },
+  "rating": {
+    "header": {
+      "title": "Rating Engine",
+      "description": "Track rated usage, aggregates, and pricing version drift."
+    },
+    "toast_results_failed": "Failed to load rating results",
+    "toast_aggregates_failed": "Failed to load aggregates",
+    "kpis": {
+      "rated_events": "Rated Events",
+      "avg_latency": "Avg Latency",
+      "replays_today": "Replays Today"
+    },
+    "tabs": {
+      "results": "Rating Results",
+      "aggregates": "Usage Aggregates"
+    },
+    "filters": {
+      "customer": "Customer",
+      "customer_placeholder": "Search customer by name or email",
+      "subscription": "Subscription",
+      "subscription_placeholder": "Search subscription by ID",
+      "plan_price_id": "Plan Price ID",
+      "meter": "Meter",
+      "meter_placeholder": "Search meter by name",
+      "usage_event_id": "Usage Event ID",
+      "window_start_from": "Window Start From",
+      "window_start_to": "Window Start To",
+      "period_start_from": "Period Start From",
+      "period_start_to": "Period Start To"
+    },
+    "results": {
+      "title": "Rating Results",
+      "columns": {
+        "usage_event": "Usage Event",
+        "customer": "Customer",
+        "meter": "Meter",
+        "quantity": "Qty",
+        "amount": "Amount",
+        "window_start": "Window Start"
+      },
+      "empty_title": "No rating results",
+      "empty_desc": "Run rating engine to see results here."
+    },
+    "aggregates": {
+      "title": "Usage Aggregates",
+      "columns": {
+        "customer": "Customer",
+        "meter": "Meter",
+        "period": "Period",
+        "quantity": "Quantity",
+        "amount": "Amount"
+      },
+      "empty_title": "No usage aggregates",
+      "empty_desc": "Aggregates appear after usage is rated."
+    }
+  },
+  "ledger": {
+    "header": {
+      "title": "Ledger",
+      "description": "Post balanced transactions and review the accounting stream."
+    },
+    "actions": {
+      "new": "Post Transaction"
+    },
+    "toast_load_failed": "Failed to load ledger",
+    "filters": {
+      "source_type": "Source Type",
+      "source_id": "Source ID",
+      "customer": "Customer",
+      "customer_placeholder": "Search customer by name or email",
+      "subscription": "Subscription",
+      "subscription_placeholder": "Search subscription by ID",
+      "invoice": "Invoice",
+      "invoice_placeholder": "Search invoice by number",
+      "occurred_from": "Occurred From",
+      "occurred_to": "Occurred To"
+    },
+    "table": {
+      "columns": {
+        "source_type": "Source Type",
+        "source_id": "Source ID",
+        "currency": "Currency",
+        "customer": "Customer",
+        "occurred_at": "Occurred At"
+      },
+      "empty_title": "No ledger transactions",
+      "empty_desc": "Post a transaction to start the accounting stream."
+    }
+  },
+  "payments": {
+    "header": {
+      "title": "Payments",
+      "description": "Track payment intents, reconciliation, and settlement windows."
+    },
+    "toast_load_failed": "Failed to load payments",
+    "kpis": {
+      "collected": "Collected",
+      "failed": "Failed",
+      "retries": "Retries"
+    },
+    "filters": {
+      "customer": "Customer",
+      "customer_placeholder": "Search customer by name or email",
+      "invoice": "Invoice",
+      "invoice_placeholder": "Search invoice by number",
+      "status": "Status",
+      "provider": "Provider",
+      "created_from": "Created From",
+      "created_to": "Created To"
+    },
+    "status": {
+      "pending": "Pending",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "refunded": "Refunded"
+    },
+    "table": {
+      "columns": {
+        "payment_id": "Payment ID",
+        "customer": "Customer",
+        "provider": "Provider",
+        "amount": "Amount",
+        "status": "Status",
+        "created": "Created"
+      },
+      "empty_title": "No payments found",
+      "empty_desc": "Adjust filters to find payment records."
+    }
+  },
+  "taxes": {
+    "header": {
+      "title": "Taxes",
+      "description": "Configure tax profiles, regions, and exemption logic."
+    },
+    "actions": {
+      "new": "New Tax Rate"
+    },
+    "toast_load_failed": "Failed to load tax rates",
+    "kpis": {
+      "active_profiles": "Active Profiles",
+      "exempt_customers": "Exempt Customers"
+    },
+    "filters": {
+      "code": "Code",
+      "name": "Name",
+      "status": "Status",
+      "created_from": "Created From",
+      "created_to": "Created To"
+    },
+    "table": {
+      "columns": {
+        "name": "Name",
+        "code": "Code",
+        "rate": "Rate",
+        "type": "Type",
+        "status": "Status",
+        "created": "Created"
+      },
+      "type": {
+        "inclusive": "Inclusive",
+        "exclusive": "Exclusive"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "empty_title": "No tax rates found",
+      "empty_desc": "Adjust filters to find a matching rate."
+    }
+  },
+  "invoices": {
+    "header": {
+      "title": "Invoices",
+      "description": "Draft, open, and paid billing records."
+    },
+    "actions": {
+      "generate": "Generate"
+    },
+    "toast_load_failed": "Failed to load invoices",
+    "kpis": {
+      "draft": "Draft",
+      "open": "Open",
+      "paid_amount": "Paid Amount"
+    },
+    "filters": {
+      "customer": "Customer",
+      "customer_placeholder": "Search customer by name or email",
+      "subscription": "Subscription",
+      "subscription_placeholder": "Search subscription by ID",
+      "status": "Status",
+      "number": "Invoice Number"
+    },
+    "status": {
+      "draft": "Draft",
+      "open": "Open",
+      "paid": "Paid",
+      "void": "Void",
+      "uncollectible": "Uncollectible"
+    },
+    "table": {
+      "columns": {
+        "invoice": "Invoice",
+        "status": "Status",
+        "amount": "Amount",
+        "customer": "Customer",
+        "period": "Period"
+      },
+      "empty_title": "No invoices found",
+      "empty_desc": "Create an invoice to get started, or change your filters."
+    }
+  },
+  "not_found": {
+    "title": "Page not found",
+    "description": "We could not find this view. Try heading back to the dashboard.",
+    "back": "Back to Dashboard"
+  },
+  "routes": {
+    "dashboard": {
+      "label": "Dashboard",
+      "desc": "Revenue overview and billing signals"
+    },
+    "organizations": {
+      "label": "Organizations",
+      "desc": "Manage tenants and org accounts"
+    },
+    "organizations_new": {
+      "label": "New Organization",
+      "desc": "Create new tenant"
+    },
+    "organizations_edit": {
+      "label": "Edit Organization",
+      "desc": "Configuration and preferences"
+    },
+    "customers": {
+      "label": "Customers",
+      "desc": "Track accounts, health, and billing posture"
+    },
+    "customers_new": {
+      "label": "New Customer",
+      "desc": "Create a new billing customer"
+    },
+    "customers_edit": {
+      "label": "Edit Customer",
+      "desc": "Update customer information"
+    },
+    "products": {
+      "label": "Products",
+      "desc": ""
+    },
+    "products_new": {
+      "label": "New Product",
+      "desc": "Create a new product"
+    },
+    "products_edit": {
+      "label": "Edit Product",
+      "desc": "Update product information"
+    },
+    "features": {
+      "label": "Features",
+      "desc": ""
+    },
+    "features_new": {
+      "label": "New Feature",
+      "desc": "Create a new feature"
+    },
+    "features_edit": {
+      "label": "Edit Feature",
+      "desc": "Update feature information"
+    },
+    "plans": {
+      "label": "Plans & Pricing",
+      "desc": "Design flat, usage, and tiered pricing"
+    },
+    "plans_new": {
+      "label": "New Plan",
+      "desc": "Create a primary billing plan"
+    },
+    "plans_edit": {
+      "label": "Edit Plan",
+      "desc": "Design pricing options and catalog items"
+    },
+    "subscriptions": {
+      "label": "Subscriptions",
+      "desc": "Manage subscription lifecycle"
+    },
+    "subscriptions_new": {
+      "label": "New Subscription",
+      "desc": "Create a new subscription"
+    },
+    "subscriptions_edit": {
+      "label": "Edit Subscription",
+      "desc": "Modify subscription details"
+    },
+    "usage": {
+      "label": "Usage",
+      "desc": "View metered usage events"
+    },
+    "usage_new": {
+      "label": "Ingest Usage",
+      "desc": "Upload usage events"
+    },
+    "meters": {
+      "label": "Meters",
+      "desc": "Configure usage meters"
+    },
+    "meters_new": {
+      "label": "New Meter",
+      "desc": "Create a new metered dimension"
+    },
+    "meters_edit": {
+      "label": "Edit Meter",
+      "desc": "Update metered dimensions"
+    },
+    "rating": {
+      "label": "Rating",
+      "desc": "Usage-to-cost calculation results"
+    },
+    "ledger": {
+      "label": "Ledger",
+      "desc": "Immutable financial transaction log"
+    },
+    "ledger_new": {
+      "label": "Post Transaction",
+      "desc": "Write an immutable entry"
+    },
+    "invoices": {
+      "label": "Invoices",
+      "desc": "Draft, open, and paid billing records"
+    },
+    "invoices_new": {
+      "label": "Generate Invoice",
+      "desc": "Manually generate a specific invoice"
+    },
+    "invoices_manage": {
+      "label": "Manage Invoice",
+      "desc": "Record payments and modify status"
+    },
+    "payments": {
+      "label": "Payments",
+      "desc": "Track payment attempts and status"
+    },
+    "taxes": {
+      "label": "Taxes",
+      "desc": "Configure tax profiles and rates"
+    },
+    "taxes_new": {
+      "label": "New Tax Rate",
+      "desc": "Create a tax rate for invoicing"
+    },
+    "audit_logs": {
+      "label": "Audit Logs",
+      "desc": "System event trail and activity"
+    },
+    "apps": {
+      "label": "Apps",
+      "desc": "Marketplace integrations and providers"
+    },
+    "test_clock": {
+      "label": "Test Clock",
+      "desc": "Simulate time for billing workflows"
+    },
+    "settings": {
+      "label": "Settings",
+      "desc": "System configuration and preferences"
+    },
+    "default": {
+      "label": "Billing Admin",
+      "desc": "Railzway control panel"
+    }
+  },
+  "organizations": {
+    "header": {
+      "title": "Organizations",
+      "description": "Manage organizations, billing preferences, and invoice formats."
+    },
+    "actions": {
+      "new": "New Organization"
+    },
+    "table": {
+      "columns": {
+        "name": "Name",
+        "role": "Role",
+        "created": "Created"
+      },
+      "empty_title": "No organizations",
+      "empty_desc": "Create one to get started."
+    },
+    "toast_load_failed": "Failed to load organizations"
+  },
+  "organizations_create": {
+    "header": {
+      "title": "Create organization",
+      "subtitle": "This becomes your billing workspace and data boundary."
+    },
+    "fields": {
+      "name_label": "Organization name *",
+      "name_placeholder": "Example Labs",
+      "country_label": "Country Code",
+      "country_placeholder": "Select country",
+      "country_input_placeholder": "US",
+      "country_hint": "Used for taxes and billing locale.",
+      "timezone_label": "Timezone",
+      "timezone_placeholder": "Select timezone",
+      "timezone_input_placeholder": "UTC",
+      "timezone_hint": "Controls invoice periods and report cutoffs."
+    },
+    "actions": {
+      "create": "Create Organization"
+    },
+    "validation": {
+      "name_required": "Name required."
+    },
+    "toast": {
+      "countries_failed": "Failed to load countries",
+      "timezones_failed": "Failed to load timezones",
+      "create_failed": "Failed to create organization",
+      "created": "Organization created"
+    }
+  },
+  "organizations_edit": {
+    "header": {
+      "title": "Edit Organization",
+      "title_with_name": "Edit {{name}}"
+    },
+    "rename": {
+      "title": "Rename Organization",
+      "name_label": "New Name *"
+    },
+    "locale": {
+      "title": "Organization Locale",
+      "country_label": "Country Code",
+      "country_placeholder": "Select country",
+      "country_input_placeholder": "US",
+      "timezone_label": "Timezone",
+      "timezone_placeholder": "Select timezone",
+      "timezone_input_placeholder": "UTC",
+      "save": "Save Locale"
+    },
+    "billing": {
+      "title": "Billing Preferences",
+      "currency_label": "Currency",
+      "currency_placeholder": "USD",
+      "timezone_label": "Timezone",
+      "timezone_placeholder": "Select timezone",
+      "timezone_input_placeholder": "UTC",
+      "invoice_prefix_label": "Invoice Prefix",
+      "invoice_prefix_placeholder": "INV",
+      "invoice_format_label": "Invoice Format",
+      "invoice_format_placeholder": "{PREFIX}-{YYYY}{MM}-{SEQ:6}",
+      "invoice_format_preview_label": "Preview:",
+      "sequence_scope_label": "Sequence Scope",
+      "sequence_scope_placeholder": "org_month",
+      "save": "Save Preferences"
+    },
+    "invite": {
+      "title": "Invite Member",
+      "email_label": "Email *",
+      "role_label": "Role",
+      "role_placeholder": "Select role",
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "member": "Member"
+      },
+      "send": "Send Invite"
+    },
+    "members": {
+      "title": "Organization Members",
+      "selected": "Selected",
+      "empty_title": "No members found",
+      "empty_desc": "Invite teammates to manage this organization.",
+      "table": {
+        "columns": {
+          "member": "Member",
+          "role": "Role",
+          "added": "Added"
+        }
+      }
+    },
+    "formats": {
+      "title": "Invoice Number Formats & Sequences",
+      "table": {
+        "columns": {
+          "format": "Format",
+          "effective_from": "Effective From",
+          "status": "Status"
+        }
+      },
+      "status": {
+        "active": "Active",
+        "closed": "Closed"
+      },
+      "create_title": "Create Format",
+      "create": "Create Format",
+      "close_title": "Close Format",
+      "close": "Close Format",
+      "fields": {
+        "format_label": "Format *",
+        "format_placeholder": "{prefix}-{YYYY}-{seq}",
+        "sequence_scope_label": "Sequence Scope",
+        "sequence_scope_placeholder": "org_month",
+        "effective_from_label": "Effective From",
+        "effective_to_label": "Effective To",
+        "format_id_label": "Format ID *",
+        "close_effective_to_label": "Effective To *"
+      }
+    },
+    "toast": {
+      "load_failed": "Failed to load organization",
+      "countries_failed": "Failed to load countries",
+      "timezones_failed": "Failed to load timezones",
+      "updated": "Organization updated",
+      "update_failed": "Failed to update organization",
+      "locale_updated": "Organization locale updated",
+      "locale_failed": "Failed to update locale",
+      "billing_saved": "Billing preferences saved",
+      "billing_failed": "Failed to save billing preferences",
+      "format_created": "Invoice format created",
+      "format_create_failed": "Failed to create format",
+      "format_closed": "Invoice format closed",
+      "format_close_failed": "Failed to close format",
+      "invite_sent": "Invite sent to {{email}}",
+      "invite_failed": "Failed to send invite"
+    },
+    "validation": {
+      "name_required": "Name required.",
+      "invalid_currency": "Invalid currency.",
+      "country_required": "Country code required.",
+      "timezone_required": "Timezone required.",
+      "format_required": "Format required.",
+      "effective_from_required": "Effective from required.",
+      "format_id_required": "Format ID required.",
+      "effective_to_required": "Effective to required.",
+      "invite_email_required": "Valid email required."
+    }
+  },
+  "customers_create": {
+    "header": {
+      "title": "New Customer",
+      "description": "Create a customer record for subscriptions and usage."
+    },
+    "section": {
+      "title": "Customer Details"
+    },
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "external_id": "External ID",
+      "currency": "Currency",
+      "currency_placeholder": "USD"
+    },
+    "actions": {
+      "create": "Create Customer"
+    },
+    "validation": {
+      "name_required": "Name is required.",
+      "email_required": "Email is required.",
+      "email_invalid": "Email format is invalid.",
+      "currency_invalid": "Currency must be an ISO 4217 code."
+    },
+    "toast": {
+      "created": "Customer created: {{id}}",
+      "create_failed": "Failed to create customer"
+    },
+    "errors": {
+      "prefix": "Error"
+    }
+  },
+  "customers_edit": {
+    "header": {
+      "title": "Edit Customer",
+      "description": "Update identity and billing metadata."
+    },
+    "section": {
+      "title": "Customer Details"
+    },
+    "fields": {
+      "id": "Customer ID",
+      "name": "Name",
+      "email": "Email",
+      "external_id": "External ID",
+      "currency": "Currency",
+      "currency_placeholder": "USD"
+    },
+    "actions": {
+      "back": "Back to list"
+    },
+    "validation": {
+      "id_required": "Customer ID is required.",
+      "no_changes": "Update at least one field.",
+      "email_invalid": "Email format is invalid.",
+      "currency_invalid": "Currency must be an ISO 4217 code."
+    },
+    "toast": {
+      "load_failed": "Failed to load customer",
+      "update_failed": "Failed to update customer",
+      "updated": "Customer updated: {{id}}"
+    },
+    "errors": {
+      "prefix": "Error"
+    }
+  },
+  "plans_create": {
+    "header": {
+      "title": "Create Plan",
+      "description": "Configure your product and its base pricing in one step."
+    },
+    "sections": {
+      "product": "Product Information",
+      "pricing": "Pricing Configuration"
+    },
+    "pricing": {
+      "flat": "Flat Rate Pricing",
+      "usage": "Usage Based Pricing"
+    },
+    "fields": {
+      "plan_name": "Plan Name *",
+      "plan_name_placeholder": "e.g. Pro Tier",
+      "plan_code": "Plan Code *",
+      "plan_code_placeholder": "e.g. plan_pro_m",
+      "description": "Description",
+      "description_placeholder": "Optional marketing description",
+      "meter_label": "Select Meter *",
+      "meter_placeholder": "Search meters by name",
+      "amount_label": "Amount (cents) *",
+      "currency_label": "Currency *",
+      "interval_label": "Billing Interval *",
+      "interval_placeholder": "Select interval",
+      "interval_options": {
+        "month": "Monthly",
+        "year": "Yearly",
+        "week": "Weekly",
+        "day": "Daily"
+      },
+      "interval_count_label": "Interval Count *"
+    },
+    "actions": {
+      "save": "Save unified plan"
+    },
+    "defaults": {
+      "base_price": "Base Price"
+    },
+    "toast": {
+      "created_title": "Plan Created",
+      "created_desc": "Plan and pricing configured successfully.",
+      "create_failed": "Failed to create plan"
+    },
+    "validation": {
+      "code_required": "Plan Code is required.",
+      "name_required": "Plan Name is required.",
+      "currency_required": "Currency is required.",
+      "currency_invalid": "Currency must be ISO 4217.",
+      "interval_count": "Interval count must be >= 1.",
+      "amount_min": "Amount must be >= 0.",
+      "meter_required": "Meter is required for usage-based pricing."
+    }
+  },
+  "plans_edit": {
+    "header": {
+      "title": "Edit Plan",
+      "title_with_name": "Edit Plan: {{name}}"
+    },
+    "sections": {
+      "current_pricing": "Current Pricing",
+      "amounts": "Amounts",
+      "tiers": "Tiers",
+      "update_details": "Update Details",
+      "attach_price": "Attach Price"
+    },
+    "actions": {
+      "add_amount": "Add Amount",
+      "add_tier": "Add Tier",
+      "update": "Update Plan",
+      "create_price": "Create Price"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "empty": {
+      "prices": "No prices yet. Add a price below.",
+      "amounts": "No amounts",
+      "tiers": "No tiers"
+    },
+    "amount_form": {
+      "title": "Create Amount",
+      "currency": "Currency",
+      "unit_amount": "Unit Amount (cents)",
+      "minimum": "Minimum (cents)",
+      "maximum": "Maximum (cents)",
+      "effective_from": "Effective From",
+      "effective_to": "Effective To",
+      "create": "Create Amount"
+    },
+    "tier_form": {
+      "title": "Create Tier",
+      "mode": "Tier Mode",
+      "mode_placeholder": "Select tier mode",
+      "mode_options": {
+        "volume": "volume",
+        "graduated": "graduated"
+      },
+      "quantities": "Start / End Quantities",
+      "end_placeholder": "End (optional)",
+      "amount": "Amount (cents)",
+      "unit_placeholder": "Per Unit",
+      "flat_placeholder": "Flat",
+      "unit": "Unit",
+      "create": "Create Tier"
+    },
+    "price_fields": {
+      "code": "Price Code",
+      "name": "Name",
+      "type": "Price Type",
+      "type_placeholder": "Select type",
+      "type_options": {
+        "flat": "flat",
+        "usage": "usage",
+        "tiered": "tiered"
+      },
+      "interval": "Billing Interval",
+      "interval_placeholder": "Select interval",
+      "interval_options": {
+        "day": "Day",
+        "week": "Week",
+        "month": "Month",
+        "year": "Year"
+      },
+      "interval_count": "Interval Count",
+      "meter": "Meter",
+      "meter_placeholder": "Search meters by name"
+    },
+    "update_fields": {
+      "name": "Name",
+      "description": "Description",
+      "status": "Status"
+    },
+    "validation": {
+      "no_changes": "Provide at least one field to update.",
+      "price_code_required": "Price code required.",
+      "price_type_required": "Price type required.",
+      "interval_required": "Billing interval required.",
+      "interval_count": "Interval count must be >= 1.",
+      "meter_required": "Meter ID or code required for non-flat prices.",
+      "amount_price_required": "Price ID required.",
+      "currency_required": "Currency required.",
+      "currency_invalid": "Currency must be ISO 4217.",
+      "unit_amount_min": "Unit amount must be >= 0.",
+      "effective_range": "Effective to must be after effective from.",
+      "min_max": "Max must be >= min.",
+      "tier_price_required": "Price ID required.",
+      "tier_mode_required": "Tier mode required.",
+      "tier_start_min": "Start quantity >= 0.",
+      "tier_end_min": "End quantity must be >= start.",
+      "tier_amount_required": "Unit amount or flat amount required."
+    },
+    "toast": {
+      "load_failed": "Failed to load plan",
+      "updated": "Plan updated",
+      "update_failed": "Update failed",
+      "price_created": "Price created",
+      "price_create_failed": "Failed to create price",
+      "amount_created": "Amount created",
+      "amount_create_failed": "Failed to create amount",
+      "tier_created": "Tier created",
+      "tier_create_failed": "Failed to create tier"
+    }
+  },
+  "products": {
+    "header": {
+      "title": "Products",
+      "description": "Logical abstraction of what you are selling, linked to features."
+    },
+    "actions": {
+      "new": "New Product"
+    },
+    "table": {
+      "columns": {
+        "prices": "Prices"
+      },
+      "price_count": "{{count}} prices"
+    },
+    "empty_title": "No Products found",
+    "empty_desc": "Create a product to start building your catalog."
+  },
+  "products_create": {
+    "header": {
+      "title": "New Product",
+      "description": "Create a new product defining its name, code, and commercial plans."
+    },
+    "actions": {
+      "save": "Create Product",
+      "submit": "Create Product",
+      "toggle_plan": "Create primary plan",
+      "add_price": "Add Price",
+      "add_multi_currency": "+ Add Multi-currency Amount"
+    },
+    "sections": {
+      "product": "Product Details",
+      "pricing": "Pricing Configuration"
+    },
+    "fields": {
+      "price_code": "Price Code",
+      "pricing_tiers": "Pricing Tiers",
+      "tier_start": "Start",
+      "tier_end": "End (empty for ∞)",
+      "tier_base_rate": "Base Rate (Cents)",
+      "amount": "Amount",
+      "idempotency": "Idempotency"
+    },
+    "placeholders": {
+      "product_code": "e.g. cloud-hosting",
+      "product_name": "e.g. Cloud Hosting",
+      "plan_name": "e.g. Professional",
+      "plan_code": "e.g. pro-monthly",
+      "price_code": "e.g. monthly-recurring",
+      "amount_cents": "Amount in cents"
+    },
+    "hints": {
+      "idempotency": "Root creation key for transactional safety.",
+      "no_plans": "No plans added. Customers cannot subscribe to this product without at least one plan.",
+      "price_recommendation": "At least one price is recommended for a plan to be commercial."
+    },
+    "validation": {
+      "required": "Required"
+    },
+    "toast": {
+      "create_failed": "Failed to create product",
+      "created": "Product created successfully"
+    }
+  },
+  "products_edit": {
+    "header": {
+      "title": "Edit Product",
+      "title_with_name": "Edit Product: {{name}}"
+    },
+    "actions": {
+      "save": "Update Product",
+      "submit": "Save Product Details",
+      "update_features": "Update Features"
+    },
+    "tabs": {
+      "details": "Details",
+      "features": "Features",
+      "plans": "Plans"
+    },
+    "plans": {
+      "title": "Plans",
+      "description": "Commercial plans associated with this product.",
+      "boundary_title": "Billing Boundary:",
+      "boundary_desc": "Plans and prices are managed as separate billing units to preserve subscription integrity. Use the links above to manage individual plans. 0 plans found for this product typically means it's a metadata-only product used for feature entitlement without a commercial subscription cost."
+    },
+    "toast": {
+      "load_failed": "Failed to load product data",
+      "update_failed": "Failed to update product"
+    }
+  },
+  "features": {
+    "header": {
+      "title": "Features",
+      "description": "Logical capabilities and entitlements linked to your products."
+    },
+    "actions": {
+      "new": "New Feature"
+    },
+    "type": {
+      "boolean": "Boolean (On/Off)",
+      "metered": "Metered (Quota based)"
+    },
+    "empty_title": "No Features found",
+    "empty_desc": "Create a feature to start building your catalog."
+  },
+  "features_create": {
+    "header": {
+      "title": "New Feature",
+      "description": "Create a new capability for features assignment."
+    },
+    "sections": {
+      "feature": "Feature Details"
+    },
+    "actions": {
+      "save": "Create Feature"
+    },
+    "placeholders": {
+      "code": "e.g. sso_integration",
+      "name": "e.g. Single Sign-On",
+      "meter_hint": "Leave empty or enter meter ID"
+    },
+    "hints": {
+      "meter_required": "required for {{type}} pricing"
+    },
+    "toast": {
+      "create_failed": "Failed to create feature",
+      "created": "Feature created successfully"
+    }
+  },
+  "features_edit": {
+    "header": {
+      "title": "Edit Feature",
+      "title_with_name": "Edit Feature: {{name}}"
+    },
+    "actions": {
+      "update": "Update Feature"
+    },
+    "toast": {
+      "load_failed": "Failed to load feature",
+      "update_failed": "Failed to update feature",
+      "updated": "Feature updated successfully"
+    }
+  },
+  "taxes_create": {
+    "header": {
+      "title": "New Tax Rate",
+      "description": "Add a tax rate that can be applied to invoices."
+    },
+    "fields": {
+      "code": "Code *",
+      "name": "Name *",
+      "rate": "Rate (%) *",
+      "inclusive": "Inclusive",
+      "inclusive_placeholder": "Select mode",
+      "inclusive_options": {
+        "exclusive": "Exclusive",
+        "inclusive": "Inclusive"
+      },
+      "status": "Status",
+      "status_placeholder": "Select status",
+      "status_options": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "metadata": "Metadata",
+      "metadata_hint": "Optional. Provide a JSON object (e.g. {\"region\":\"APAC\"}).",
+      "metadata_placeholder": "{\"region\":\"APAC\"}"
+    },
+    "actions": {
+      "create": "Create Tax Rate"
+    },
+    "toast": {
+      "created": "Tax rate created",
+      "create_failed": "Failed to create tax rate"
+    },
+    "validation": {
+      "code_required": "Code is required.",
+      "name_required": "Name is required.",
+      "rate_required": "Rate is required.",
+      "rate_number": "Rate must be a number.",
+      "rate_min": "Rate must be >= 0.",
+      "metadata_object": "Metadata must be a JSON object.",
+      "metadata_invalid": "Metadata must be valid JSON."
+    }
+  },
+  "invoices_create": {
+    "header": {
+      "title": "Generate Invoice",
+      "description": "Manually generate an invoice for a specific subscription and period."
+    },
+    "fields": {
+      "subscription_label": "Subscription ID *",
+      "subscription_placeholder": "Select subscription",
+      "period_start": "Period Start *",
+      "period_start_placeholder": "2026-03-01",
+      "period_end": "Period End *",
+      "period_end_placeholder": "2026-04-01",
+      "issue_at": "Issue At",
+      "due_at": "Due At",
+      "optional_placeholder": "Optional override"
+    },
+    "actions": {
+      "generate": "Generate Invoice",
+      "generating": "Generating…"
+    },
+    "toast": {
+      "generated": "Invoice generated",
+      "generate_failed": "Failed to generate invoice"
+    },
+    "validation": {
+      "subscription_required": "Subscription ID is required.",
+      "period_start_required": "Period start is required.",
+      "period_end_required": "Period end is required.",
+      "period_end_after": "Period end must be after start."
+    }
+  },
+  "invoices_manage": {
+    "line_item": "Line item",
+    "not_found": "Invoice not found",
+    "actions": {
+      "back": "Back to invoices",
+      "download": "Download PDF",
+      "resend": "Resend Email",
+      "title": "Actions",
+      "open": "Open Invoice",
+      "pay": "Try Pay",
+      "mark_paid": "Mark Paid",
+      "void": "Void"
+    },
+    "fields": {
+      "reason": "Reason",
+      "reason_placeholder": "Applicable for void/pay",
+      "attachment": "Attachment URL",
+      "attachment_placeholder": "External receipt/PDF",
+      "note": "Note",
+      "note_placeholder": "Context note"
+    },
+    "toast": {
+      "load_failed": "Failed to load invoice",
+      "action_success": "Invoice {{action}} successfully",
+      "action_failed": "Failed to {{action}} invoice",
+      "resend_copied": "Invoice email queued. Public link copied.",
+      "resend_generated": "Invoice email queued. Public link generated.",
+      "resend_queued": "Invoice email queued",
+      "resend_failed": "Failed to resend invoice"
+    }
+  },
+  "subscriptions_create": {
+    "header": {
+      "title": "New Subscription",
+      "description": "Provision a subscription and anchor its billing period."
+    },
+    "sections": {
+      "customer_pricing": "Customer & Pricing",
+      "schedule": "Schedule"
+    },
+    "fields": {
+      "customer": "Customer",
+      "customer_placeholder": "Search customer by name or email",
+      "plan": "Plan",
+      "plan_placeholder": "Search plan by name",
+      "plan_price": "Plan Price",
+      "plan_price_placeholder": "Select plan price",
+      "plan_price_placeholder_empty": "Select a plan first",
+      "quantity": "Quantity",
+      "currency": "Currency",
+      "start_at": "Start At",
+      "period_start": "Current Period Start",
+      "period_end": "Current Period End",
+      "trial_end": "Trial End",
+      "cancel_at": "Cancel At",
+      "status": "Status",
+      "status_placeholder": "Select status",
+      "status_options": {
+        "active": "active",
+        "trialing": "trialing",
+        "past_due": "past_due",
+        "paused": "paused",
+        "canceled": "canceled"
+      }
+    },
+    "actions": {
+      "create": "Create Subscription"
+    },
+    "toast": {
+      "created": "Subscription created: {{id}}",
+      "create_failed": "Failed to create subscription",
+      "load_options_failed": "Failed to load options"
+    },
+    "errors": {
+      "prefix": "Error",
+      "options_prefix": "Options"
+    },
+    "validation": {
+      "customer_required": "Customer ID is required.",
+      "plan_required": "Plan ID is required.",
+      "price_required": "Plan price is required.",
+      "quantity_min": "Quantity must be > 0.",
+      "currency_required": "Currency is required.",
+      "currency_invalid": "Currency must be an ISO 4217 code.",
+      "period_start_required": "Current period start is required.",
+      "period_end_required": "Current period end is required.",
+      "period_end_after": "Current period end must be after start."
+    }
+  },
+  "subscriptions_edit": {
+    "header": {
+      "title": "Subscription",
+      "description": "Review status and adjust billing lifecycle."
+    },
+    "actions": {
+      "back": "Back to list",
+      "cancel_now": "Cancel Now",
+      "cancel_end": "Cancel End"
+    },
+    "sections": {
+      "current_status": "Current Status",
+      "period_ends": "Period ends: {{date}}",
+      "update": "Update Subscription",
+      "items": "Add Subscription Item"
+    },
+    "fields": {
+      "status": "Status",
+      "status_placeholder": "No change",
+      "status_options": {
+        "active": "active",
+        "trialing": "trialing",
+        "past_due": "past_due",
+        "paused": "paused",
+        "canceled": "canceled"
+      },
+      "cancel_at": "Cancel At",
+      "canceled_at": "Canceled At",
+      "ended_at": "Ended At"
+    },
+    "items": {
+      "price_id": "Plan Price ID",
+      "quantity": "Quantity",
+      "start_at": "Start At",
+      "end_at": "End At",
+      "add": "Add Item",
+      "adding": "Adding…"
+    },
+    "confirm": {
+      "cancel_now": "Cancel this subscription immediately?",
+      "cancel_end": "Cancel at period end?"
+    },
+    "toast": {
+      "load_failed": "Failed to load subscription",
+      "updated": "Subscription updated: {{id}}",
+      "update_failed": "Failed to update subscription",
+      "item_created": "Item created: {{id}}",
+      "item_create_failed": "Failed to create item"
+    },
+    "validation": {
+      "id_required": "Subscription ID is required.",
+      "no_changes": "Provide at least one field to update.",
+      "price_required": "Plan price ID is required.",
+      "quantity_min": "Quantity must be greater than 0.",
+      "item_end_after": "Item end must be after start.",
+      "period_end_required": "Period end required"
+    },
+    "errors": {
+      "prefix": "Error"
+    }
+  },
+  "meters_create": {
+    "header": {
+      "title": "New Meter",
+      "description": "Define a new metering dimension for usage-based billing."
+    },
+    "fields": {
+      "code": "Code *",
+      "name": "Name *",
+      "aggregation": "Aggregation *",
+      "aggregation_placeholder": "Select aggregation",
+      "aggregation_options": {
+        "sum": "sum",
+        "count": "count",
+        "max": "max",
+        "last": "last",
+        "avg": "avg"
+      },
+      "unit": "Unit *",
+      "unit_placeholder": "requests, tokens, GB…",
+      "status": "Active",
+      "status_placeholder": "Select status",
+      "status_options": {
+        "active": "Active",
+        "inactive": "Inactive"
+      }
+    },
+    "actions": {
+      "create": "Create Meter"
+    },
+    "toast": {
+      "created": "Meter created",
+      "create_failed": "Failed to create meter"
+    },
+    "validation": {
+      "code_required": "Code required.",
+      "name_required": "Name required.",
+      "aggregation_required": "Aggregation required.",
+      "unit_required": "Unit required."
+    }
+  },
+  "meters_edit": {
+    "header": {
+      "title": "Edit Meter",
+      "title_with_name": "Edit Meter: {{name}}"
+    },
+    "section": {
+      "title": "Update Meter"
+    },
+    "fields": {
+      "name": "Name",
+      "aggregation": "Aggregation",
+      "aggregation_options": {
+        "sum": "sum",
+        "count": "count",
+        "max": "max",
+        "last": "last",
+        "avg": "avg"
+      },
+      "unit": "Unit",
+      "unit_placeholder": "requests, tokens, GB…",
+      "status": "Active",
+      "status_options": {
+        "active": "Active",
+        "inactive": "Inactive"
+      }
+    },
+    "actions": {
+      "update": "Update Meter"
+    },
+    "toast": {
+      "load_failed": "Failed to load meter",
+      "updated": "Meter updated",
+      "update_failed": "Failed to update meter"
+    },
+    "validation": {
+      "no_changes": "Provide at least one field to update."
+    }
+  },
+  "usage_create": {
+    "header": {
+      "title": "Ingest Usage Events",
+      "description": "Bulk upload usage events via CSV format."
+    },
+    "csv_hint": "CSV columns:",
+    "fields": {
+      "file": "CSV File"
+    },
+    "progress": "Progress: {{done}}/{{total}} ({{success}} ok, {{failed}} failed)",
+    "actions": {
+      "upload": "Upload CSV",
+      "uploading": "Uploading…"
+    },
+    "toast": {
+      "select_file": "Select a CSV file first",
+      "empty_csv": "CSV is empty or has no data rows",
+      "complete_title": "Upload complete",
+      "complete_desc": "{{success}} succeeded, {{failed}} failed",
+      "failed": "Upload failed"
+    }
+  },
+  "ledger_create": {
+    "header": {
+      "title": "Post Ledger Transaction",
+      "description": "Write an immutable multi-entry transaction to your ledger."
+    },
+    "sections": {
+      "details": "Transaction Details",
+      "entries": "Journal Entries (minimum 2)"
+    },
+    "fields": {
+      "currency": "Currency",
+      "source_type": "Source Type",
+      "source_type_placeholder": "e.g. payout, refund",
+      "source_id": "Source ID",
+      "customer": "Customer",
+      "customer_placeholder": "Search customer by name or email",
+      "subscription": "Subscription",
+      "subscription_placeholder": "Select subscription",
+      "invoice": "Invoice",
+      "invoice_placeholder": "Search invoice by number",
+      "occurred_at": "Occurred At"
+    },
+    "entries": {
+      "account_code": "Account Code",
+      "entry_type": "Entry Type",
+      "entry_type_placeholder": "Select entry type",
+      "entry_type_options": {
+        "debit": "Debit",
+        "credit": "Credit"
+      },
+      "amount": "Amount (cents)",
+      "currency": "Currency",
+      "description": "Description"
+    },
+    "actions": {
+      "add_entry": "+ Add Entry",
+      "post": "Post Transaction",
+      "posting": "Posting…"
+    },
+    "toast": {
+      "posted": "Transaction posted",
+      "post_failed": "Failed to post transaction"
+    },
+    "validation": {
+      "entries_min": "At least 2 valid entries required"
+    }
+  },
+  "audit_logs": {
+    "header": {
+      "title": "Audit Logs",
+      "description": "Immutable trail of configuration and billing changes."
+    },
+    "highlights": {
+      "columns": {
+        "entry": "Entry",
+        "tag": "Tag"
+      },
+      "empty_title": "No highlights",
+      "empty_desc": "Audit trail is empty."
+    },
+    "filters": {
+      "title": "Filter Audit Stream",
+      "action": "Action",
+      "actor_type": "Actor Type",
+      "actor_type_placeholder": "admin_user",
+      "resource_type": "Resource Type",
+      "resource_type_placeholder": "invoice",
+      "resource_id": "Resource ID",
+      "request_id": "Request ID",
+      "created_from": "Created From",
+      "created_to": "Created To"
+    },
+    "table": {
+      "columns": {
+        "action": "Action",
+        "resource": "Resource",
+        "actor": "Actor",
+        "reason": "Reason",
+        "when": "When"
+      },
+      "empty_title": "No audit logs found",
+      "empty_desc": "Adjust filters to find an event."
+    },
+    "toast_load_failed": "Failed to load audit logs"
+  },
+  "settings": {
+    "header": {
+      "title": "Settings",
+      "description": "Organization preferences, invoice formats, and feature controls."
+    },
+    "cards": {
+      "api_keys": "API Keys",
+      "invoice_format": "Invoice Format",
+      "timezone": "Timezone"
+    },
+    "invoice_format": {
+      "title": "Invoice Format",
+      "description": "Manage invoice numbering formats, sequences, and effective dates per organization.",
+      "edit": "Edit Invoice Format"
+    },
+    "api_keys": {
+      "title": "API Keys",
+      "description": "Create scoped keys for public integrations. Keys are shown only once.",
+      "fields": {
+        "name": "Key name",
+        "type": "Key type",
+        "type_placeholder": "Select type",
+        "scopes": "Scopes (comma separated)",
+        "allowed_ips": "Allowed IPs (comma separated)",
+        "allowed_domains": "Allowed domains (comma separated)"
+      },
+      "placeholders": {
+        "name": "e.g. Production Backend"
+      },
+      "types": {
+        "secret": "Secret",
+        "public": "Public",
+        "webhook": "Webhook"
+      },
+      "actions": {
+        "create": "Create key",
+        "revoke": "Revoke"
+      },
+      "columns": {
+        "name": "Key",
+        "prefix": "Prefix",
+        "scopes": "Scopes",
+        "status": "Status"
+      },
+      "empty_title": "No API keys yet",
+      "empty_desc": "Create a key to start integrating public APIs.",
+      "created": {
+        "title": "Key created",
+        "description": "Copy this key now. You will not be able to see it again.",
+        "key_label": "API Key",
+        "copy": "Copy key"
+      },
+      "validation": {
+        "name_required": "Name is required."
+      },
+      "toast": {
+        "created": "API key created",
+        "create_failed": "Failed to create API key",
+        "revoked": "API key revoked",
+        "revoke_failed": "Failed to revoke API key",
+        "copied": "API key copied"
+      }
+    },
+    "flags": {
+      "title": "Feature Flags",
+      "description": "Toggle per-tenant overrides or push a global rollout. Changes take effect immediately.",
+      "scope_label": "Scope",
+      "scope_placeholder": "Select scope",
+      "scope_options": {
+        "org": "Org override",
+        "global": "Global"
+      },
+      "actor_label": "Actor ID",
+      "columns": {
+        "key": "Flag Key",
+        "status": "Status",
+        "rollout": "Rollout %",
+        "source": "Source: {{source}}"
+      },
+      "empty_title": "No feature flags",
+      "empty_desc": "Add defaults in features.yml or set overrides via API."
+    },
+    "status": {
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "toast": {
+      "load_failed": "Failed to load settings",
+      "flag_updated": "Flag {{key}} {{status}}",
+      "flag_update_failed": "Failed to update flag",
+      "rollout_saved": "Rollout saved for {{key}}",
+      "rollout_failed": "Failed to save rollout",
+      "org_not_selected": "Organization is not selected"
+    }
+  },
+  "test_clock": {
+    "header": {
+      "title": "Test Clock",
+      "description": "Simulate time per organization to test billing lifecycles."
+    },
+    "actions": {
+      "view_audit": "View Audit Logs",
+      "pause": "Pause",
+      "resume": "Resume"
+    },
+    "current": {
+      "title": "Current Clock",
+      "loading": "Loading test clock…",
+      "status": "Status",
+      "time": "Current Time",
+      "updated": "Updated",
+      "empty": "No test clock configured for this organization."
+    },
+    "update": {
+      "title": "Set / Update Clock",
+      "current_time": "Current Time",
+      "status": "Status",
+      "status_placeholder": "Select status",
+      "save": "Save Test Clock"
+    },
+    "status": {
+      "active": "Active",
+      "paused": "Paused"
+    },
+    "advance": {
+      "title": "Advance Time",
+      "label": "Advance By (seconds)",
+      "cta": "Advance",
+      "advancing": "Advancing…"
+    },
+    "toast": {
+      "load_failed": "Failed to load test clock",
+      "saved": "Test clock saved",
+      "save_failed": "Failed to save test clock",
+      "advance_invalid": "Advance must be a positive number of seconds",
+      "advanced": "Test clock advanced",
+      "advance_failed": "Failed to advance test clock",
+      "paused": "Test clock paused",
+      "pause_failed": "Failed to pause test clock",
+      "resumed": "Test clock resumed",
+      "resume_failed": "Failed to resume test clock"
+    },
+    "validation": {
+      "current_time_required": "Current time is required."
+    }
+  },
+  "apps": {
+    "catalog": {
+      "title": "Apps Catalog",
+      "description": "Install payment providers per organization.",
+      "columns": {
+        "app": "App",
+        "category": "Category",
+        "provider": "Provider",
+        "auth": "Auth Method",
+        "status": "Status"
+      },
+      "select_auth": "Select auth method",
+      "install": "Install",
+      "empty_title": "No apps catalog",
+      "empty_desc": "Apps catalog is empty."
+    },
+    "installed": {
+      "title": "Installed Apps",
+      "description": "Apps installed for this organization.",
+      "columns": {
+        "app": "App",
+        "status": "Status",
+        "updated": "Updated"
+      },
+      "configure": "Configure",
+      "empty_title": "No installed apps",
+      "empty_desc": "Install an app to get started."
+    },
+    "dialog": {
+      "title": "Configure {{app}}",
+      "description": "Choose an auth method and save credentials.",
+      "auth_method": "Auth Method",
+      "select_auth_method": "Select auth method",
+      "stripe": {
+        "title": "Stripe Connect",
+        "description": "Connect with Stripe OAuth to manage payments.",
+        "connect": "Connect",
+        "redirecting": "Redirecting…",
+        "oauth_hint": "Complete Stripe Connect to finish installation."
+      },
+      "publishable_key": "Publishable key",
+      "publishable_placeholder": "pk_live_...",
+      "secret_key": "Secret key",
+      "secret_placeholder": "sk_live_...",
+      "api_key": "API key",
+      "api_key_placeholder": "api_...",
+      "username": "Username",
+      "username_placeholder": "your-username",
+      "password": "Password",
+      "password_placeholder": "your-password",
+      "host": "Host",
+      "host_placeholder": "smtp.example.com",
+      "port": "Port",
+      "port_placeholder": "587",
+      "save": "Save",
+      "webhook_secret": "Webhook secret",
+      "webhook_placeholder": "whsec_..."
+    },
+    "toast_load_failed": "Failed to load apps",
+    "toast_installed": "App installed",
+    "toast_install_failed": "Failed to install app",
+    "toast_installation_updated": "App installation updated",
+    "toast_update_failed": "Failed to update app",
+    "toast_config_saved": "Configuration saved",
+    "toast_config_failed": "Failed to save configuration",
+    "toast_stripe_connected": "Stripe connected",
+    "toast_stripe_connected_desc": "Stripe OAuth connected successfully.",
+    "toast_stripe_failed": "Stripe connection failed",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "validation": {
+      "credentials_required": "Required credentials are missing.",
+      "oauth_required": "Use Stripe Connect to complete installation."
+    }
+  },
+  "reference": {
+    "toast": {
+      "currencies_failed": "Failed to load currencies"
+    }
+  }
+}

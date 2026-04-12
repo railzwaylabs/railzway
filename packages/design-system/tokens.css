@@ -1,0 +1,73 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+:root,
+.light {
+  color-scheme: light;
+
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", "Menlo",
+    monospace;
+
+  /* Primary Light Backgrounds */
+  --bg-primary: 0 0% 100%;
+  --bg-surface: 210 40% 98%;
+  --bg-surface-strong: 210 40% 96.1%;
+  --bg-subtle: 210 40% 93%;
+
+  /* Borders */
+  --border-subtle: 214 32% 91%;
+  --border-strong: 214 32% 85%;
+
+  /* Text */
+  --text-primary: 222 47% 11%;
+  --text-secondary: 215 25% 27%;
+  --text-muted: 215 16% 47%;
+  --text-inverse: 0 0% 100%;
+
+  /* Accent */
+  --accent-primary: 243 75% 59%;
+  --accent-glow: 243 100% 75%;
+
+  /* Status Colors */
+  --status-success: 151 55% 45%;
+  --status-warning: 38 92% 50%;
+  --status-error: 0 84% 60%;
+
+  /* Brand Colors (Payments) */
+  --brand-visa: #1434CB;
+  --brand-mastercard-red: #EB001B;
+  --brand-mastercard-orange: #FF5F00;
+  --brand-jcb-blue: #0066B2;
+  --brand-jcb-gold: #F7B600;
+  --brand-card-border: hsl(var(--border-strong));
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-pill: 999px;
+
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-glow: 0 0 20px hsl(243 75% 59% / 0.15);
+
+  --blur-xs: 4px;
+  --blur-sm: 8px;
+  --blur-md: 12px;
+  --blur-lg: 16px;
+
+  --z-base: 0;
+  --z-header: 50;
+  --z-overlay: 60;
+  --z-modal: 70;
+  --z-toast: 80;
+
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-slow: 300ms;
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
