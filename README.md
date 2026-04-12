@@ -1,50 +1,21 @@
 # Railzway
 
-Railzway is an open-source billing engine that aims to help teams model subscriptions, usage-based pricing, ratings, proration, and invoicing. The project is under active development and the feature surface is evolving.
+Railzway is an open-source billing engine for teams that want to model subscriptions, usage-based pricing, rating, proration, and invoicing. It focuses on determining what should be billed; payment execution is handled by integrations.
 
 ## Status
 
-Railzway is in active development. Some flows are still being refined, and you may encounter incomplete screens or evolving APIs. If you want to try it, treat the current build as a working preview rather than a finished product.
+Railzway is under active development. Some flows and APIs are still evolving, so treat this as a working preview rather than a finished product.
 
-## What’s Inside
-
-- **Admin backend** (Go): admin API + UI host.
-- **Scheduler** (Go): background jobs (rating, reconciliation, close-period, etc.).
-- **Public API** (Go, optional): endpoints intended for API-key based integrations.
-- **Admin UI** (Vite/React): web console for billing operations.
-
-## Quick Start (Docker Compose)
-
-This path uses prebuilt images when they are available.
-
-1. Copy environment files:
-
-```bash
-cp config/docker/admin.env.example config/docker/admin.env
-cp config/docker/scheduler.env.example config/docker/scheduler.env
-```
-
-2. (Optional) Update secrets in `config/docker/*.env` for local testing.
-
-3. Start services:
-
-```bash
-cd deployment/docker
-docker compose up -d
-```
-
-4. Open the admin UI:
-
-- `http://localhost:8080`
-
-## Local Development (from source)
+## Quick Start (Local, from source)
 
 ### Prerequisites
 
-- Go 1.25+
-- Node.js 20+
-- PostgreSQL 16+
-- Redis 7+
+Tested with:
+
+- Go 1.25
+- Node.js 20
+- PostgreSQL 16
+- Redis 7
 
 ### 1) Environment
 
@@ -67,45 +38,83 @@ docker compose up -d postgres redis
 
 ### 3) Run migrations (manual)
 
-Install the `migrate` CLI (golang-migrate) if you do not have it yet:
-
-```bash
-brew install golang-migrate
-```
-
-or:
-
-```bash
-go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-```
-
-Then run migrations:
-
 ```bash
 migrate -path db/migrations -database "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" up
 ```
 
-### 4) Run admin backend
+### 4) Build admin UI
+
+If you want the admin UI served by the Go backend, build the admin UI first.
+Skip this step if you only need the API, or prefer the dev server (see step 5).
+
+```bash
+pnpm --dir apps/admin install
+pnpm --dir apps/admin build
+```
+
+### 5) Run admin backend
 
 ```bash
 go run cmd/admin/main.go
 ```
 
-### 5) Run admin UI (dev)
+Admin backend default: `http://localhost:8080`
+
+If you prefer a frontend dev server instead:
 
 ```bash
-pnpm --dir apps/admin install
 pnpm --dir apps/admin dev
 ```
 
-Admin UI default: `http://localhost:5173`
+Admin UI (dev) default: `http://localhost:5173`
+
+## Project Structure
+
+```
+apps/            # Frontend apps (admin, invoice, checkout, customer)
+cmd/             # Go binaries (admin, scheduler, api, checkout, customer)
+config/          # Local env examples and runtime configs
+db/migrations/   # Database migrations
+deployment/      # Docker compose, build scripts
+docs/            # Long-form documentation and diagrams
+internal/        # Core domains, services, repositories, transport
+packages/        # Shared UI/design-system packages
+```
+
+Where to start:
+- **Product logic**: `internal/*/service`
+- **API handlers**: `internal/admin/transport/http`
+- **Scheduler jobs**: `internal/*/scheduler`
+- **Admin UI**: `apps/admin/src`
+
+## Apps & Binaries
+
+**Frontend apps (apps/):**
+- `apps/admin` – Admin console (React/Vite)
+- `apps/invoice` – Invoice UI
+- `apps/checkout` – Checkout UI
+- `apps/customer` – Customer portal
+
+**Go binaries (cmd/):**
+- `cmd/admin` – Admin backend (serves admin API + static UI)
+- `cmd/scheduler` – Background jobs
+- `cmd/api` – Public API (API-key auth)
+- `cmd/checkout` – Checkout service host
+- `cmd/customer` – Customer portal host
+
+## Documentation
+
+Long-form documentation lives in `docs/`. Start from `docs/` if you want deeper design context.
 
 ## Notes
 
-- Admin APIs are served under `/admin/v1`.
-- Org-scoped resources require the `X-Org-ID` header. The admin UI manages this after you pick an organization.
-- The public API (API-key auth) is intended for integrations and may be enabled separately.
+- Org-scoped resources require the `X-Org-ID` header.
+- The admin UI sets this after you choose an organization.
+- The public API (API-key auth) is evolving; documentation will be published when stable.
+- If you do not have the `migrate` CLI:
+  - `brew install golang-migrate`, or
+  - `go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest`
 
 ## Contributing
 
-This project is evolving quickly. If you plan to contribute, open an issue with a short proposal or a reproduction first so changes align with the current roadmap.
+If you plan to contribute, open an issue with a short proposal or a reproduction first so changes align with the current roadmap. See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
