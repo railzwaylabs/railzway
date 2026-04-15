@@ -28,7 +28,7 @@ It is for teams building SaaS billing systems with usage-based, tiered, or hybri
 
 ## Mental Model
 
-`usage events -> rating -> rating results -> invoices -> ledger -> payment adapter/provider`
+`usage events -> rating -> rating results + usage aggregates -> draft invoice -> open invoice -> ledger -> payment adapter/provider`
 
 Railzway owns the billing computation path from usage to invoice and ledger. Payment providers sit after that boundary as adapters that collect payment for an amount Railzway has already computed.
 
