@@ -5,6 +5,8 @@ import {
   AdminLoginResponse,
   AdminLogoutResponse,
   AdminMeResponse,
+  AdminRevokeSessionResponse,
+  AdminSessionsResponse,
   AdminSwitchOrgResponse,
   AdminSkipPasswordResponse,
   AppDefinition,
@@ -71,12 +73,20 @@ import {
   UsageEvent,
   UsageEventsResponse,
   UsageSummary,
+  AIAssistantOverviewResponse,
+  AIAssistantRunsResponse,
+  AIAssistantRunDetailResponse,
+  AIAssistantCreateRunRequest,
+  AIWorkflowListResponse,
+  AIWorkflowDetailResponse,
+  AIWorkflowCreateRequest,
+  AIWorkflowApproveRequest,
   CreateProductRequest,
   UpdateProductRequest,
   ProductCreateBootstrap,
   ReconciliationMismatch
 } from "./types";
-import { getOrgId, getToken } from "./auth";
+import { getOrgId } from "./auth";
 
 
 export type ApiConfig = {
@@ -121,11 +131,15 @@ const friendlyErrorMessages: Record<string, string> = {
   missing_items: "At least one subscription item is required.",
   invalid_cursor: "Pagination cursor is invalid.",
   not_found: "Resource not found.",
+  invalid_intent: "Invalid intent selection.",
+  invalid_time_range: "Invalid time range.",
+  invalid_prompt: "Prompt is required.",
   invalid_credentials: "Invalid credentials.",
   no_organization: "No organization is associated with this account.",
   missing_token: "Missing authentication token.",
   missing_org_id: "Organization is required. Please select an organization.",
   invalid_session: "Session is invalid or expired.",
+  session_not_found: "Session was not found.",
   password_change_required: "Password change is required before continuing.",
   skip_not_allowed: "Skipping password change is not allowed in this environment.",
   invalid_invite: "Invite is invalid or expired.",
@@ -306,12 +320,6 @@ async function request<T>(path: string, init?: RequestInit, config: ApiConfig = 
   } else if (resolvedOrgId) {
     headers.set("X-Org-ID", resolvedOrgId);
   }
-  if (!headers.has("Authorization")) {
-    const token = getToken();
-    if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
-    }
-  }
   const method = (init?.method ?? "GET").toUpperCase();
   const shouldAttachIdempotency = method !== "GET" && method !== "HEAD" && method !== "OPTIONS";
   const shouldAttachCSRF = shouldAttachIdempotency;
@@ -440,6 +448,24 @@ export const api = {
         `${adminBasePath}/auth/change-password`,
         { method: "PUT", body: JSON.stringify(payload) },
         { ...defaultConfig, ...config }
+      ),
+    listSessions: (config?: ApiConfig) =>
+      request<AdminSessionsResponse>(
+        `${adminBasePath}/profile/sessions`,
+        undefined,
+        { ...defaultConfig, ...config }
+      ),
+    revokeSession: (sessionId: string, config?: ApiConfig) =>
+      request<AdminRevokeSessionResponse>(
+        `${adminBasePath}/profile/sessions/${sessionId}/revoke`,
+        { method: "POST" },
+        { ...defaultConfig, ...config }
+      ),
+    revokeOtherSessions: (config?: ApiConfig) =>
+      request<AdminRevokeSessionResponse>(
+        `${adminBasePath}/profile/sessions/revoke-others`,
+        { method: "POST" },
+        { ...defaultConfig, ...config }
       )
   },
   organizations: {
@@ -532,6 +558,18 @@ export const api = {
       request<{ status: string }>(
         `${adminBasePath}/organizations/${orgId}/invites`,
         { method: "POST", body: JSON.stringify(payload) },
+        { ...defaultConfig, ...config }
+      ),
+    listSessions: (orgId: string, config?: ApiConfig) =>
+      request<AdminSessionsResponse>(
+        `${adminBasePath}/organizations/${orgId}/sessions`,
+        undefined,
+        { ...defaultConfig, ...config }
+      ),
+    revokeSession: (orgId: string, sessionId: string, config?: ApiConfig) =>
+      request<AdminRevokeSessionResponse>(
+        `${adminBasePath}/organizations/${orgId}/sessions/${sessionId}/revoke`,
+        { method: "POST" },
         { ...defaultConfig, ...config }
       )
   },
@@ -1125,6 +1163,60 @@ export const api = {
       ),
     startStripeOAuth: (config?: ApiConfig) =>
       request<{ url: string }>(`${adminBasePath}/apps/oauth/stripe/start`, undefined, { ...defaultConfig, ...config }),
+  },
+  aiAssistant: {
+    overview: (config?: ApiConfig) =>
+      request<AIAssistantOverviewResponse>(`${adminBasePath}/ai-assistant/overview`, undefined, { ...defaultConfig, ...config }),
+    createRun: (payload: AIAssistantCreateRunRequest, config?: ApiConfig) =>
+      request<AIAssistantRunDetailResponse>(
+        `${adminBasePath}/ai-assistant/runs`,
+        { method: "POST", body: JSON.stringify(payload) },
+        { ...defaultConfig, ...config }
+      ),
+    listRuns: (params?: { page_token?: string; page_size?: number }, config?: ApiConfig) =>
+      request<AIAssistantRunsResponse>(
+        `${adminBasePath}/ai-assistant/runs${buildQuery(withDefaultPageSize(params))}`,
+        undefined,
+        { ...defaultConfig, ...config }
+      ),
+    getRun: (runId: string, config?: ApiConfig) =>
+      request<AIAssistantRunDetailResponse>(
+        `${adminBasePath}/ai-assistant/runs/${runId}`,
+        undefined,
+        { ...defaultConfig, ...config }
+      ),
+  },
+  aiWorkflows: {
+    list: (params?: { page_token?: string; page_size?: number }, config?: ApiConfig) =>
+      request<AIWorkflowListResponse>(
+        `${adminBasePath}/ai-workflows${buildQuery(withDefaultPageSize(params))}`,
+        undefined,
+        { ...defaultConfig, ...config }
+      ),
+    create: (payload: AIWorkflowCreateRequest, config?: ApiConfig) =>
+      request<AIWorkflowDetailResponse>(
+        `${adminBasePath}/ai-workflows`,
+        { method: "POST", body: JSON.stringify(payload) },
+        { ...defaultConfig, ...config }
+      ),
+    get: (workflowId: string, config?: ApiConfig) =>
+      request<AIWorkflowDetailResponse>(
+        `${adminBasePath}/ai-workflows/${workflowId}`,
+        undefined,
+        { ...defaultConfig, ...config }
+      ),
+    approve: (workflowId: string, payload: AIWorkflowApproveRequest, config?: ApiConfig) =>
+      request<AIWorkflowDetailResponse>(
+        `${adminBasePath}/ai-workflows/${workflowId}/approvals`,
+        { method: "POST", body: JSON.stringify(payload) },
+        { ...defaultConfig, ...config }
+      ),
+    execute: (workflowId: string, config?: ApiConfig) =>
+      request<AIWorkflowDetailResponse>(
+        `${adminBasePath}/ai-workflows/${workflowId}/execute`,
+        { method: "POST" },
+        { ...defaultConfig, ...config }
+      ),
   },
   auditLogs: {
     summary: (config?: ApiConfig) =>

@@ -631,7 +631,6 @@ export type AdminLoginRequest = {
 };
 
 export type AdminLoginResponse = {
-  token: string;
   userId: string;
   email: string;
   orgId: string;
@@ -666,6 +665,31 @@ export type AdminSkipPasswordResponse = {
 export type AdminSwitchOrgResponse = {
   status: string;
   orgId: string;
+};
+
+export type AdminSession = {
+  id: string;
+  userId: string;
+  email?: string;
+  displayName?: string;
+  activeOrgId?: string;
+  userAgent?: string;
+  ipAddress?: string;
+  createdAt: string;
+  lastSeenAt: string;
+  expiresAt: string;
+  revokedAt?: string;
+  current: boolean;
+};
+
+export type AdminSessionsResponse = {
+  sessions: AdminSession[];
+};
+
+export type AdminRevokeSessionResponse = {
+  status: string;
+  revokedCount?: number;
+  revokedCurrent?: boolean;
 };
 
 export type Product = {
@@ -780,4 +804,277 @@ export type ProductFeature = {
   feature_type: string;
   meter_id?: string;
   active: boolean;
+};
+
+export type AIAssistantOption = {
+  value: string;
+  label: string;
+  description?: string;
+};
+
+export type AIAssistantWorkspace = {
+  customer_placeholder: string;
+  prompt_placeholder: string;
+  default_prompt: string;
+  time_ranges: AIAssistantOption[];
+  intents: AIAssistantOption[];
+  masking_enabled: boolean;
+};
+
+export type AIAssistantSummaryCard = {
+  id: string;
+  label: string;
+  value: string;
+  sub: string;
+  tone: string;
+  delta?: string;
+};
+
+export type AIAssistantSignalItem = {
+  id: string;
+  title: string;
+  detail: string;
+  severity: string;
+};
+
+export type AIAssistantSignalPanel = {
+  title: string;
+  description: string;
+  items: AIAssistantSignalItem[];
+};
+
+export type AIAssistantGuardrailItem = {
+  id: string;
+  title: string;
+  detail: string;
+};
+
+export type AIAssistantGuardrailPanel = {
+  title: string;
+  description: string;
+  items: AIAssistantGuardrailItem[];
+};
+
+export type AIAssistantStatusBadge = {
+  code: string;
+  label: string;
+  tone: string;
+};
+
+export type AIAssistantRunError = {
+  code: string;
+  message: string;
+};
+
+export type AIAssistantSummary = {
+  headline: string;
+  metric: string;
+  metric_note: string;
+};
+
+export type AIAssistantSnapshot = {
+  label: string;
+  previous: string;
+  current: string;
+  delta: string;
+};
+
+export type AIAssistantDriver = {
+  label: string;
+  detail: string;
+  impact: "high" | "medium" | "low";
+};
+
+export type AIAssistantAnomaly = {
+  title: string;
+  detail: string;
+  severity: "watch" | "risk";
+};
+
+export type AIAssistantProration = {
+  title: string;
+  detail: string;
+};
+
+export type AIAssistantPlanRecommendation = {
+  current_plan: string;
+  recommended_plan: string;
+  savings_estimate: string;
+  billing_impact: string;
+  reason_summary: string;
+};
+
+export type AIAssistantProductRecommendation = {
+  name: string;
+  target_segment: string;
+  value_proposition: string;
+  pricing_model: string;
+  pricing_hint: string;
+  required_capabilities: string[];
+  expected_impact: string;
+  priority: string;
+};
+
+export type AIAssistantConfidence = {
+  level: "high" | "medium" | "low";
+  note: string;
+};
+
+export type AIAssistantAction = {
+  key: string;
+  label: string;
+  style: "primary" | "secondary";
+  path: string;
+  disabled?: boolean;
+};
+
+export type AIAssistantInsight = {
+  summary: AIAssistantSummary;
+  snapshot?: AIAssistantSnapshot;
+  drivers: AIAssistantDriver[];
+  anomalies?: AIAssistantAnomaly[];
+  proration?: AIAssistantProration;
+  plan_recommendation?: AIAssistantPlanRecommendation;
+  product_recommendations?: AIAssistantProductRecommendation[];
+  confidence: AIAssistantConfidence;
+  data_quality: string;
+  actions: AIAssistantAction[];
+  generated_at: string;
+};
+
+export type AIAssistantRunDetail = {
+  id: string;
+  status: AIAssistantStatusBadge;
+  intent: string;
+  time_range: string;
+  prompt: string;
+  customer_label: string;
+  created_at: string;
+  updated_at: string;
+  started_at?: string;
+  finished_at?: string;
+  duration_ms?: number;
+  insight?: AIAssistantInsight | null;
+  error?: AIAssistantRunError | null;
+};
+
+export type AIAssistantRunHistoryItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  intent: string;
+  customer_label: string;
+  status: AIAssistantStatusBadge;
+  created_at: string;
+  duration_ms?: number;
+};
+
+export type AIAssistantRunsResponse = {
+  next_page_token?: string;
+  previous_page_token?: string;
+  has_more?: boolean;
+  runs: AIAssistantRunHistoryItem[];
+};
+
+export type AIAssistantOverviewResponse = {
+  workspace: AIAssistantWorkspace;
+  summary_cards: AIAssistantSummaryCard[];
+  signals: AIAssistantSignalPanel;
+  guardrails: AIAssistantGuardrailPanel;
+  runs: AIAssistantRunsResponse;
+  active_run_id?: string;
+};
+
+export type AIAssistantRunDetailResponse = {
+  run: AIAssistantRunDetail;
+};
+
+export type AIAssistantCreateRunRequest = {
+  customer_ref: string;
+  time_range: string;
+  intent: string;
+  prompt: string;
+};
+
+export type AIWorkflowStatusBadge = {
+  code: string;
+  label: string;
+  tone: string;
+};
+
+export type AIWorkflowAction = {
+  id: string;
+  type: string;
+  label: string;
+  status: "pending" | "running" | "done" | "failed";
+  payload: Record<string, unknown>;
+  order: number;
+  error?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AIWorkflowApproval = {
+  id: string;
+  actor_id: string;
+  status: "approved" | "rejected";
+  note?: string;
+  created_at: string;
+};
+
+export type AIWorkflowListItem = {
+  id: string;
+  title: string;
+  intent: string;
+  summary: string;
+  status: AIWorkflowStatusBadge;
+  created_at: string;
+  updated_at: string;
+  actions: number;
+  source_run_id?: string;
+};
+
+export type AIWorkflowDetail = {
+  id: string;
+  title: string;
+  intent: string;
+  summary: string;
+  status: AIWorkflowStatusBadge;
+  source_run_id?: string;
+  created_at: string;
+  updated_at: string;
+  started_at?: string;
+  finished_at?: string;
+  actions: AIWorkflowAction[];
+  approvals: AIWorkflowApproval[];
+};
+
+export type AIWorkflowListResponse = {
+  next_page_token?: string;
+  previous_page_token?: string;
+  has_more?: boolean;
+  workflows: AIWorkflowListItem[];
+};
+
+export type AIWorkflowDetailResponse = {
+  workflow: AIWorkflowDetail;
+};
+
+export type AIWorkflowCreateAction = {
+  type: string;
+  label: string;
+  payload?: Record<string, unknown>;
+};
+
+export type AIWorkflowCreateRequest = {
+  title: string;
+  summary: string;
+  intent: string;
+  source_run_id?: string;
+  actions: AIWorkflowCreateAction[];
+};
+
+export type AIWorkflowApproveRequest = {
+  status: "approved" | "rejected";
+  note?: string;
 };

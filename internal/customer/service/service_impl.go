@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/mail"
 	"strings"
 	"time"
@@ -13,14 +14,18 @@ import (
 	"github.com/railzwaylabs/railzway/internal/customer/domain"
 	"github.com/railzwaylabs/railzway/internal/db/pagination"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 )
+
+const customerCacheTTL = 15 * time.Second
 
 type service struct {
 	db    *gorm.DB
 	repo  domain.Repository
 	audit *auditlog.Service
+	cache *redis.Client
 }
 
 type Params struct {
@@ -29,6 +34,7 @@ type Params struct {
 	DB    *gorm.DB
 	Repo  domain.Repository
 	Audit *auditlog.Service `optional:"true"`
+	Cache *redis.Client     `name:"redis_cache" optional:"true"`
 }
 
 func NewService(p Params) domain.Service {
@@ -36,6 +42,7 @@ func NewService(p Params) domain.Service {
 		db:    p.DB,
 		repo:  p.Repo,
 		audit: p.Audit,
+		cache: p.Cache,
 	}
 }
 
@@ -103,6 +110,7 @@ func (s *service) Create(ctx context.Context, req domain.CreateCustomerRequest) 
 	}
 
 	resp := toResponse(customer)
+	s.setCustomerCache(ctx, orgID, customer.ID, resp)
 	s.recordAudit(ctx, "customer.create", "customer", resp.ID, nil, resp, nil)
 	return resp, nil
 }
@@ -163,6 +171,7 @@ func (s *service) Update(ctx context.Context, id string, req domain.UpdateCustom
 	if err := s.repo.Update(ctx, orgID, customerID, updates); err != nil {
 		return domain.CustomerResponse{}, err
 	}
+	s.deleteCustomerCache(ctx, orgID, customerID)
 
 	item, err := s.repo.FindByID(ctx, orgID, customerID)
 	if err != nil {
@@ -173,6 +182,7 @@ func (s *service) Update(ctx context.Context, id string, req domain.UpdateCustom
 	}
 
 	resp := toResponse(*item)
+	s.setCustomerCache(ctx, orgID, customerID, resp)
 	s.recordAudit(ctx, "customer.update", "customer", resp.ID, toResponse(*beforeCustomer), resp, nil)
 	return resp, nil
 }
@@ -186,6 +196,9 @@ func (s *service) GetByID(ctx context.Context, req domain.GetCustomerRequest) (d
 	if err != nil {
 		return domain.CustomerResponse{}, err
 	}
+	if cached, ok := s.getCustomerCache(ctx, orgID, id); ok {
+		return cached, nil
+	}
 
 	item, err := s.repo.FindByID(ctx, orgID, id)
 	if err != nil {
@@ -195,7 +208,46 @@ func (s *service) GetByID(ctx context.Context, req domain.GetCustomerRequest) (d
 		return domain.CustomerResponse{}, domain.ErrNotFound
 	}
 
-	return toResponse(*item), nil
+	resp := toResponse(*item)
+	s.setCustomerCache(ctx, orgID, id, resp)
+	return resp, nil
+}
+
+func customerCacheKey(orgID uuid.UUID, customerID uuid.UUID) string {
+	return fmt.Sprintf("cache:customer:%s:%s", orgID.String(), customerID.String())
+}
+
+func (s *service) getCustomerCache(ctx context.Context, orgID, customerID uuid.UUID) (domain.CustomerResponse, bool) {
+	if s.cache == nil {
+		return domain.CustomerResponse{}, false
+	}
+	raw, err := s.cache.Get(ctx, customerCacheKey(orgID, customerID)).Result()
+	if err != nil {
+		return domain.CustomerResponse{}, false
+	}
+	var cached domain.CustomerResponse
+	if err := json.Unmarshal([]byte(raw), &cached); err != nil {
+		return domain.CustomerResponse{}, false
+	}
+	return cached, true
+}
+
+func (s *service) setCustomerCache(ctx context.Context, orgID, customerID uuid.UUID, resp domain.CustomerResponse) {
+	if s.cache == nil {
+		return
+	}
+	raw, err := json.Marshal(resp)
+	if err != nil {
+		return
+	}
+	_ = s.cache.Set(ctx, customerCacheKey(orgID, customerID), raw, customerCacheTTL).Err()
+}
+
+func (s *service) deleteCustomerCache(ctx context.Context, orgID, customerID uuid.UUID) {
+	if s.cache == nil {
+		return
+	}
+	_ = s.cache.Del(ctx, customerCacheKey(orgID, customerID)).Err()
 }
 
 func (s *service) List(ctx context.Context, req domain.ListCustomerRequest) (domain.ListCustomerResponse, error) {

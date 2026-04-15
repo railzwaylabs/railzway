@@ -146,17 +146,17 @@ export default function ProductsCreate() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{t("plans_create.fields.plan_code")} *</Label>
-                    <Input {...register("code", { required: true })} placeholder={t("products_create.placeholders.product_code")} />
+                    <Input {...register("code", { required: true })} placeholder={t("products_create.placeholders.product_code")} data-testid="products-create-code" />
                     {errors.code && <span className="text-destructive text-xs">{t("products_create.validation.required")}</span>}
                   </div>
                   <div className="space-y-2">
                     <Label>{t("plans_create.fields.plan_name")} *</Label>
-                    <Input {...register("name", { required: true })} placeholder={t("products_create.placeholders.product_name")} />
+                    <Input {...register("name", { required: true })} placeholder={t("products_create.placeholders.product_name")} data-testid="products-create-name" />
                     {errors.name && <span className="text-destructive text-xs">{t("products_create.validation.required")}</span>}
                   </div>
                   <div className="col-span-2 space-y-2">
                     <Label>{t("plans_create.fields.description")}</Label>
-                    <Input {...register("description")} placeholder={t("plans_create.fields.description_placeholder")} />
+                    <Input {...register("description")} placeholder={t("plans_create.fields.description_placeholder")} data-testid="products-create-description" />
                   </div>
                 </div>
               </div>
@@ -173,6 +173,7 @@ export default function ProductsCreate() {
                     variant="outline" 
                     size="sm"
                     onClick={() => appendPlan({ code: "", name: "", active: true, prices: [] })}
+                    data-testid="products-create-add-plan"
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     {t("plans.actions.create")}
@@ -200,10 +201,10 @@ export default function ProductsCreate() {
               {error && <div className="p-4 bg-destructive/10 text-destructive rounded-md text-sm font-medium">{error}</div>}
 
               <div className="flex items-center gap-3 pt-4 sticky bottom-4 bg-background/80 backdrop-blur-sm p-4 rounded-lg shadow-sm border border-border/50">
-                <Button type="submit" size="lg" disabled={saving}>
+                <Button type="submit" size="lg" disabled={saving} data-testid="products-create-submit">
                   {saving ? t("common.creating") : t("products_create.actions.submit")}
                 </Button>
-                <Button type="button" variant="secondary" size="lg" onClick={() => navigate(orgPath("/products"))} disabled={saving}>
+                <Button type="button" variant="secondary" size="lg" onClick={() => navigate(orgPath("/products"))} disabled={saving} data-testid="products-create-cancel">
                   {t("common.cancel")}
                 </Button>
               </div>
@@ -239,6 +240,7 @@ export default function ProductsCreate() {
                           checked={selectedFeatures.includes(f.id)} 
                           readOnly
                           className="rounded border-gray-300 pointer-events-none"
+                          data-testid={`feature-checkbox-${f.code}`}
                         />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium truncate">{f.name}</div>
@@ -294,11 +296,11 @@ function PlanFormItem({ index, remove, currencyOptions, meterOptions, t }: any) 
         <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="space-y-2">
           <Label>{t("plans_create.fields.plan_name")} *</Label>
-          <Input {...register(`plans.${index}.name`, { required: true })} placeholder={t("products_create.placeholders.plan_name")} />
+          <Input {...register(`plans.${index}.name`, { required: true })} placeholder={t("products_create.placeholders.plan_name")} data-testid={`plans-name-${index}`} />
         </div>
         <div className="space-y-2">
           <Label>{t("plans_create.fields.plan_code")} *</Label>
-          <Input {...register(`plans.${index}.code`, { required: true })} placeholder={t("products_create.placeholders.plan_code")} />
+          <Input {...register(`plans.${index}.code`, { required: true })} placeholder={t("products_create.placeholders.plan_code")} data-testid={`plans-code-${index}`} />
         </div>
       </div>
 

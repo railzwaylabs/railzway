@@ -11,6 +11,7 @@ import (
 	apikeydomain "github.com/railzwaylabs/railzway/internal/apikey/domain"
 	apikeyservice "github.com/railzwaylabs/railzway/internal/apikey/service"
 	customerdomain "github.com/railzwaylabs/railzway/internal/customer/domain"
+	"github.com/railzwaylabs/railzway/internal/ratelimit"
 	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
@@ -26,6 +27,7 @@ type Handler struct {
 	subscriptions subscriptiondomain.Service
 	usage         usagedomain.Service
 	entitlement   entitlementdomain.Service
+	rateLimiter   *ratelimit.Limiter
 }
 
 func NewHandler(
@@ -35,6 +37,7 @@ func NewHandler(
 	subscriptions subscriptiondomain.Service,
 	usage usagedomain.Service,
 	entitlement entitlementdomain.Service,
+	rateLimiter *ratelimit.Limiter,
 ) *Handler {
 	return &Handler{
 		apiKeys:       apiKeys,
@@ -43,6 +46,7 @@ func NewHandler(
 		subscriptions: subscriptions,
 		usage:         usage,
 		entitlement:   entitlement,
+		rateLimiter:   rateLimiter,
 	}
 }
 
@@ -101,6 +105,13 @@ func (h *Handler) APIKeyRequired(resource string) gin.HandlerFunc {
 		if err != nil || orgID == uuid.Nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid_api_key"})
 			return
+		}
+		if headerOrg := strings.TrimSpace(c.GetHeader("X-Org-ID")); headerOrg != "" {
+			headerOrgID, parseErr := uuid.Parse(headerOrg)
+			if parseErr != nil || headerOrgID == uuid.Nil || headerOrgID != orgID {
+				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "org_mismatch"})
+				return
+			}
 		}
 		ctx := orgcontext.WithOrgID(c.Request.Context(), orgID)
 		c.Request = c.Request.WithContext(ctx)

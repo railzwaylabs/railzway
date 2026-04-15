@@ -178,13 +178,15 @@ export default function PlansCreate() {
              <Button type="button" 
                      variant={form.priceType === "flat" ? "default" : "secondary"}
                      onClick={() => setForm(p => ({...p, priceType: "flat"}))}
-                     style={{ flex: 1 }}>
+                     style={{ flex: 1 }}
+                     data-testid="plans-create-type-flat">
                {t("plans_create.pricing.flat")}
              </Button>
              <Button type="button" 
                      variant={form.priceType === "usage" ? "default" : "secondary"}
                      onClick={() => setForm(p => ({...p, priceType: "usage"}))}
-                     style={{ flex: 1 }}>
+                     style={{ flex: 1 }}
+                     data-testid="plans-create-type-usage">
                {t("plans_create.pricing.usage")}
              </Button>
           </div>
@@ -244,7 +246,7 @@ export default function PlansCreate() {
           {validation.length > 0 && <div className="inline-error" style={{ marginTop: 16 }}>{validation.join(" ")}</div>}
           
           <div className="action-buttons" style={{ marginTop: 24, justifyContent: "space-between" }}>
-            <Button variant="outline" onClick={() => navigate(orgPath("/plans"))}>{t("common.cancel")}</Button>
+            <Button variant="outline" onClick={() => navigate(orgPath("/plans"))} data-testid="plans-create-cancel">{t("common.cancel")}</Button>
             <Button variant="default" disabled={loading || validation.length > 0} onClick={handleCreate} data-testid="plans-create-submit">
               {loading ? t("common.creating") : t("plans_create.actions.save")}
             </Button>

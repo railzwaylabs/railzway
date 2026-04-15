@@ -34,6 +34,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/reference"
 	"github.com/railzwaylabs/railzway/internal/subscription"
 	"github.com/railzwaylabs/railzway/internal/tax"
+	"github.com/railzwaylabs/railzway/internal/telemetry"
 	"github.com/railzwaylabs/railzway/internal/testclock"
 	"github.com/railzwaylabs/railzway/internal/usage"
 	redisv9 "github.com/redis/go-redis/v9"
@@ -83,6 +84,8 @@ func main() {
 		tax.Module,
 		admin.Module,
 		fx.Invoke(registerLoggerLifecycle),
+		fx.Invoke(registerTelemetryLifecycle),
+		fx.Invoke(telemetry.StartProfiler(6060)),
 		fx.Invoke(startHTTPServer),
 	)
 
@@ -105,6 +108,34 @@ func registerLoggerLifecycle(lc fx.Lifecycle, logger *zap.Logger) {
 	})
 }
 
+func registerTelemetryLifecycle(lc fx.Lifecycle, cfg *config.Config, logger *zap.Logger) {
+	serviceName := "railzway-admin"
+	if cfg != nil && strings.TrimSpace(cfg.AppName) != "" {
+		serviceName = strings.TrimSpace(cfg.AppName) + "-admin"
+	}
+
+	var shutdown func(context.Context) error = func(context.Context) error { return nil }
+
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			traceShutdown, enabled, err := telemetry.InitTracing(ctx, serviceName, logger)
+			if err != nil {
+				return err
+			}
+
+			shutdown = traceShutdown
+			if !enabled && logger != nil {
+				logger.Info("opentelemetry tracing disabled", zap.String("service", serviceName))
+			}
+
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			return shutdown(ctx)
+		},
+	})
+}
+
 func newRouter(
 	cfg *config.Config,
 	adminHandler *adminhandler.Handler,
@@ -120,10 +151,13 @@ func newRouter(
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(httpmiddleware.SecurityHeadersWithCSP(cfg, cfg.CSPExtraDirectives, httpmiddleware.CSPProfileAdmin))
+	router.Use(httpmiddleware.Correlation())
+	router.Use(httpmiddleware.PrometheusMetrics("admin"))
 	router.Use(httpmiddleware.ZapRequestLogger(logger))
 	router.Use(httpmiddleware.RequireTLS(cfg))
 
 	registerHealthRoutes(router, dbConn, cacheClient, storeClient)
+	router.GET("/metrics", gin.WrapH(telemetry.MetricsHandler()))
 	adminhandler.RegisterRoutes(router, adminHandler)
 
 	distDir := filepath.Join("apps", "admin", "dist")

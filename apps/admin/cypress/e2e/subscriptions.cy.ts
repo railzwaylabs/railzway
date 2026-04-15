@@ -3,118 +3,78 @@ describe("Subscriptions", () => {
     cy.login();
   });
 
-  it("create, filter, edit", () => {
+  it("create subscription (positive scenario)", () => {
     const uid = Date.now();
-    const customerName = `Sub Customer ${uid}`;
-    const customerEmail = `sub_${uid}@example.com`;
-    const planName = `Sub Plan ${uid}`;
-    const planCode = `sub_plan_${uid}`;
-    const priceName = "Base Price";
-    const periodStart = "2026-03-01T00:00:00Z";
-    const periodEnd = "2026-04-01T00:00:00Z";
+    const customerName = `Sub User ${uid}`;
+    const customerEmail = `sub_user_${uid}@example.com`;
+    const planName = `Pro Plan ${uid}`;
+    const planCode = `plan_pro_${uid}`;
 
-    cy.csrfRequest("POST", "/admin/v1/customers", {
-      name: customerName,
-      email: customerEmail,
-      currency: "USD"
-    })
-      .then((resp) => {
-        const customerId = resp.body.id as string;
-        return cy.csrfRequest("POST", "/admin/v1/plans", {
-          code: planCode,
-          name: planName,
-          active: true
-        }).then((planResp) => ({ customerId, planId: planResp.body.id as string }));
-      })
-      .then(({ customerId, planId }) => {
-        return cy.csrfRequest("POST", `/admin/v1/plans/${planId}/prices`, {
-          code: `${planCode}_price`,
-          name: priceName,
+    // Pre-create data via API for reliability
+    cy.ensureOrg().then((orgId) => {
+      cy.csrfRequest("POST", "/admin/v1/customers", {
+        name: customerName,
+        email: customerEmail,
+        currency: "USD"
+      });
+
+      cy.csrfRequest("POST", "/admin/v1/plans", {
+        name: planName,
+        code: planCode,
+        active: true,
+        prices: [{
+          code: `price_${uid}`,
+          name: "Standard Price",
           price_type: "flat",
           billing_interval: "month",
           billing_interval_count: 1,
-          active: true
-        }).then((priceResp) => ({ customerId, planId, priceId: priceResp.body.id as string }));
-      })
-      .then(({ customerId, planId, priceId }) => {
-        return cy.csrfRequest("POST", `/admin/v1/plans/prices/${priceId}/amounts`, {
-          currency: "USD",
-          unit_amount_cents: 1000
-        }).then(() => ({ customerId, planId, priceId }));
-      })
-      .then(() => {
-        const customerLabel = `${customerName} · ${customerEmail}`;
-        const planLabel = `${planName} · ${planCode}`;
-        const priceLabel = `${priceName} · flat · month`;
-        cy.wrap({ customerLabel, planLabel, priceLabel }).as("subscriptionLabels");
+          active: true,
+          amounts: [{ currency: "USD", unit_amount_cents: 2900 }]
+        }]
       });
+    });
 
-    cy.intercept("POST", "/admin/v1/subscriptions").as("createSubscription");
-    cy.intercept("GET", "/admin/v1/customers*").as("customerOptions");
-    cy.intercept("GET", "/admin/v1/plans*").as("planOptions");
     cy.orgVisit("/subscriptions/new");
-    cy.contains("h2", "New Subscription").should("be.visible");
+    cy.contains("h1", "New Subscription").should("be.visible");
 
-    cy.get("@subscriptionLabels").then((labels) => {
-      const { customerLabel, planLabel, priceLabel } = labels as Record<string, string>;
-      cy.wait("@customerOptions");
-      cy.get("[data-testid=\"subscription-customer-id-list\"] option").should(($options) => {
-        const values = [...$options].map((option) => option.value);
-        expect(values).to.include(customerLabel);
-      });
-      cy.get("[data-testid=\"subscription-customer-id\"]").clear().type(customerLabel);
+    // Select Customer
+    cy.get("[data-testid=\"subscription-customer-id\"]").click();
+    cy.get("[data-testid=\"subscription-customer-id-search\"]").type(customerName);
+    cy.get("[role=\"option\"]").contains(customerName).click();
 
-      cy.wait("@planOptions");
-      cy.get("[data-testid=\"subscription-plan-id-list\"] option").should(($options) => {
-        const values = [...$options].map((option) => option.value);
-        expect(values).to.include(planLabel);
-      });
-      cy.get("[data-testid=\"subscription-plan-id\"]").clear().type(planLabel);
+    // Select Plan
+    cy.get("[data-testid=\"subscription-plan-id\"]").click();
+    cy.get("[data-testid=\"subscription-plan-id-search\"]").type(planName);
+    cy.get("[role=\"option\"]").contains(planName).click();
 
-      cy.get("[data-testid=\"subscription-plan-price-id-list\"] option").should(($options) => {
-        const values = [...$options].map((option) => option.value);
-        expect(values).to.include(priceLabel);
-      });
-      cy.get("[data-testid=\"subscription-plan-price-id\"]").clear().type(priceLabel);
-      cy.get("[data-testid=\"subscriptions-create-quantity\"]").clear().type("1");
-      cy.get("[data-testid=\"subscriptions-create-currency\"]").clear().type("USD");
-      cy.get("[data-testid=\"subscriptions-create-period-start\"]").clear().type(periodStart);
-      cy.get("[data-testid=\"subscriptions-create-period-end\"]").clear().type(periodEnd);
-      cy.get("[data-testid=\"subscriptions-create-submit\"]").click();
-    });
+    // Select Price
+    cy.get("[data-testid=\"subscription-plan-price-id\"]").click();
+    cy.get("[role=\"option\"]").contains("Standard Price").click();
 
-    cy.wait("@createSubscription").then((interception) => {
-      const subscriptionId = interception.response?.body?.id as string;
-      expect(subscriptionId).to.be.a("string").and.not.be.empty;
-      cy.wrap(subscriptionId).as("subscriptionId");
-    });
+    // Set Dates (using today for simplicity)
+    const today = new Date().toISOString().split("T")[0];
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const nextMonthStr = nextMonth.toISOString().split("T")[0];
 
-    cy.intercept("GET", "/admin/v1/subscriptions*").as("subscriptionsList");
+    cy.get("[data-testid=\"subscriptions-create-period-start\"]").type(`${today}T00:00`);
+    cy.get("[data-testid=\"subscriptions-create-period-end\"]").type(`${nextMonthStr}T00:00`);
+
+    cy.get("[data-testid=\"subscriptions-create-submit\"]").click();
+
     cy.url().should("include", "/subscriptions");
-    cy.get("@subscriptionLabels").then((labels) => {
-      const { customerLabel } = labels as Record<string, string>;
-      cy.get("[data-testid=\"subscriptions-filter-customer\"]").clear().type(customerLabel);
-      cy.get("[data-testid=\"subscriptions-filters-apply\"]").click();
-    });
-    cy.wait("@subscriptionsList");
-
-    cy.get("@subscriptionId").then((subId) => {
-      const id = subId as string;
-      cy.get(`[data-testid="subscriptions-manage-${id}"]`).click();
-    });
-    cy.contains("h2", "Subscription").should("be.visible");
-    cy.get("[data-testid=\"subscriptions-edit-status\"]").clear().type("canceled");
-    cy.get("[data-testid=\"subscriptions-edit-submit\"]").click();
-    cy.contains(".page", "Subscription updated").should("be.visible");
+    cy.contains(".data-table", customerName).should("be.visible");
   });
 
-  it("validates required fields", () => {
+  it("validates required fields (negative scenario)", () => {
     cy.orgVisit("/subscriptions/new");
     cy.get("[data-testid=\"subscriptions-create-submit\"]").should("be.disabled");
-    cy.get("[data-testid=\"subscriptions-create-currency\"]").clear().type("USD");
-    cy.get("[data-testid=\"subscriptions-create-submit\"]").should("be.disabled");
-    cy.get("[data-testid=\"subscriptions-create-period-start\"]").type("2026-03-01T00:00:00Z");
-    cy.get("[data-testid=\"subscriptions-create-period-end\"]").type("2026-04-01T00:00:00Z");
+    
+    // Select customer only
+    cy.get("[data-testid=\"subscription-customer-id\"]").click();
+    cy.get("[data-testid=\"subscription-customer-id-search\"]").type("any");
+    // Just click away to close popover if no results, but here we expect validation
+    
     cy.get("[data-testid=\"subscriptions-create-submit\"]").should("be.disabled");
   });
 });

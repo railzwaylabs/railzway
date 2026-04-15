@@ -19,6 +19,7 @@ import (
 	plandomain "github.com/railzwaylabs/railzway/internal/plan/domain"
 	ratingdomain "github.com/railzwaylabs/railzway/internal/rating/domain"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
+	"github.com/railzwaylabs/railzway/internal/telemetry"
 	usagedomain "github.com/railzwaylabs/railzway/internal/usage/domain"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
@@ -72,11 +73,22 @@ func NewService(p Params) ratingdomain.Service {
 	}
 }
 
-func (s *service) RateUsage(ctx context.Context, req ratingdomain.RateUsageRequest) (ratingdomain.RateUsageResponse, error) {
+func (s *service) RateUsage(ctx context.Context, req ratingdomain.RateUsageRequest) (resp ratingdomain.RateUsageResponse, err error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == uuid.Nil {
 		return ratingdomain.RateUsageResponse{}, ratingdomain.ErrInvalidOrganization
 	}
+
+	ctx, span := telemetry.StartSpan(
+		ctx,
+		"rating.rate_usage",
+		telemetry.UUIDAttr("billing.org_id", orgID),
+		telemetry.StringAttr("billing.usage_event_id", strings.TrimSpace(req.UsageEventID)),
+	)
+	defer func() { telemetry.EndSpan(span, err) }()
+
+	startedAt := time.Now()
+	defer func() { telemetry.ObserveOperation("rating.rate_usage", time.Since(startedAt), err) }()
 
 	usageID, err := parseID(req.UsageEventID)
 	if err != nil {
@@ -94,7 +106,12 @@ func (s *service) RateUsage(ctx context.Context, req ratingdomain.RateUsageReque
 		if err := s.usageRepo.UpdateUsageStatus(ctx, orgID, existing.UsageEventID, usagedomain.StatusRated); err != nil {
 			return ratingdomain.RateUsageResponse{}, err
 		}
-		return ratingdomain.RateUsageResponse{RatingResult: toRatingResponse(*existing)}, nil
+		resp = ratingdomain.RateUsageResponse{RatingResult: toRatingResponse(*existing)}
+		span.SetAttributes(
+			telemetry.UUIDAttr("billing.rating_result_id", existing.ID),
+			telemetry.BoolAttr("billing.idempotent_hit", true),
+		)
+		return resp, nil
 	}
 
 	usageEvent, err := s.findUsageEvent(ctx, orgID, usageID)
@@ -291,7 +308,12 @@ func (s *service) RateUsage(ctx context.Context, req ratingdomain.RateUsageReque
 				if err := s.usageRepo.UpdateUsageStatus(ctx, orgID, existing.UsageEventID, usagedomain.StatusRated); err != nil {
 					return ratingdomain.RateUsageResponse{}, err
 				}
-				return ratingdomain.RateUsageResponse{RatingResult: toRatingResponse(*existing)}, nil
+				resp = ratingdomain.RateUsageResponse{RatingResult: toRatingResponse(*existing)}
+				span.SetAttributes(
+					telemetry.UUIDAttr("billing.rating_result_id", existing.ID),
+					telemetry.BoolAttr("billing.idempotent_hit", true),
+				)
+				return resp, nil
 			}
 		}
 		return ratingdomain.RateUsageResponse{}, err
@@ -304,7 +326,13 @@ func (s *service) RateUsage(ctx context.Context, req ratingdomain.RateUsageReque
 		return ratingdomain.RateUsageResponse{}, err
 	}
 
-	resp := ratingdomain.RateUsageResponse{RatingResult: toRatingResponse(result)}
+	resp = ratingdomain.RateUsageResponse{RatingResult: toRatingResponse(result)}
+	span.SetAttributes(
+		telemetry.UUIDAttr("billing.rating_result_id", result.ID),
+		telemetry.UUIDAttr("billing.customer_id", result.CustomerID),
+		telemetry.UUIDAttr("billing.meter_id", result.MeterID),
+		telemetry.Int64Attr("billing.amount_cents", result.AmountCents),
+	)
 	s.recordAudit(ctx, "rating.result.create", "rating_result", result.ID.String(), nil, resp.RatingResult, nil)
 	return resp, nil
 }
@@ -316,7 +344,9 @@ func (s *service) ListRatingResults(ctx context.Context, req ratingdomain.ListRa
 	}
 
 	pageSize := pagination.ValidatePageSize(int(req.PageSize))
+
 	filter := ratingdomain.RatingResultFilter{}
+
 	if req.CustomerID != "" {
 		id, err := parseUUID(req.CustomerID, ratingdomain.ErrInvalidCustomer)
 		if err != nil {
@@ -324,6 +354,7 @@ func (s *service) ListRatingResults(ctx context.Context, req ratingdomain.ListRa
 		}
 		filter.CustomerID = id
 	}
+
 	if req.SubscriptionID != "" {
 		id, err := parseUUID(req.SubscriptionID, ratingdomain.ErrInvalidSubscription)
 		if err != nil {
@@ -331,6 +362,7 @@ func (s *service) ListRatingResults(ctx context.Context, req ratingdomain.ListRa
 		}
 		filter.SubscriptionID = id
 	}
+
 	if req.PlanPriceID != "" {
 		id, err := parseUUID(req.PlanPriceID, ratingdomain.ErrInvalidPlanPrice)
 		if err != nil {
@@ -338,6 +370,7 @@ func (s *service) ListRatingResults(ctx context.Context, req ratingdomain.ListRa
 		}
 		filter.PlanPriceID = id
 	}
+
 	if req.MeterID != "" {
 		id, err := parseUUID(req.MeterID, ratingdomain.ErrInvalidMeter)
 		if err != nil {
@@ -345,6 +378,7 @@ func (s *service) ListRatingResults(ctx context.Context, req ratingdomain.ListRa
 		}
 		filter.MeterID = id
 	}
+
 	if req.UsageEventID != "" {
 		id, err := parseUUID(req.UsageEventID, ratingdomain.ErrInvalidUsageEvent)
 		if err != nil {
@@ -352,9 +386,11 @@ func (s *service) ListRatingResults(ctx context.Context, req ratingdomain.ListRa
 		}
 		filter.UsageEventID = id
 	}
+
 	if req.WindowStartFrom != nil && req.WindowStartTo != nil && req.WindowStartTo.Before(*req.WindowStartFrom) {
 		return ratingdomain.ListRatingResultsResponse{}, ratingdomain.ErrInvalidPeriod
 	}
+
 	filter.WindowStartFrom = req.WindowStartFrom
 	filter.WindowStartTo = req.WindowStartTo
 
@@ -404,7 +440,9 @@ func (s *service) ListUsageAggregates(ctx context.Context, req ratingdomain.List
 	}
 
 	pageSize := pagination.ValidatePageSize(int(req.PageSize))
+
 	filter := ratingdomain.UsageAggregateFilter{}
+
 	if req.CustomerID != "" {
 		id, err := parseUUID(req.CustomerID, ratingdomain.ErrInvalidCustomer)
 		if err != nil {
@@ -412,6 +450,7 @@ func (s *service) ListUsageAggregates(ctx context.Context, req ratingdomain.List
 		}
 		filter.CustomerID = id
 	}
+
 	if req.SubscriptionID != "" {
 		id, err := parseUUID(req.SubscriptionID, ratingdomain.ErrInvalidSubscription)
 		if err != nil {
@@ -419,6 +458,7 @@ func (s *service) ListUsageAggregates(ctx context.Context, req ratingdomain.List
 		}
 		filter.SubscriptionID = id
 	}
+
 	if req.PlanPriceID != "" {
 		id, err := parseUUID(req.PlanPriceID, ratingdomain.ErrInvalidPlanPrice)
 		if err != nil {
@@ -426,6 +466,7 @@ func (s *service) ListUsageAggregates(ctx context.Context, req ratingdomain.List
 		}
 		filter.PlanPriceID = id
 	}
+
 	if req.MeterID != "" {
 		id, err := parseUUID(req.MeterID, ratingdomain.ErrInvalidMeter)
 		if err != nil {
@@ -433,9 +474,11 @@ func (s *service) ListUsageAggregates(ctx context.Context, req ratingdomain.List
 		}
 		filter.MeterID = id
 	}
+
 	if req.PeriodStartFrom != nil && req.PeriodStartTo != nil && req.PeriodStartTo.Before(*req.PeriodStartFrom) {
 		return ratingdomain.ListUsageAggregatesResponse{}, ratingdomain.ErrInvalidPeriod
 	}
+
 	filter.PeriodStartFrom = req.PeriodStartFrom
 	filter.PeriodStartTo = req.PeriodStartTo
 

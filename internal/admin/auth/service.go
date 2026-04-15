@@ -51,6 +51,21 @@ type AuthSession struct {
 	MustChangePassword bool
 }
 
+type SessionView struct {
+	ID          uuid.UUID  `json:"id"`
+	UserID      uuid.UUID  `json:"userId"`
+	Email       string     `json:"email,omitempty"`
+	DisplayName string     `json:"displayName,omitempty"`
+	ActiveOrgID uuid.UUID  `json:"activeOrgId"`
+	UserAgent   string     `json:"userAgent,omitempty"`
+	IPAddress   string     `json:"ipAddress,omitempty"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	LastSeenAt  time.Time  `json:"lastSeenAt"`
+	ExpiresAt   time.Time  `json:"expiresAt"`
+	RevokedAt   *time.Time `json:"revokedAt,omitempty"`
+	Current     bool       `json:"current"`
+}
+
 func NewService(db *gorm.DB, cfg *config.Config, log *zap.Logger) *Service {
 	if log == nil {
 		log = zap.L()
@@ -198,6 +213,227 @@ func (s *Service) RevokeSession(ctx context.Context, token string) error {
 	result := s.db.WithContext(ctx).Exec(
 		`UPDATE sessions SET revoked_at = CURRENT_TIMESTAMP WHERE session_token_hash = ? AND revoked_at IS NULL`,
 		hash,
+	)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrSessionNotFound
+	}
+	return nil
+}
+
+func (s *Service) CurrentSessionID(ctx context.Context, token string) (uuid.UUID, error) {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return uuid.Nil, ErrSessionNotFound
+	}
+	secret := ""
+	if s.cfg != nil {
+		secret = strings.TrimSpace(s.cfg.SessionConfig.SessionSecret)
+	}
+	hash := hashToken(secret, token)
+
+	var sessionID uuid.UUID
+	if err := s.db.WithContext(ctx).Raw(
+		`SELECT id
+		 FROM sessions
+		 WHERE session_token_hash = ? AND revoked_at IS NULL AND expires_at > CURRENT_TIMESTAMP
+		 LIMIT 1`,
+		hash,
+	).Scan(&sessionID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return uuid.Nil, ErrSessionNotFound
+		}
+		return uuid.Nil, err
+	}
+	if sessionID == uuid.Nil {
+		return uuid.Nil, ErrSessionNotFound
+	}
+	return sessionID, nil
+}
+
+func (s *Service) ListUserSessions(ctx context.Context, userID uuid.UUID, token string) ([]SessionView, error) {
+	if userID == uuid.Nil {
+		return nil, ErrSessionNotFound
+	}
+
+	currentHash := s.sessionHash(token)
+	rows := []struct {
+		ID               uuid.UUID
+		UserID           uuid.UUID
+		ActiveOrgID      uuid.UUID
+		UserAgent        string
+		IPAddress        string
+		CreatedAt        time.Time
+		LastSeenAt       time.Time
+		ExpiresAt        time.Time
+		RevokedAt        *time.Time
+		SessionTokenHash string
+	}{}
+
+	if err := s.db.WithContext(ctx).Raw(
+		`SELECT s.id, s.user_id, s.active_org_id, s.user_agent, s.ip_address, s.created_at, s.last_seen_at, s.expires_at, s.revoked_at, s.session_token_hash
+		 FROM sessions s
+		 WHERE s.user_id = ?
+		 ORDER BY CASE WHEN s.session_token_hash = ? THEN 0 ELSE 1 END, s.last_seen_at DESC, s.created_at DESC`,
+		userID, currentHash,
+	).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	sessions := make([]SessionView, 0, len(rows))
+	for _, row := range rows {
+		sessions = append(sessions, SessionView{
+			ID:          row.ID,
+			UserID:      row.UserID,
+			ActiveOrgID: row.ActiveOrgID,
+			UserAgent:   row.UserAgent,
+			IPAddress:   row.IPAddress,
+			CreatedAt:   row.CreatedAt,
+			LastSeenAt:  row.LastSeenAt,
+			ExpiresAt:   row.ExpiresAt,
+			RevokedAt:   row.RevokedAt,
+			Current:     currentHash != "" && row.SessionTokenHash == currentHash,
+		})
+	}
+	return sessions, nil
+}
+
+func (s *Service) RevokeUserSessionByID(ctx context.Context, userID, sessionID uuid.UUID) error {
+	if userID == uuid.Nil || sessionID == uuid.Nil {
+		return ErrSessionNotFound
+	}
+	result := s.db.WithContext(ctx).Exec(
+		`UPDATE sessions
+		 SET revoked_at = CURRENT_TIMESTAMP
+		 WHERE id = ? AND user_id = ? AND revoked_at IS NULL`,
+		sessionID, userID,
+	)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrSessionNotFound
+	}
+	return nil
+}
+
+func (s *Service) RevokeOtherUserSessions(ctx context.Context, userID uuid.UUID, token string) (int64, error) {
+	if userID == uuid.Nil {
+		return 0, ErrSessionNotFound
+	}
+	currentHash := s.sessionHash(token)
+	query := `UPDATE sessions SET revoked_at = CURRENT_TIMESTAMP WHERE user_id = ? AND revoked_at IS NULL`
+	args := []interface{}{userID}
+	if currentHash != "" {
+		query += ` AND session_token_hash <> ?`
+		args = append(args, currentHash)
+	}
+
+	result := s.db.WithContext(ctx).Exec(query, args...)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return result.RowsAffected, nil
+}
+
+func (s *Service) ListOrganizationSessions(ctx context.Context, orgID uuid.UUID, token string) ([]SessionView, error) {
+	if orgID == uuid.Nil {
+		return nil, ErrInvalidOrganization
+	}
+
+	currentHash := s.sessionHash(token)
+	rows := []struct {
+		ID               uuid.UUID
+		UserID           uuid.UUID
+		Email            string
+		DisplayName      string
+		ActiveOrgID      uuid.UUID
+		UserAgent        string
+		IPAddress        string
+		CreatedAt        time.Time
+		LastSeenAt       time.Time
+		ExpiresAt        time.Time
+		RevokedAt        *time.Time
+		SessionTokenHash string
+	}{}
+
+	if err := s.db.WithContext(ctx).Raw(
+		`SELECT s.id, s.user_id, u.email, u.display_name, s.active_org_id, s.user_agent, s.ip_address, s.created_at, s.last_seen_at, s.expires_at, s.revoked_at, s.session_token_hash
+		 FROM sessions s
+		 JOIN users u ON u.id = s.user_id
+		 JOIN organization_members m ON m.user_id = s.user_id AND m.org_id = ?
+		 WHERE s.active_org_id = ?
+		 ORDER BY CASE WHEN s.session_token_hash = ? THEN 0 ELSE 1 END, s.last_seen_at DESC, s.created_at DESC`,
+		orgID, orgID, currentHash,
+	).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	sessions := make([]SessionView, 0, len(rows))
+	for _, row := range rows {
+		sessions = append(sessions, SessionView{
+			ID:          row.ID,
+			UserID:      row.UserID,
+			Email:       row.Email,
+			DisplayName: row.DisplayName,
+			ActiveOrgID: row.ActiveOrgID,
+			UserAgent:   row.UserAgent,
+			IPAddress:   row.IPAddress,
+			CreatedAt:   row.CreatedAt,
+			LastSeenAt:  row.LastSeenAt,
+			ExpiresAt:   row.ExpiresAt,
+			RevokedAt:   row.RevokedAt,
+			Current:     currentHash != "" && row.SessionTokenHash == currentHash,
+		})
+	}
+	return sessions, nil
+}
+
+func (s *Service) RevokeOrganizationSession(ctx context.Context, orgID, sessionID uuid.UUID) error {
+	if orgID == uuid.Nil {
+		return ErrInvalidOrganization
+	}
+	if sessionID == uuid.Nil {
+		return ErrSessionNotFound
+	}
+
+	var sessionRow struct {
+		UserID uuid.UUID
+	}
+	if err := s.db.WithContext(ctx).Raw(
+		`SELECT user_id
+		 FROM sessions
+		 WHERE id = ? AND active_org_id = ? AND revoked_at IS NULL
+		 LIMIT 1`,
+		sessionID, orgID,
+	).Scan(&sessionRow).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrSessionNotFound
+		}
+		return err
+	}
+	if sessionRow.UserID == uuid.Nil {
+		return ErrSessionNotFound
+	}
+
+	var membershipCount int64
+	if err := s.db.WithContext(ctx).
+		Table("organization_members").
+		Where("user_id = ? AND org_id = ?", sessionRow.UserID, orgID).
+		Count(&membershipCount).Error; err != nil {
+		return err
+	}
+	if membershipCount == 0 {
+		return ErrSessionNotFound
+	}
+
+	result := s.db.WithContext(ctx).Exec(
+		`UPDATE sessions
+		 SET revoked_at = CURRENT_TIMESTAMP
+		 WHERE id = ? AND active_org_id = ? AND revoked_at IS NULL`,
+		sessionID, orgID,
 	)
 	if result.Error != nil {
 		return result.Error
@@ -394,4 +630,16 @@ func hashToken(secret, token string) string {
 	}
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
+}
+
+func (s *Service) sessionHash(token string) string {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return ""
+	}
+	secret := ""
+	if s.cfg != nil {
+		secret = strings.TrimSpace(s.cfg.SessionConfig.SessionSecret)
+	}
+	return hashToken(secret, token)
 }

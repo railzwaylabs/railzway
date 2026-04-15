@@ -12,6 +12,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/db/pagination"
 	"github.com/railzwaylabs/railzway/internal/ledger/domain"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	"github.com/railzwaylabs/railzway/internal/telemetry"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 )
@@ -84,11 +85,25 @@ func (s *service) CreateAccount(ctx context.Context, req domain.CreateAccountReq
 	return resp, nil
 }
 
-func (s *service) CreateTransaction(ctx context.Context, req domain.CreateTransactionRequest) (domain.CreateTransactionResponse, error) {
+func (s *service) CreateTransaction(ctx context.Context, req domain.CreateTransactionRequest) (resp domain.CreateTransactionResponse, err error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == uuid.Nil {
 		return domain.CreateTransactionResponse{}, domain.ErrInvalidOrganization
 	}
+
+	ctx, span := telemetry.StartSpan(
+		ctx,
+		"ledger.transaction.create",
+		telemetry.UUIDAttr("billing.org_id", orgID),
+		telemetry.StringAttr("billing.source_type", strings.TrimSpace(req.SourceType)),
+		telemetry.StringAttr("billing.source_id", strings.TrimSpace(req.SourceID)),
+		telemetry.Int64Attr("billing.entries_count", int64(len(req.Entries))),
+		telemetry.StringAttr("billing.idempotency_key", strings.TrimSpace(req.IdempotencyKey)),
+	)
+	defer func() { telemetry.EndSpan(span, err) }()
+
+	startedAt := time.Now()
+	defer func() { telemetry.ObserveOperation("ledger.transaction.create", time.Since(startedAt), err) }()
 
 	currency := strings.TrimSpace(strings.ToUpper(req.Currency))
 	if currency == "" || len(currency) != 3 {
@@ -127,7 +142,12 @@ func (s *service) CreateTransaction(ctx context.Context, req domain.CreateTransa
 		}
 		if existing != nil {
 			entries, _ := s.repo.ListEntriesByTransaction(ctx, orgID, existing.ID)
-			return domain.CreateTransactionResponse{Transaction: *existing, Entries: entries}, nil
+			resp = domain.CreateTransactionResponse{Transaction: *existing, Entries: entries}
+			span.SetAttributes(
+				telemetry.UUIDAttr("billing.transaction_id", existing.ID),
+				telemetry.BoolAttr("billing.idempotent_hit", true),
+			)
+			return resp, nil
 		}
 	}
 
@@ -234,13 +254,23 @@ func (s *service) CreateTransaction(ctx context.Context, req domain.CreateTransa
 			}
 			if existing != nil {
 				entryList, _ := s.repo.ListEntriesByTransaction(ctx, orgID, existing.ID)
-				return domain.CreateTransactionResponse{Transaction: *existing, Entries: entryList}, nil
+				resp = domain.CreateTransactionResponse{Transaction: *existing, Entries: entryList}
+				span.SetAttributes(
+					telemetry.UUIDAttr("billing.transaction_id", existing.ID),
+					telemetry.BoolAttr("billing.idempotent_hit", true),
+				)
+				return resp, nil
 			}
 		}
 		return domain.CreateTransactionResponse{}, err
 	}
 
-	resp := domain.CreateTransactionResponse{Transaction: tx, Entries: entries}
+	resp = domain.CreateTransactionResponse{Transaction: tx, Entries: entries}
+	span.SetAttributes(
+		telemetry.UUIDAttr("billing.transaction_id", tx.ID),
+		telemetry.Int64Attr("billing.debit_total_cents", debitTotal),
+		telemetry.Int64Attr("billing.credit_total_cents", creditTotal),
+	)
 	s.recordAudit(ctx, "ledger.transaction.create", "ledger_transaction", tx.ID.String(), nil, tx, nil)
 	return resp, nil
 }

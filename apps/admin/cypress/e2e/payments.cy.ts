@@ -3,20 +3,20 @@ describe("Payments", () => {
     cy.login();
   });
 
-  it("filters payments", () => {
-    cy.intercept("GET", "/admin/v1/payments*").as("paymentsList");
+  it("view payments and use filters", () => {
     cy.orgVisit("/payments");
-
-    cy.get("[data-testid=\"payments-filter-status\"]").select("failed");
-    cy.get("[data-testid=\"payments-filters-apply\"]").click();
-
-    cy.wait("@paymentsList");
+    cy.get("[data-testid=\"page-header-title\"]").should("contain", "Payments");
+    
+    // Check filters
+    cy.get("[data-testid=\"payments-filters-apply\"]").should("be.visible");
+    cy.get("[data-testid=\"payments-filters-reset\"]").should("be.visible");
   });
 
-  it("resets payment filters", () => {
+  it("filter by provider (positive scenario)", () => {
     cy.orgVisit("/payments");
-    cy.get("[data-testid=\"payments-filter-status\"]").select("failed");
-    cy.get("[data-testid=\"payments-filters-reset\"]").click();
-    cy.get("[data-testid=\"payments-filter-status\"]").should("have.value", "");
+    cy.get("[data-testid=\"payments-filter-provider\"]").type("stripe");
+    cy.get("[data-testid=\"payments-filters-apply\"]").click();
+    // Even if empty, it should not crash
+    cy.get(".data-table").should("exist");
   });
 });

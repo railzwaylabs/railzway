@@ -70,6 +70,8 @@
     "items": {
       "dashboard": "Dashboard",
       "customers": "Customers",
+      "ai_assistant": "AI Assistant",
+      "ai_workflows": "AI Workflows",
       "plans": "Plans",
       "subscriptions": "Subscriptions",
       "usage": "Usage",
@@ -710,9 +712,208 @@
       "label": "Settings",
       "desc": "System configuration and preferences"
     },
+    "ai_assistant": {
+      "label": "AI Assistant",
+      "desc": "Billing intelligence and admin insights"
+    },
+    "ai_workflows": {
+      "label": "AI Workflows",
+      "desc": "Approve and execute AI-recommended actions"
+    },
     "default": {
       "label": "Billing Admin",
       "desc": "Railzway control panel"
+    }
+  },
+  "ai_assistant": {
+    "header": {
+      "title": "AI Assistant",
+      "description": "Explain billing, forecast revenue, recommend plans, and flag churn risk."
+    },
+    "loading": "Loading AI assistant…",
+    "summary": {
+      "forecast": {
+        "label": "30d Forecast",
+        "sub": "Projected revenue"
+      },
+      "risk": {
+        "label": "Revenue at Risk",
+        "sub": "Past-due + churn exposure"
+      },
+      "upgrade": {
+        "label": "Upgrade Potential",
+        "sub": "High-fit customers"
+      },
+      "churn": {
+        "label": "Churn Watchlist",
+        "sub": "Needs attention"
+      }
+    },
+    "workspace": {
+      "title": "Assistant Workspace",
+      "description": "Analyze customers with masked data and read-only context."
+    },
+    "badges": {
+      "masking": "PII masked",
+      "provider": "OpenAI",
+      "scope": "Admin only"
+    },
+    "fields": {
+      "customer": "Customer",
+      "customer_placeholder": "Customer ID, email, or company",
+      "time_range": "Time range",
+      "intent": "Intent",
+      "prompt": "Prompt",
+      "prompt_placeholder": "Ask the assistant to explain trends or summarize billing events."
+    },
+    "intents": {
+      "billing": "Explain Billing",
+      "forecast": "Forecasting",
+      "plan": "Plan Recommendation",
+      "churn": "Customer Churn"
+    },
+    "ranges": {
+      "30d": "Last 30 days",
+      "90d": "Last 90 days",
+      "12m": "Last 12 months"
+    },
+    "actions": {
+      "run": "Generate Insight"
+    },
+    "how": {
+      "title": "How It Works",
+      "description": "Turn insights into approved actions.",
+      "step_1": "Generate insight from billing data.",
+      "step_2": "Review drivers, anomalies, and actions.",
+      "step_3": "Create a workflow for approval.",
+      "step_4": "Approve and execute in AI Workflows."
+    },
+    "workflow": {
+      "title": "Workflow",
+      "description": "Turn these actions into an approval workflow for your team.",
+      "create": "Create workflow",
+      "created": "Workflow created",
+      "failed": "Failed to create workflow",
+      "default_title": "AI Insight"
+    },
+    "prompt_hint": "Masked context enabled",
+    "prompt_detail": "Scope: {{intent}} · Window: {{range}}",
+    "output_blocks": {
+      "summary": "Summary",
+      "plan_recommendation": "Plan Recommendation",
+      "current_plan": "Current plan",
+      "recommended_plan": "Recommended plan",
+      "drivers": "Drivers",
+      "drivers_count": "{{count}} items",
+      "product_recs": "Product Recommendations",
+      "target_segment": "Target segment",
+      "pricing": "Pricing",
+      "capabilities": "Required capabilities",
+      "expected_impact": "Expected impact",
+      "anomalies": "Anomaly Watch",
+      "anomaly_watch": "Watch",
+      "anomaly_risk": "High attention",
+      "data_quality": "Data quality",
+      "previous": "Previous",
+      "snapshot_note": "Delta is calculated from the selected range. Use this to validate pricing and capacity planning.",
+      "proration": "Proration",
+      "empty_title": "Run analysis to see insights.",
+      "empty_desc": "Generate a summary with drivers, risks, and next actions.",
+      "error_title": "Unable to load AI insights.",
+      "error_desc": "Check your data source or retry the analysis.",
+      "retry": "Retry",
+      "confidence_label": "{{level}} confidence"
+    },
+    "output": {
+      "title": "AI Output",
+      "description": "Preview the assistant response before sharing.",
+      "last_run": "Last run",
+      "placeholder": "Run an analysis to see results."
+    },
+    "runs": {
+      "empty_title": "No runs yet",
+      "empty_desc": "Generate your first insight."
+    },
+    "guardrails": {
+      "title": "Guardrails",
+      "description": "Safety and compliance controls",
+      "item_1": "PII fields are masked by default",
+      "item_2": "Read-only responses, no writes",
+      "item_3": "Org-scoped context only",
+      "item_4": "Audit trail captured for each run"
+    },
+    "recent": {
+      "title": "Recent Runs",
+      "description": "Latest admin queries"
+    },
+    "signals": {
+      "title": "Churn Signals",
+      "description": "Behavioral and billing indicators",
+      "badge": "Signal"
+    },
+    "masked": "[masked]",
+    "no_customer": "No customer selected"
+  },
+  "ai_workflows": {
+    "header": {
+      "title": "AI Workflows",
+      "description": "Approve and execute AI-recommended actions."
+    },
+    "loading": "Loading workflows…",
+    "loading_detail": "Loading workflow detail…",
+    "actions": {
+      "refresh": "Refresh",
+      "open_assistant": "Open AI Assistant",
+      "approve": "Approve",
+      "reject": "Reject",
+      "execute": "Execute workflow"
+    },
+    "list": {
+      "title": "Workflow Queue",
+      "description": "Queued, approved, and completed workflows.",
+      "empty_title": "No workflows yet",
+      "empty_desc": "Generate an AI insight to create a workflow.",
+      "summary_placeholder": "No summary provided"
+    },
+    "detail": {
+      "title": "Workflow Detail",
+      "description": "Review actions before execution.",
+      "empty": "Select a workflow to review details.",
+      "summary_placeholder": "Add a short summary for this workflow.",
+      "hint_idle": "Select a workflow to review and approve.",
+      "hint_pending": "This workflow is waiting for approval before execution.",
+      "hint_approved": "Approved. Click Execute to run the actions.",
+      "hint_executing": "Executing actions. Status updates will appear here.",
+      "hint_completed": "Workflow completed. Actions executed successfully.",
+      "hint_failed": "Execution failed. Review the action error details.",
+      "intent": "Intent",
+      "created": "Created",
+      "updated": "Updated",
+      "source_run": "Source run",
+      "actions_title": "Actions",
+      "approvals_title": "Approvals",
+      "no_approvals": "No approvals yet.",
+      "no_note": "No note added.",
+      "note_placeholder": "Optional approval note",
+      "execute_ready": "Approved and ready to execute.",
+      "executing": "Executing workflow actions…",
+      "status_placeholder": "Status"
+    },
+    "action_status": {
+      "pending": "Pending",
+      "running": "Running",
+      "done": "Done",
+      "failed": "Failed"
+    },
+    "toast": {
+      "approval_saved": "Approval saved",
+      "approval_failed": "Failed to save approval",
+      "execution_started": "Execution started",
+      "execution_failed": "Failed to execute workflow"
+    },
+    "errors": {
+      "load_list": "Failed to load workflows",
+      "load_detail": "Failed to load workflow detail"
     }
   },
   "organizations": {

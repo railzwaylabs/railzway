@@ -3,6 +3,7 @@ package http
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -11,6 +12,8 @@ import (
 	"github.com/google/uuid"
 	adminauth "github.com/railzwaylabs/railzway/internal/admin/auth"
 	adminservice "github.com/railzwaylabs/railzway/internal/admin/service"
+	aiassistantdomain "github.com/railzwaylabs/railzway/internal/aiassistant/domain"
+	aiworkflowdomain "github.com/railzwaylabs/railzway/internal/aiworkflow/domain"
 	apikeyservice "github.com/railzwaylabs/railzway/internal/apikey/service"
 	appsdomain "github.com/railzwaylabs/railzway/internal/apps/domain"
 	"github.com/railzwaylabs/railzway/internal/auditlog"
@@ -58,6 +61,8 @@ type Handler struct {
 	taxes           taxdomain.Service
 	testclocks      testclockdomain.Service
 	references      referencedomain.Repository
+	aiAssistant     aiassistantdomain.Service
+	aiWorkflow      aiworkflowdomain.Service
 }
 
 func NewHandler(
@@ -84,6 +89,8 @@ func NewHandler(
 	taxes taxdomain.Service,
 	testclocks testclockdomain.Service,
 	references referencedomain.Repository,
+	aiAssistant aiassistantdomain.Service,
+	aiWorkflow aiworkflowdomain.Service,
 ) *Handler {
 	return &Handler{
 		summary:         summary,
@@ -109,6 +116,8 @@ func NewHandler(
 		taxes:           taxes,
 		testclocks:      testclocks,
 		references:      references,
+		aiAssistant:     aiAssistant,
+		aiWorkflow:      aiWorkflow,
 	}
 }
 
@@ -356,7 +365,6 @@ type loginRequest struct {
 }
 
 type loginResponse struct {
-	Token              string    `json:"token"`
 	UserID             uuid.UUID `json:"userId"`
 	Email              string    `json:"email"`
 	OrgID              uuid.UUID `json:"orgId"`
@@ -399,7 +407,6 @@ func (h *Handler) Login(c *gin.Context) {
 	setSessionCookie(c, resp.Token, resp.SessionExpiresAt, h.cfg)
 	setCSRFCookie(c, newCSRFToken(), resp.SessionExpiresAt, h.cfg)
 	c.JSON(http.StatusOK, loginResponse{
-		Token:              resp.Token,
 		UserID:             resp.UserID,
 		Email:              resp.Email,
 		OrgID:              resp.OrgID,
@@ -690,6 +697,7 @@ func (h *Handler) RequireCSRF() gin.HandlerFunc {
 		expected := csrfTokenFromCookie(c, h.cfg)
 		provided := strings.TrimSpace(c.GetHeader("X-CSRF-Token"))
 		if expected == "" || provided == "" || expected != provided {
+			log.Printf("CSRF MISMATCH: expected='%s' provided='%s'", expected, provided)
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "csrf_invalid"})
 			return
 		}

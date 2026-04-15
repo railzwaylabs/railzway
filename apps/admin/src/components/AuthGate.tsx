@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
 
 import { api } from "../lib/api";
-import { clearOrgId, clearToken, isAuthRequired, setOrgId, setToken } from "../lib/auth";
+import { clearOrgId, isAuthRequired, setOrgId } from "../lib/auth";
 
 type AuthState = "checking" | "login" | "change" | "ready";
 
@@ -43,7 +43,6 @@ export default function AuthGate({ children }: AuthGateProps) {
     setError("");
     try {
       const resp = await api.auth.login({ email, password });
-      setToken(resp.token);
       if (resp.orgId) {
         setOrgId(resp.orgId);
       }
@@ -51,7 +50,6 @@ export default function AuthGate({ children }: AuthGateProps) {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed";
       setError(message);
-      clearToken();
       clearOrgId();
       setState("login");
     } finally {

@@ -15,6 +15,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/reconciliation"
 	"github.com/railzwaylabs/railzway/internal/subscription"
 	subscriptionrepo "github.com/railzwaylabs/railzway/internal/subscription/repository"
+	"github.com/railzwaylabs/railzway/internal/telemetry"
 	"github.com/railzwaylabs/railzway/internal/testclock"
 	"github.com/railzwaylabs/railzway/internal/usage"
 	usagerepo "github.com/railzwaylabs/railzway/internal/usage/repository"
@@ -89,6 +90,7 @@ func buildAllApp() *fx.App {
 		ledger.Module,
 		reconciliation.Module,
 		fx.Invoke(registerLoggerLifecycle),
+		fx.Invoke(telemetry.StartProfiler(6060)),
 	)
 }
 
@@ -106,6 +108,7 @@ func buildRatingApp() *fx.App {
 		ledger.Module,
 		rating.Module,
 		fx.Invoke(registerLoggerLifecycle),
+		fx.Invoke(telemetry.StartProfiler(6060)),
 	)
 }
 
@@ -123,5 +126,6 @@ func buildClosePeriodApp() *fx.App {
 		invoice.Module,
 		ledger.Module,
 		fx.Invoke(registerLoggerLifecycle),
+		fx.Invoke(telemetry.StartProfiler(6060)),
 	)
 }

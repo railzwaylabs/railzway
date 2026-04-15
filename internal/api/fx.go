@@ -6,6 +6,7 @@ import (
 	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
 	apihandler "github.com/railzwaylabs/railzway/internal/api/transport/http"
 	entitlementdomain "github.com/railzwaylabs/railzway/internal/entitlement/domain"
+	"github.com/railzwaylabs/railzway/internal/ratelimit"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
 	usagedomain "github.com/railzwaylabs/railzway/internal/usage/domain"
 	"go.uber.org/fx"
@@ -21,8 +22,9 @@ var Module = fx.Module("api",
 			subscriptions subscriptiondomain.Service,
 			usage usagedomain.Service,
 			entitlement entitlementdomain.Service,
+			rateLimiter *ratelimit.Limiter,
 		) *apihandler.Handler {
-			return apihandler.NewHandler(apiKeys, invoices, customers, subscriptions, usage, entitlement)
+			return apihandler.NewHandler(apiKeys, invoices, customers, subscriptions, usage, entitlement, rateLimiter)
 		},
 	),
 )

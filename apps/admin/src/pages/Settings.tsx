@@ -265,7 +265,7 @@ export default function Settings() {
           <div className="action-fields">
             <div className="action-field">
               <label className="action-label">{t("settings.api_keys.fields.name")}</label>
-              <Input className="action-input" value={newKey.name} onChange={(e) => setNewKey((p) => ({ ...p, name: e.target.value }))} />
+              <Input className="action-input" value={newKey.name} onChange={(e) => setNewKey((p) => ({ ...p, name: e.target.value }))} data-testid="settings-api-key-name" />
             </div>
             <div className="action-field">
               <label className="action-label">{t("settings.api_keys.fields.type")}</label>
@@ -282,7 +282,7 @@ export default function Settings() {
             </div>
             <div className="action-field" style={{ gridColumn: "span 2" }}>
               <label className="action-label">{t("settings.api_keys.fields.scopes")}</label>
-              <Input className="action-input" value={newKey.scopes} onChange={(e) => setNewKey((p) => ({ ...p, scopes: e.target.value }))} />
+              <Input className="action-input" value={newKey.scopes} onChange={(e) => setNewKey((p) => ({ ...p, scopes: e.target.value }))} data-testid="settings-api-key-scopes" />
             </div>
             <div className="action-field" style={{ gridColumn: "span 2" }}>
               <label className="action-label">{t("settings.api_keys.fields.allowed_ips")}</label>
@@ -294,7 +294,7 @@ export default function Settings() {
             </div>
           </div>
           <div className="action-buttons" style={{ marginTop: 12 }}>
-            <Button variant="default" disabled={savingKey === "api_keys_create"} onClick={handleCreateKey}>
+            <Button variant="default" disabled={savingKey === "api_keys_create"} onClick={handleCreateKey} data-testid="settings-api-key-submit">
               {t("settings.api_keys.actions.create")}
             </Button>
           </div>
@@ -305,11 +305,11 @@ export default function Settings() {
               <div className="action-fields" style={{ marginTop: 12 }}>
                 <div className="action-field" style={{ gridColumn: "span 2" }}>
                   <label className="action-label">{t("settings.api_keys.created.key_label")}</label>
-                  <Input className="action-input" value={createdKey.key} readOnly />
+                  <Input className="action-input" value={createdKey.key} readOnly data-testid="settings-api-key-value" />
                 </div>
               </div>
               <div className="action-buttons" style={{ marginTop: 8 }}>
-                <Button variant="secondary" onClick={handleCopyKey}>{t("settings.api_keys.created.copy")}</Button>
+                <Button variant="secondary" onClick={handleCopyKey} data-testid="settings-api-key-copy">{t("settings.api_keys.created.copy")}</Button>
               </div>
             </div>
           ) : null}

@@ -135,7 +135,7 @@ export default function Usage() {
         title={t("usage.header.title")} 
         description={t("usage.header.description")} 
         actions={
-          <Button variant="default" onClick={() => navigate(orgPath("/usage/new"))} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <Button variant="default" onClick={() => navigate(orgPath("/usage/new"))} style={{ display: "flex", gap: 6, alignItems: "center" }} data-testid="usage-ingest-button">
             <IconUpload /> {t("usage.actions.ingest")}
           </Button>
         }

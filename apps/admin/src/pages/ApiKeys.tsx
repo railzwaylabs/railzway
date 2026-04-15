@@ -39,6 +39,8 @@ export default function ApiKeys() {
   const [createForm, setCreateForm] = useState({ name: "" })
   const [creating, setCreating] = useState(false)
   const [newKey, setNewKey] = useState<string | null>(null)
+  const [revokeTarget, setRevokeTarget] = useState<APIKey | null>(null)
+  const [revoking, setRevoking] = useState(false)
 
   const loadKeys = useCallback(async () => {
     try {
@@ -75,13 +77,16 @@ export default function ApiKeys() {
   }
 
   const handleRevoke = async (id: string) => {
-    if (!window.confirm(t("common.confirm_action") || "Are you sure?")) return;
     try {
+      setRevoking(true)
       await api.apiKeys.revoke(id)
+      setRevokeTarget(null)
       toast.success(t("settings.api_keys.toast.revoked"))
       await loadKeys()
     } catch (err) {
       toast.error(t("settings.api_keys.toast.revoke_failed"), err instanceof Error ? err.message : undefined)
+    } finally {
+      setRevoking(false)
     }
   }
 
@@ -120,7 +125,7 @@ export default function ApiKeys() {
       key: "actions", label: "", width: "80px", className: "col-actions",
       render: (row: APIKey) => (
         row.status === 'active' ? (
-          <Button variant="ghost" size="sm" onClick={() => handleRevoke(row.id)} style={{ color: "var(--status-danger)" }}>
+          <Button variant="ghost" size="sm" onClick={() => setRevokeTarget(row)} style={{ color: "var(--status-danger)" }}>
             {t("settings.api_keys.actions.revoke")}
           </Button>
         ) : null
@@ -198,6 +203,31 @@ export default function ApiKeys() {
         emptyTitle={t("settings.api_keys.empty_title")}
         emptyDesc={t("settings.api_keys.empty_desc")}
       />
+
+      <Dialog open={Boolean(revokeTarget)} onOpenChange={(open) => { if (!open) setRevokeTarget(null) }}>
+        <DialogContent style={{ maxWidth: 480 }}>
+          <DialogHeader>
+            <DialogTitle>{t("settings.api_keys.actions.revoke")}</DialogTitle>
+            <DialogDescription>
+              {revokeTarget
+                ? `Revoke API key "${revokeTarget.name}"? This action cannot be undone.`
+                : t("common.confirm_action")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter style={{ marginTop: "8px" }}>
+            <Button variant="secondary" onClick={() => setRevokeTarget(null)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => revokeTarget ? void handleRevoke(revokeTarget.id) : undefined}
+              disabled={revoking}
+            >
+              {revoking ? (t("common.loading") || "Revoking...") : t("settings.api_keys.actions.revoke")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

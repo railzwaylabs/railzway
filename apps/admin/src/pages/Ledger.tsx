@@ -129,7 +129,7 @@ export default function Ledger() {
         title={t("ledger.header.title")} 
         description={t("ledger.header.description")} 
         actions={
-          <Button variant="default" onClick={() => navigate(orgPath("/ledger/new"))} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <Button variant="default" onClick={() => navigate(orgPath("/ledger/new"))} style={{ display: "flex", gap: 6, alignItems: "center" }} data-testid="ledger-new-button">
             <IconPlus /> {t("ledger.actions.new")}
           </Button>
         }

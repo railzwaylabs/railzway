@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/mail"
 	"strings"
 	"time"
@@ -11,15 +12,19 @@ import (
 	"github.com/railzwaylabs/railzway/internal/auditlog"
 	"github.com/railzwaylabs/railzway/internal/ledger"
 	"github.com/railzwaylabs/railzway/internal/organization/domain"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
+const organizationCacheTTL = 15 * time.Second
+
 type service struct {
 	db    *gorm.DB
 	repo  domain.Repository
 	audit *auditlog.Service
+	cache *redis.Client
 }
 
 type Params struct {
@@ -28,6 +33,7 @@ type Params struct {
 	DB    *gorm.DB
 	Repo  domain.Repository
 	Audit *auditlog.Service `optional:"true"`
+	Cache *redis.Client     `name:"redis_cache" optional:"true"`
 }
 
 func NewService(p Params) domain.Service {
@@ -35,6 +41,7 @@ func NewService(p Params) domain.Service {
 		db:    p.DB,
 		repo:  p.Repo,
 		audit: p.Audit,
+		cache: p.Cache,
 	}
 }
 
@@ -111,6 +118,7 @@ func (s *service) Create(ctx context.Context, userID uuid.UUID, req domain.Creat
 		CountryCode:  org.CountryCode,
 		TimezoneName: org.TimezoneName,
 	}
+	s.setOrganizationCache(ctx, orgID, *resp)
 	s.recordAudit(ctx, orgID, "organization.create", "organization", resp.ID, nil, resp, nil)
 	if defaultFormat != nil {
 		s.recordAudit(ctx, orgID, "organization.invoice_format.create", "organization_invoice_number_format", defaultFormat.ID.String(), nil, defaultFormat, map[string]interface{}{
@@ -168,6 +176,7 @@ func (s *service) Update(ctx context.Context, userID uuid.UUID, orgID string, re
 	if err := s.repo.Update(ctx, updates); err != nil {
 		return nil, err
 	}
+	s.deleteOrganizationCache(ctx, parsedOrgID)
 
 	updated, err := s.GetByID(ctx, parsedOrgID.String())
 	if err != nil {
@@ -226,19 +235,24 @@ func (s *service) GetByID(ctx context.Context, id string) (*domain.OrganizationR
 	if err != nil {
 		return nil, domain.ErrInvalidOrganization
 	}
+	if cached, ok := s.getOrganizationCache(ctx, orgID); ok {
+		return &cached, nil
+	}
 
 	var org domain.Organization
 	if err := s.db.WithContext(ctx).First(&org, "id = ?", orgID).Error; err != nil {
 		return nil, err
 	}
 
-	return &domain.OrganizationResponse{
+	resp := domain.OrganizationResponse{
 		ID:           org.ID.String(),
 		Name:         org.Name,
 		Slug:         org.Slug,
 		CountryCode:  org.CountryCode,
 		TimezoneName: org.TimezoneName,
-	}, nil
+	}
+	s.setOrganizationCache(ctx, orgID, resp)
+	return &resp, nil
 }
 
 func (s *service) ListOrganizationsByUser(ctx context.Context, userID uuid.UUID) ([]domain.OrganizationListResponseItem, error) {
@@ -761,6 +775,43 @@ func (s *service) recordAudit(ctx context.Context, orgID uuid.UUID, action, reso
 		Reason:       reasonPtr,
 		RequestID:    requestPtr,
 	})
+}
+
+func organizationCacheKey(orgID uuid.UUID) string {
+	return fmt.Sprintf("cache:organization:%s", orgID.String())
+}
+
+func (s *service) getOrganizationCache(ctx context.Context, orgID uuid.UUID) (domain.OrganizationResponse, bool) {
+	if s.cache == nil {
+		return domain.OrganizationResponse{}, false
+	}
+	raw, err := s.cache.Get(ctx, organizationCacheKey(orgID)).Result()
+	if err != nil {
+		return domain.OrganizationResponse{}, false
+	}
+	var cached domain.OrganizationResponse
+	if err := json.Unmarshal([]byte(raw), &cached); err != nil {
+		return domain.OrganizationResponse{}, false
+	}
+	return cached, true
+}
+
+func (s *service) setOrganizationCache(ctx context.Context, orgID uuid.UUID, resp domain.OrganizationResponse) {
+	if s.cache == nil {
+		return
+	}
+	raw, err := json.Marshal(resp)
+	if err != nil {
+		return
+	}
+	_ = s.cache.Set(ctx, organizationCacheKey(orgID), raw, organizationCacheTTL).Err()
+}
+
+func (s *service) deleteOrganizationCache(ctx context.Context, orgID uuid.UUID) {
+	if s.cache == nil {
+		return
+	}
+	_ = s.cache.Del(ctx, organizationCacheKey(orgID)).Err()
 }
 
 func mergeMetadata(primary, secondary map[string]interface{}) map[string]interface{} {

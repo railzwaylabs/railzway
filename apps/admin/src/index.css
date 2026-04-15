@@ -1740,9 +1740,316 @@ body {
   padding: 13px 20px;
   border-bottom: 1px solid var(--line);
   transition: background 0.12s;
+  width: 100%;
+  box-sizing: border-box;
 }
 .list-item:last-child { border-bottom: none; }
 .list-item:hover { background: var(--panel-hover); }
+
+.ai-workflow-list-item {
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.ai-workflow-list-item:focus-visible {
+  outline: 2px solid hsl(var(--accent));
+  outline-offset: -2px;
+}
+
+.ai-assistant-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
+  margin-top: 18px;
+}
+
+.ai-workflow-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+  margin-top: 18px;
+}
+
+.ai-workflow-shell .panel {
+  box-shadow: none;
+  border-color: hsl(var(--border));
+}
+
+.ai-workflow-shell .panel-header {
+  border-bottom-color: hsl(var(--border));
+}
+
+.ai-workflow-shell .panel-title {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+.ai-workflow-shell .panel-desc {
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+}
+
+.ai-assistant-shell .panel {
+  box-shadow: none;
+  border-color: hsl(var(--border));
+}
+
+.ai-assistant-shell .panel-header {
+  border-bottom-color: hsl(var(--border));
+}
+
+.ai-assistant-shell .panel-title {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+.ai-assistant-shell .panel-desc {
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+}
+
+.ai-assistant-shell .stat-card {
+  box-shadow: none;
+  border-color: hsl(var(--border));
+}
+
+.ai-assistant-main,
+.ai-assistant-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ai-assistant-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-assistant-shell .badge {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ai-assistant-tabs {
+  margin-top: 18px;
+}
+
+.ai-assistant-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.ai-assistant-textarea {
+  min-height: 120px;
+}
+
+.ai-assistant-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ai-how-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.ai-workflow-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ai-workflow-hint {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--line);
+  background: var(--panel);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.ai-workflow-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.ai-workflow-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-workflow-meta-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+}
+
+.ai-workflow-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-workflow-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+}
+
+.ai-workflow-action-list,
+.ai-workflow-approvals {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-workflow-action,
+.ai-workflow-approval {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.ai-workflow-approval {
+  border-style: dashed;
+}
+
+.ai-workflow-action-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ai-workflow-action-meta {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.ai-workflow-approval-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-workflow-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-workflow-execute {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.ai-workflow-executing {
+  font-size: 12px;
+  color: var(--status-info-text);
+  background: var(--status-info-bg);
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.ai-output {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-output-meta {
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+}
+
+.ai-output-text {
+  border: 1px dashed var(--line);
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 14px 16px;
+  white-space: pre-line;
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.ai-guardrail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.ai-guardrail-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.ai-guardrail-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: hsl(var(--accent-primary));
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.ai-recent-meta {
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+}
+
+.ai-signal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-signal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
 
 .flag-toolbar {
   display: flex;
@@ -1913,6 +2220,8 @@ body {
 ───────────────────────────────────────────── */
 @media (max-width: 1024px) {
   :root { --sidebar-width: 240px; }
+  .ai-assistant-grid { grid-template-columns: 1fr; }
+  .ai-workflow-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {
@@ -1943,6 +2252,7 @@ body {
   .stat-grid { grid-template-columns: 1fr 1fr; }
   .filter-grid { grid-template-columns: 1fr; }
   .action-fields { grid-template-columns: 1fr; }
+  .ai-assistant-actions { flex-direction: column; align-items: stretch; }
 
   .data-table th:nth-child(n+4),
   .data-table td:nth-child(n+4) { display: none; }

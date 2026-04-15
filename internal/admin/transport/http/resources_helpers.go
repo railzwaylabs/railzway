@@ -12,10 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	adminauth "github.com/railzwaylabs/railzway/internal/admin/auth"
+	aiassistantdomain "github.com/railzwaylabs/railzway/internal/aiassistant/domain"
+	aiworkflowdomain "github.com/railzwaylabs/railzway/internal/aiworkflow/domain"
 	appsdomain "github.com/railzwaylabs/railzway/internal/apps/domain"
 	"github.com/railzwaylabs/railzway/internal/auditlog"
 	customerdomain "github.com/railzwaylabs/railzway/internal/customer/domain"
 	featuredomain "github.com/railzwaylabs/railzway/internal/feature/domain"
+	"github.com/railzwaylabs/railzway/internal/httpmiddleware"
 	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
 	ledgerdomain "github.com/railzwaylabs/railzway/internal/ledger/domain"
 	organizationdomain "github.com/railzwaylabs/railzway/internal/organization/domain"
@@ -91,12 +94,35 @@ func (h *Handler) withAuditContext(c *gin.Context, ctx context.Context) context.
 	}
 	ctx = auditlog.WithActor(ctx, "user", actorID)
 
-	requestID := strings.TrimSpace(c.GetHeader("X-Request-ID"))
+	requestID := httpmiddleware.RequestIDFromContext(c.Request.Context())
+	if requestID == "" {
+		requestID = strings.TrimSpace(c.GetHeader("X-Request-ID"))
+	}
+	if requestID == "" {
+		requestID = httpmiddleware.TraceIDFromContext(c.Request.Context())
+	}
 	if requestID == "" {
 		requestID = strings.TrimSpace(c.GetHeader("X-Trace-ID"))
 	}
 	if requestID != "" {
 		ctx = auditlog.WithRequestID(ctx, requestID)
+	}
+
+	traceID := httpmiddleware.TraceIDFromContext(c.Request.Context())
+	correlationID := httpmiddleware.CorrelationIDFromContext(c.Request.Context())
+	if traceID != "" || correlationID != "" {
+		metadata := auditlog.MetadataFromContext(ctx)
+		nextMetadata := make(map[string]interface{}, len(metadata)+2)
+		for key, value := range metadata {
+			nextMetadata[key] = value
+		}
+		if traceID != "" {
+			nextMetadata["trace_id"] = traceID
+		}
+		if correlationID != "" {
+			nextMetadata["correlation_id"] = correlationID
+		}
+		ctx = auditlog.WithMetadata(ctx, nextMetadata)
 	}
 
 	reason := strings.TrimSpace(c.GetHeader("X-Reason"))
@@ -393,6 +419,44 @@ func writeTestClockError(c *gin.Context, err error) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	case errors.Is(err, testclockdomain.ErrNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal_error"})
+	}
+}
+
+func writeAIAssistantError(c *gin.Context, err error) {
+	switch err {
+	case aiassistantdomain.ErrInvalidOrganization:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_org_id"})
+	case aiassistantdomain.ErrInvalidIntent:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_intent"})
+	case aiassistantdomain.ErrInvalidTimeRange:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_time_range"})
+	case aiassistantdomain.ErrInvalidPrompt:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_prompt"})
+	case aiassistantdomain.ErrInvalidID:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_id"})
+	case aiassistantdomain.ErrNotFound:
+		c.JSON(http.StatusNotFound, gin.H{"error": "not_found"})
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal_error"})
+	}
+}
+
+func writeAIWorkflowError(c *gin.Context, err error) {
+	switch err {
+	case aiworkflowdomain.ErrInvalidOrganization:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_org_id"})
+	case aiworkflowdomain.ErrInvalidID:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_id"})
+	case aiworkflowdomain.ErrInvalidTitle:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_title"})
+	case aiworkflowdomain.ErrInvalidActions:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_actions"})
+	case aiworkflowdomain.ErrInvalidStatus:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_status"})
+	case aiworkflowdomain.ErrNotFound:
+		c.JSON(http.StatusNotFound, gin.H{"error": "not_found"})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal_error"})
 	}

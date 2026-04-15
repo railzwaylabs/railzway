@@ -3,18 +3,26 @@ describe("Meters", () => {
     cy.login();
   });
 
-  it("create, filter, edit", () => {
+  it("create, filter, edit (positive scenario)", () => {
     const uid = Date.now();
     const code = `mtr_${uid}`;
     const name = `Meter ${uid}`;
 
     cy.orgVisit("/meters/new");
-    cy.contains("h1, h2", "New Meter").should("be.visible");
+    cy.contains("h1", "New Meter").should("be.visible");
     cy.get("[data-testid=\"meters-create-code\"]").type(code);
     cy.get("[data-testid=\"meters-create-name\"]").type(name);
-    cy.get("[data-testid=\"meters-create-aggregation\"]").type("sum");
+    
+    // Select Aggregation
+    cy.get("[data-testid=\"meters-create-aggregation\"]").click();
+    cy.get("[role=\"option\"]").contains("Sum").click();
+    
     cy.get("[data-testid=\"meters-create-unit\"]").type("requests");
-    cy.get("[data-testid=\"meters-create-active\"]").select("true");
+    
+    // Select Status
+    cy.get("[data-testid=\"meters-create-active\"]").click();
+    cy.get("[role=\"option\"]").contains("Active").click();
+    
     cy.get("[data-testid=\"meters-create-submit\"]").click();
 
     cy.url().should("include", "/meters/");
@@ -28,13 +36,18 @@ describe("Meters", () => {
     cy.contains(".data-table", updatedName).should("be.visible");
   });
 
-  it("validates required fields", () => {
+  it("validates required fields (negative scenario)", () => {
     cy.orgVisit("/meters/new");
     cy.get("[data-testid=\"meters-create-submit\"]").should("be.disabled");
+    
     cy.get("[data-testid=\"meters-create-code\"]").type("mtr_validate");
     cy.get("[data-testid=\"meters-create-name\"]").type("Validation Meter");
     cy.get("[data-testid=\"meters-create-submit\"]").should("be.disabled");
-    cy.get("[data-testid=\"meters-create-aggregation\"]").type("sum");
+    
+    // Select Aggregation
+    cy.get("[data-testid=\"meters-create-aggregation\"]").click();
+    cy.get("[role=\"option\"]").contains("Sum").click();
+    
     cy.get("[data-testid=\"meters-create-unit\"]").type("requests");
     cy.get("[data-testid=\"meters-create-submit\"]").should("not.be.disabled");
   });

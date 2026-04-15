@@ -101,6 +101,7 @@ export default function InvoicesCreate() {
                 options={subscriptionOptions}
                 placeholder={t("invoices_create.fields.subscription_placeholder")}
                 onChange={(value) => setGenerateForm((prev) => ({ ...prev, subscriptionId: value }))}
+                data-testid="invoices-create-subscription-id"
               />
             </div>
             

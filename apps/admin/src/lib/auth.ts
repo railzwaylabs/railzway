@@ -1,20 +1,7 @@
 const ORG_KEY = "railzway_admin_org_id";
-const TOKEN_KEY = "railzway_admin_token";
 
 export function isAuthRequired(): boolean {
   return true;
-}
-
-export function getToken(): string | null {
-  return window.sessionStorage.getItem(TOKEN_KEY);
-}
-
-export function setToken(token: string): void {
-  window.sessionStorage.setItem(TOKEN_KEY, token);
-}
-
-export function clearToken(): void {
-  window.sessionStorage.removeItem(TOKEN_KEY);
 }
 
 export function getOrgId(): string | null {

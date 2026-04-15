@@ -6,7 +6,7 @@ import { Input } from "./components/ui/input"
 import { ToastContainer, toast } from "./components/Toast"
 import ConfigWarningsBanner from "./components/ConfigWarningsBanner"
 import { api } from "./lib/api"
-import { clearOrgId, clearToken, getOrgId, isAuthRequired, setOrgId } from "./lib/auth"
+import { clearOrgId, getOrgId, isAuthRequired, setOrgId } from "./lib/auth"
 import type { OrganizationListItem } from "./lib/types"
 
 const Dashboard = lazy(() => import("./pages/Dashboard"))
@@ -47,6 +47,10 @@ const Features = lazy(() => import("./pages/Features"))
 const FeaturesCreate = lazy(() => import("./pages/FeaturesCreate"))
 const FeaturesEdit = lazy(() => import("./pages/FeaturesEdit"))
 const ApiKeys = lazy(() => import("./pages/ApiKeys"))
+const ProfileSessions = lazy(() => import("./pages/ProfileSessions"))
+const OrganizationSessions = lazy(() => import("./pages/OrganizationSessions"))
+const AIAssistant = lazy(() => import("./pages/AIAssistant"))
+const AIWorkflows = lazy(() => import("./pages/AIWorkflows"))
 
 // ── Nav Icons ─────────────────────────────────
 const icons: Record<string, JSX.Element> = {
@@ -166,6 +170,20 @@ const icons: Record<string, JSX.Element> = {
       <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
     </svg>
   ),
+  ai_assistant: (
+    <svg className="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M8 1.5l1.3 3.2 3.2 1.3-3.2 1.3L8 10.5 6.7 7.3 3.5 6l3.2-1.3L8 1.5z" strokeLinejoin="round"/>
+      <path d="M2 11.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6.6-1.4z" strokeLinejoin="round"/>
+      <path d="M12.2 11l.5 1.1 1.1.5-1.1.5-.5 1.1-.5-1.1-1.1-.5 1.1-.5.5-1.1z" strokeLinejoin="round"/>
+    </svg>
+  ),
+  ai_workflows: (
+    <svg className="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="2" y="2" width="12" height="12" rx="2" />
+      <path d="M5 6h6M5 9h6" strokeLinecap="round"/>
+      <path d="M6 11.5l1.2-1.2 1.2 1.2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
 }
 
 function usePageTitle() {
@@ -207,6 +225,12 @@ function usePageTitle() {
     "/features": "features",
     "/features/new": "features_new",
     "/api-keys": "api_keys",
+    "/profile/sessions": "profile_sessions",
+    "/ai-assistant": "ai_assistant",
+    "/ai-workflows": "ai_workflows",
+  }
+  if (pathname === "/profile/sessions") {
+    return { label: "My Sessions", desc: "Review and revoke your admin sessions" }
   }
   if (pathname === "/organizations" || pathname === "/organizations/new") {
     return getTitle(routeKeyMap[pathname] ?? "organizations")
@@ -234,6 +258,9 @@ function usePageTitle() {
   }
   if (normalizedPath.match(/^\/invoices\/[^/]+\/manage/)) {
     return getTitle("invoices_manage")
+  }
+  if (normalizedPath === "/sessions") {
+    return { label: "Organization Sessions", desc: "Review and revoke organization admin sessions" }
   }
   if (normalizedPath.match(/^\/subscriptions\/[^/]+\/edit/)) {
     return getTitle("subscriptions_edit")
@@ -384,6 +411,7 @@ function OrgSwitcher({
 function Topbar({ authRequired }: { authRequired: boolean }) {
   const { t } = useTranslation()
   const { label, desc } = usePageTitle()
+  const navigate = useNavigate()
 
   return (
     <header className="topbar">
@@ -402,6 +430,19 @@ function Topbar({ authRequired }: { authRequired: boolean }) {
           <button
             className="btn btn-secondary btn-sm"
             style={{ display: "flex", alignItems: "center", gap: 6 }}
+            onClick={() => navigate("/profile/sessions")}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="2" y="3" width="12" height="8" rx="1.5" />
+              <path d="M6 13h4" strokeLinecap="round" />
+            </svg>
+            My Sessions
+          </button>
+        ) : null}
+        {authRequired ? (
+          <button
+            className="btn btn-secondary btn-sm"
+            style={{ display: "flex", alignItems: "center", gap: 6 }}
             title={desc}
             data-testid="topbar-logout"
             onClick={() => {
@@ -409,7 +450,6 @@ function Topbar({ authRequired }: { authRequired: boolean }) {
                 .logout()
                 .catch(() => undefined)
                 .finally(() => {
-                  clearToken()
                   clearOrgId()
                   window.location.reload()
                 })
@@ -565,6 +605,7 @@ function AppLayout() {
   const orgBase = activeOrgId ? `/organizations/${activeOrgId}` : ""
   const navGroups = useMemo(() => {
     const withOrg = (path: string) => (orgBase ? `${orgBase}${path}` : "/organizations")
+    const canManageOrgSessions = activeOrg?.role === "OWNER" || activeOrg?.role === "ADMIN"
     return [
       {
         label: t("nav.groups.core"),
@@ -601,6 +642,7 @@ function AppLayout() {
           { label: t("nav.items.apps"), path: withOrg("/apps"), icon: icons.apps },
           { label: t("nav.items.test_clock"), path: withOrg("/test-clock"), icon: icons.settings },
           { label: t("nav.items.settings"), path: withOrg("/settings"), icon: icons.settings },
+          ...(canManageOrgSessions ? [{ label: "Sessions", path: withOrg("/sessions"), icon: icons.settings }] : []),
         ],
       },
       {
@@ -610,7 +652,7 @@ function AppLayout() {
         ],
       },
     ]
-  }, [orgBase, t])
+  }, [activeOrg?.role, orgBase, t])
 
   const RootRedirect = () => {
     if (activeOrgId) {
@@ -650,6 +692,7 @@ function AppLayout() {
       <Route path="audit-logs" element={<AuditLogs />} />
       <Route path="test-clock" element={<TestClock />} />
       <Route path="settings" element={<Settings />} />
+      <Route path="sessions" element={<OrganizationSessions />} />
       <Route path="products" element={<Products />} />
       <Route path="products/new" element={<ProductsCreate />} />
       <Route path="products/:id/edit" element={<ProductsEdit />} />
@@ -657,6 +700,8 @@ function AppLayout() {
       <Route path="features/new" element={<FeaturesCreate />} />
       <Route path="features/:id/edit" element={<FeaturesEdit />} />
       <Route path="api-keys" element={<ApiKeys />} />
+      <Route path="ai-assistant" element={<AIAssistant />} />
+      <Route path="ai-workflows" element={<AIWorkflows />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   )
@@ -672,9 +717,10 @@ function AppLayout() {
     >
       <Routes>
         <Route path="/" element={<RootRedirect />} />
-            <Route path="/organizations" element={<RootRedirect />} />
+        <Route path="/organizations" element={<RootRedirect />} />
         <Route path="/organizations/new" element={<OrganizationsCreate />} />
         <Route path="/organizations/:id/edit" element={<OrganizationsEdit />} />
+        <Route path="/profile/sessions" element={<ProfileSessions />} />
         <Route path="/organizations/:orgId/*" element={<OrgRoutes />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

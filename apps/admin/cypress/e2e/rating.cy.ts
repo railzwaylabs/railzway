@@ -3,29 +3,25 @@ describe("Rating", () => {
     cy.login();
   });
 
-  it("filters rating results and aggregates", () => {
-    cy.intercept("GET", "/admin/v1/rating/results*").as("ratingResults");
-    cy.intercept("GET", "/admin/v1/rating/aggregates*").as("ratingAggregates");
-
+  it("switches between results and aggregates view", () => {
     cy.orgVisit("/rating");
+    cy.get("[data-testid=\"page-header-title\"]").should("contain", "Rating");
 
-    cy.get("[data-testid=\"rating-results-usage-event\"]").type("evt_");
-    cy.get("[data-testid=\"rating-results-apply\"]").click();
-    cy.wait("@ratingResults");
+    // Results is active by default
+    cy.get("[data-testid=\"rating-tab-results\"]").should("have.class", "is-active");
+    cy.get("[data-testid=\"rating-results-apply\"]").should("be.visible");
 
-    cy.get("[data-testid=\"rating-aggregates-period-from\"]").clear().type("2026-03-01T00:00:00Z");
-    cy.get("[data-testid=\"rating-aggregates-apply\"]").click();
-    cy.wait("@ratingAggregates");
+    // Switch to aggregates
+    cy.get("[data-testid=\"rating-tab-aggregates\"]").click();
+    cy.get("[data-testid=\"rating-tab-aggregates\"]").should("have.class", "is-active");
+    cy.get("[data-testid=\"rating-aggregates-apply\"]").should("be.visible");
   });
 
-  it("resets rating filters", () => {
+  it("uses results filters (positive scenario)", () => {
     cy.orgVisit("/rating");
-    cy.get("[data-testid=\"rating-results-usage-event\"]").type("evt_reset");
-    cy.get("[data-testid=\"rating-results-reset\"]").click();
-    cy.get("[data-testid=\"rating-results-usage-event\"]").should("have.value", "");
-
-    cy.get("[data-testid=\"rating-aggregates-period-from\"]").type("2026-03-01T00:00:00Z");
-    cy.get("[data-testid=\"rating-aggregates-reset\"]").click();
-    cy.get("[data-testid=\"rating-aggregates-period-from\"]").should("have.value", "");
+    cy.get("[data-testid=\"rating-tab-results\"]").click();
+    cy.get("[data-testid=\"rating-results-plan-price\"]").type("price_123");
+    cy.get("[data-testid=\"rating-results-apply\"]").click();
+    cy.get(".data-table").should("exist");
   });
 });

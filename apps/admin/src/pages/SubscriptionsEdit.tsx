@@ -5,6 +5,7 @@ import HelpHint from "../components/HelpHint";
 import PageHeader from "../components/PageHeader";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
@@ -41,6 +42,7 @@ export default function SubscriptionsEdit() {
     startAt: "",
     endAt: ""
   });
+  const [confirmAction, setConfirmAction] = useState<"cancel_now" | "cancel_end" | null>(null);
 
   useEffect(() => {
     if (!subscriptionId) {
@@ -154,25 +156,31 @@ export default function SubscriptionsEdit() {
   }, [itemForm, subscriptionId, t]);
 
   const handleCancelNow = useCallback(async () => {
-    if (!window.confirm(t("subscriptions_edit.confirm.cancel_now"))) {
-      return;
-    }
     const now = new Date().toISOString();
     setUpdateForm((prev) => ({ ...prev, canceledAt: now }));
     await handleUpdate();
-  }, [handleUpdate, t]);
+  }, [handleUpdate]);
 
   const handleCancelAtPeriodEnd = useCallback(async () => {
     if (!subscription.currentPeriodEnd) {
       setError(t("subscriptions_edit.validation.period_end_required"));
       return;
     }
-    if (!window.confirm(t("subscriptions_edit.confirm.cancel_end"))) {
-      return;
-    }
     setUpdateForm((prev) => ({ ...prev, cancelAt: subscription.currentPeriodEnd }));
     await handleUpdate();
   }, [handleUpdate, subscription.currentPeriodEnd, t]);
+
+  const handleConfirmAction = useCallback(async () => {
+    if (confirmAction === "cancel_now") {
+      setConfirmAction(null);
+      await handleCancelNow();
+      return;
+    }
+    if (confirmAction === "cancel_end") {
+      setConfirmAction(null);
+      await handleCancelAtPeriodEnd();
+    }
+  }, [confirmAction, handleCancelAtPeriodEnd, handleCancelNow]);
 
   if (loading) {
     return <div className="page-content"><div className="loader" /></div>;
@@ -245,10 +253,10 @@ export default function SubscriptionsEdit() {
             <Button type="button" onClick={handleUpdate} disabled={updateDisabled} data-testid="subscriptions-edit-submit">
               {saving ? t("common.updating") : t("common.save_changes")}
             </Button>
-            <Button variant="secondary" type="button" onClick={handleCancelNow} disabled={saving}>
+            <Button variant="secondary" type="button" onClick={() => setConfirmAction("cancel_now")} disabled={saving}>
               {t("subscriptions_edit.actions.cancel_now")}
             </Button>
-            <Button variant="secondary" type="button" onClick={handleCancelAtPeriodEnd} disabled={saving}>
+            <Button variant="secondary" type="button" onClick={() => setConfirmAction("cancel_end")} disabled={saving}>
               {t("subscriptions_edit.actions.cancel_end")}
             </Button>
           </div>
@@ -292,6 +300,33 @@ export default function SubscriptionsEdit() {
           </div>
         </div>
       </div>
+
+      <Dialog open={confirmAction !== null} onOpenChange={(open) => { if (!open) setConfirmAction(null); }}>
+        <DialogContent style={{ maxWidth: 480 }}>
+          <DialogHeader>
+            <DialogTitle>
+              {confirmAction === "cancel_now"
+                ? t("subscriptions_edit.actions.cancel_now")
+                : t("subscriptions_edit.actions.cancel_end")}
+            </DialogTitle>
+            <DialogDescription>
+              {confirmAction === "cancel_now"
+                ? t("subscriptions_edit.confirm.cancel_now")
+                : t("subscriptions_edit.confirm.cancel_end")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter style={{ marginTop: "8px" }}>
+            <Button variant="secondary" onClick={() => setConfirmAction(null)}>
+              {t("common.cancel")}
+            </Button>
+            <Button variant="destructive" onClick={() => void handleConfirmAction()} disabled={saving}>
+              {confirmAction === "cancel_now"
+                ? t("subscriptions_edit.actions.cancel_now")
+                : t("subscriptions_edit.actions.cancel_end")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

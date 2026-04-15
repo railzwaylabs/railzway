@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/railzwaylabs/railzway/internal/config"
-	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
@@ -107,15 +106,15 @@ func RegisterConnectionPool(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB) er
 // 	db.Callback().Update().Before("gorm:update").Register("audit_before_update", BeforeSave)
 // }
 
-func Otel(db *gorm.DB) error {
-	// Register the OpenTelemetry plugin with GORM
-	if err := db.Use(otelgorm.NewPlugin()); err != nil {
-		zap.L().Fatal("❌ Failed to register db telemetry", zap.Error(err))
-		return err
-	}
+// func Otel(db *gorm.DB) error {
+// 	// Register the OpenTelemetry plugin with GORM
+// 	if err := db.Use(otelgorm.NewPlugin()); err != nil {
+// 		zap.L().Fatal("❌ Failed to register db telemetry", zap.Error(err))
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func Metric(db *gorm.DB) error {
 	if err := db.Use(prometheus.New(prometheus.Config{

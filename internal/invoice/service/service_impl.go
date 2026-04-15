@@ -22,6 +22,7 @@ import (
 	plandomain "github.com/railzwaylabs/railzway/internal/plan/domain"
 	"github.com/railzwaylabs/railzway/internal/proration"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
+	"github.com/railzwaylabs/railzway/internal/telemetry"
 	usagedomain "github.com/railzwaylabs/railzway/internal/usage/domain"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
@@ -58,15 +59,29 @@ func NewService(p Params) domain.Service {
 	}
 }
 
-func (s *service) GenerateInvoice(ctx context.Context, req domain.GenerateInvoiceRequest) (domain.GenerateInvoiceResponse, error) {
+func (s *service) GenerateInvoice(ctx context.Context, req domain.GenerateInvoiceRequest) (resp domain.GenerateInvoiceResponse, err error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == uuid.Nil {
 		return domain.GenerateInvoiceResponse{}, domain.ErrInvalidOrganization
 	}
+
+	ctx, span := telemetry.StartSpan(
+		ctx,
+		"invoice.generate",
+		telemetry.UUIDAttr("billing.org_id", orgID),
+		telemetry.StringAttr("billing.subscription_id", strings.TrimSpace(req.SubscriptionID)),
+		telemetry.StringAttr("billing.idempotency_key", strings.TrimSpace(req.IdempotencyKey)),
+	)
+	defer func() { telemetry.EndSpan(span, err) }()
+
+	startedAt := time.Now()
+	defer func() { telemetry.ObserveOperation("invoice.generate", time.Since(startedAt), err) }()
+
 	subID, err := parseID(req.SubscriptionID)
 	if err != nil {
 		return domain.GenerateInvoiceResponse{}, domain.ErrInvalidSubscription
 	}
+
 	if req.PeriodEnd.Before(req.PeriodStart) || req.PeriodStart.IsZero() || req.PeriodEnd.IsZero() {
 		return domain.GenerateInvoiceResponse{}, domain.ErrInvalidPeriod
 	}
@@ -79,7 +94,12 @@ func (s *service) GenerateInvoice(ctx context.Context, req domain.GenerateInvoic
 		}
 		if existing != nil {
 			items, _ := s.repo.ListInvoiceItemsByInvoice(ctx, orgID, existing.ID)
-			return domain.GenerateInvoiceResponse{Invoice: *existing, Items: derefItems(items)}, nil
+			resp = domain.GenerateInvoiceResponse{Invoice: *existing, Items: derefItems(items)}
+			span.SetAttributes(
+				telemetry.UUIDAttr("billing.invoice_id", existing.ID),
+				telemetry.BoolAttr("billing.idempotent_hit", true),
+			)
+			return resp, nil
 		}
 	}
 
@@ -212,17 +232,34 @@ func (s *service) GenerateInvoice(ctx context.Context, req domain.GenerateInvoic
 			}
 			if existing != nil {
 				itemList, _ := s.repo.ListInvoiceItemsByInvoice(ctx, orgID, existing.ID)
-				return domain.GenerateInvoiceResponse{Invoice: *existing, Items: derefItems(itemList)}, nil
+				resp = domain.GenerateInvoiceResponse{Invoice: *existing, Items: derefItems(itemList)}
+				span.SetAttributes(
+					telemetry.UUIDAttr("billing.invoice_id", existing.ID),
+					telemetry.BoolAttr("billing.idempotent_hit", true),
+				)
+				return resp, nil
 			}
 		}
 		return domain.GenerateInvoiceResponse{}, err
 	}
 
 	if existingInvoice != nil {
-		return domain.GenerateInvoiceResponse{Invoice: *existingInvoice, Items: derefItems(existingItems)}, nil
+		resp = domain.GenerateInvoiceResponse{Invoice: *existingInvoice, Items: derefItems(existingItems)}
+		span.SetAttributes(
+			telemetry.UUIDAttr("billing.invoice_id", existingInvoice.ID),
+			telemetry.BoolAttr("billing.existing_invoice", true),
+		)
+		return resp, nil
 	}
 
-	resp := domain.GenerateInvoiceResponse{Invoice: inv, Items: items}
+	resp = domain.GenerateInvoiceResponse{Invoice: inv, Items: items}
+	span.SetAttributes(
+		telemetry.UUIDAttr("billing.invoice_id", inv.ID),
+		telemetry.UUIDAttr("billing.customer_id", inv.CustomerID),
+		telemetry.UUIDAttr("billing.subscription_id", sub.ID),
+		telemetry.Int64Attr("billing.invoice_total_cents", inv.TotalCents),
+		telemetry.Int64Attr("billing.invoice_items_count", int64(len(items))),
+	)
 	s.recordAudit(ctx, "invoice.generate", "invoice", resp.Invoice.ID.String(), nil, resp.Invoice, nil)
 	return resp, nil
 }
@@ -597,11 +634,22 @@ func (s *service) GetInvoice(ctx context.Context, req domain.GetInvoiceRequest) 
 	return domain.GetInvoiceResponse{Invoice: *inv, Items: derefItems(items)}, nil
 }
 
-func (s *service) OpenInvoice(ctx context.Context, req domain.OpenInvoiceRequest) (domain.OpenInvoiceResponse, error) {
+func (s *service) OpenInvoice(ctx context.Context, req domain.OpenInvoiceRequest) (resp domain.OpenInvoiceResponse, err error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == uuid.Nil {
 		return domain.OpenInvoiceResponse{}, domain.ErrInvalidOrganization
 	}
+
+	ctx, span := telemetry.StartSpan(
+		ctx,
+		"invoice.open",
+		telemetry.UUIDAttr("billing.org_id", orgID),
+		telemetry.StringAttr("billing.invoice_id", strings.TrimSpace(req.ID)),
+	)
+	defer func() { telemetry.EndSpan(span, err) }()
+
+	startedAt := time.Now()
+	defer func() { telemetry.ObserveOperation("invoice.open", time.Since(startedAt), err) }()
 
 	invoiceID, err := parseID(req.ID)
 	if err != nil {
@@ -654,16 +702,32 @@ func (s *service) OpenInvoice(ctx context.Context, req domain.OpenInvoiceRequest
 		return domain.OpenInvoiceResponse{}, err
 	}
 
-	resp := domain.OpenInvoiceResponse{Invoice: *updated, Items: derefItems(items)}
+	resp = domain.OpenInvoiceResponse{Invoice: *updated, Items: derefItems(items)}
+	span.SetAttributes(
+		telemetry.UUIDAttr("billing.invoice_id", updated.ID),
+		telemetry.UUIDAttr("billing.customer_id", updated.CustomerID),
+		telemetry.Int64Attr("billing.invoice_total_cents", updated.TotalCents),
+	)
 	s.recordAudit(ctx, "invoice.open", "invoice", resp.Invoice.ID.String(), *inv, resp.Invoice, nil)
 	return resp, nil
 }
 
-func (s *service) PayInvoice(ctx context.Context, req domain.PayInvoiceRequest) (domain.PayInvoiceResponse, error) {
+func (s *service) PayInvoice(ctx context.Context, req domain.PayInvoiceRequest) (resp domain.PayInvoiceResponse, err error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == uuid.Nil {
 		return domain.PayInvoiceResponse{}, domain.ErrInvalidOrganization
 	}
+
+	ctx, span := telemetry.StartSpan(
+		ctx,
+		"invoice.pay",
+		telemetry.UUIDAttr("billing.org_id", orgID),
+		telemetry.StringAttr("billing.invoice_id", strings.TrimSpace(req.ID)),
+	)
+	defer func() { telemetry.EndSpan(span, err) }()
+
+	startedAt := time.Now()
+	defer func() { telemetry.ObserveOperation("invoice.pay", time.Since(startedAt), err) }()
 
 	invoiceID, err := parseID(req.ID)
 	if err != nil {
@@ -718,7 +782,12 @@ func (s *service) PayInvoice(ctx context.Context, req domain.PayInvoiceRequest) 
 		return domain.PayInvoiceResponse{}, err
 	}
 
-	resp := domain.PayInvoiceResponse{Invoice: *updated, Items: derefItems(items)}
+	resp = domain.PayInvoiceResponse{Invoice: *updated, Items: derefItems(items)}
+	span.SetAttributes(
+		telemetry.UUIDAttr("billing.invoice_id", updated.ID),
+		telemetry.UUIDAttr("billing.customer_id", updated.CustomerID),
+		telemetry.Int64Attr("billing.amount_paid_cents", updated.AmountPaidCents),
+	)
 	s.recordAudit(ctx, "invoice.pay", "invoice", resp.Invoice.ID.String(), *inv, resp.Invoice, nil)
 	return resp, nil
 }

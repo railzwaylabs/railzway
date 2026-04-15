@@ -28,13 +28,21 @@ Cypress.Commands.add("login", () => {
   expect(email, "CYPRESS_ADMIN_EMAIL").to.be.a("string").and.not.be.empty;
   expect(password, "CYPRESS_ADMIN_PASSWORD").to.be.a("string").and.not.be.empty;
 
-  cy.request("POST", "/admin/v1/auth/login", {
-    email,
-    password
-  }).then(() => {
-    cy.getCookie(CSRF_COOKIE).then((cookie) => {
-      const headers = cookie?.value ? { "X-CSRF-Token": cookie.value } : {};
-      cy.request({ method: "POST", url: "/admin/v1/auth/skip-password-change", headers, failOnStatusCode: false });
+  cy.clearCookies();
+  cy.clearLocalStorage();
+  cy.window().then((win) => win.sessionStorage.clear());
+
+  // First GET to get the CSRF cookie if it's set on landing page or health check
+  cy.request("/healthz").then(() => {
+    return cy.request("POST", "/admin/v1/auth/login", {
+      email,
+      password
+    }).then(() => {
+      return cy.csrfRequest({
+        method: "POST",
+        url: "/admin/v1/auth/skip-password-change",
+        failOnStatusCode: false
+      });
     });
   });
 });
@@ -48,11 +56,9 @@ Cypress.Commands.add("ensureOrg", () => {
     const orgId = resp.body?.[0]?.id as string | undefined;
     if (orgId) {
       Cypress.env("orgId", orgId);
-      cy.getCookie(CSRF_COOKIE).then((cookie) => {
-        const headers = cookie?.value ? { "X-CSRF-Token": cookie.value } : {};
-        cy.request({ method: "POST", url: `/admin/v1/auth/using/${orgId}`, headers });
+      return cy.csrfRequest({ method: "POST", url: `/admin/v1/auth/using/${orgId}` }).then(() => {
+        return cy.wrap(orgId);
       });
-      return orgId;
     }
     return cy.createOrg();
   });
@@ -68,10 +74,8 @@ Cypress.Commands.add("createOrg", (name?: string) => {
     const orgId = resp.body?.id as string | undefined;
     expect(orgId, "created org id").to.be.a("string").and.not.be.empty;
     Cypress.env("orgId", orgId);
-    return cy.getCookie(CSRF_COOKIE).then((cookie) => {
-      const headers = cookie?.value ? { "X-CSRF-Token": cookie.value } : {};
-      cy.request({ method: "POST", url: `/admin/v1/auth/using/${orgId}`, headers });
-      return orgId;
+    return cy.csrfRequest({ method: "POST", url: `/admin/v1/auth/using/${orgId}` }).then(() => {
+      return cy.wrap(orgId);
     });
   });
 });
@@ -131,7 +135,7 @@ Cypress.Commands.add("csrfRequest", (...args: any[]) => {
   return cy.getCookie(CSRF_COOKIE).then((cookie) => {
     const headers = { ...(options.headers ?? {}) } as Record<string, string>;
     if (cookie?.value && !headers["X-CSRF-Token"]) {
-      headers["X-CSRF-Token"] = cookie.value;
+      headers["X-CSRF-Token"] = decodeURIComponent(cookie.value);
     }
     return cy.request({ ...options, headers } as Cypress.RequestOptions);
   });

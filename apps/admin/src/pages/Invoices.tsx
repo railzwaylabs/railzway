@@ -189,7 +189,7 @@ export default function Invoices() {
         title={t("invoices.header.title")} 
         description={t("invoices.header.description")}
         actions={
-          <Button variant="default" onClick={() => navigate(orgPath("/invoices/new"))} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <Button variant="default" onClick={() => navigate(orgPath("/invoices/new"))} style={{ display: "flex", gap: 6, alignItems: "center" }} data-testid="invoices-generate-button">
             <IconPlus /> {t("invoices.actions.generate")}
           </Button>
         }

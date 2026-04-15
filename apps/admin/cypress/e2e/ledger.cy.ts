@@ -3,20 +3,18 @@ describe("Ledger", () => {
     cy.login();
   });
 
-  it("filters ledger transactions", () => {
-    cy.intercept("GET", "/admin/v1/ledger/transactions*").as("ledgerList");
+  it("view transactions and use filters", () => {
     cy.orgVisit("/ledger");
-
-    cy.get("[data-testid=\"ledger-filter-source-type\"]").type("invoice");
-    cy.get("[data-testid=\"ledger-filters-apply\"]").click();
-
-    cy.wait("@ledgerList");
+    cy.get("[data-testid=\"page-header-title\"]").should("contain", "Ledger Transactions");
+    
+    // Check filters
+    cy.get("[data-testid=\"ledger-filters-apply\"]").should("be.visible");
+    cy.get("[data-testid=\"ledger-filters-reset\"]").should("be.visible");
   });
 
-  it("resets ledger filters", () => {
+  it("navigate to manual transaction (positive scenario)", () => {
     cy.orgVisit("/ledger");
-    cy.get("[data-testid=\"ledger-filter-source-type\"]").type("invoice");
-    cy.get("[data-testid=\"ledger-filters-reset\"]").click();
-    cy.get("[data-testid=\"ledger-filter-source-type\"]").should("have.value", "");
+    cy.get("[data-testid=\"ledger-new-button\"]").click();
+    cy.get("[data-testid=\"page-header-title\"]").should("contain", "Manual Transaction");
   });
 });

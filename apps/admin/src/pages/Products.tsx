@@ -64,7 +64,7 @@ export default function Products() {
     {
       key: "actions", label: "", width: "80px", className: "col-actions",
       render: (row: Product) => (
-        <Button asChild variant="secondary" size="sm">
+        <Button asChild variant="secondary" size="sm" data-testid={`products-edit-${row.id}`}>
           <Link to={orgPath(`/products/${row.id}/edit`)}>{t("common.edit")}</Link>
         </Button>
       ),
@@ -78,7 +78,7 @@ export default function Products() {
         title={t("products.header.title")}
         description={t("products.header.description")}
         actions={
-          <Button asChild>
+          <Button asChild data-testid="products-new-button">
             <Link to={orgPath("/products/new")}>+ {t("products.actions.new")}</Link>
           </Button>
         }

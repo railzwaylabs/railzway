@@ -69,6 +69,7 @@ export default function FeaturesCreate() {
                 value={form.code}
                 onChange={(e) => setForm(p => ({ ...p, code: e.target.value }))}
                 placeholder={t("features_create.placeholders.code")}
+                data-testid="features-create-code"
               />
             </div>
             <div className="action-field">
@@ -78,6 +79,7 @@ export default function FeaturesCreate() {
                 value={form.name}
                 onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
                 placeholder={t("features_create.placeholders.name")}
+                data-testid="features-create-name"
               />
             </div>
             <div className="action-field">
@@ -86,11 +88,12 @@ export default function FeaturesCreate() {
                 className="action-input"
                 value={form.description}
                 onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
+                data-testid="features-create-description"
               />
             </div>
             <div className="action-field">
               <AutoCompleteInput
-                id="feature-type"
+                id="features-create-type"
                 label={<>{t("plans_edit.price_fields.type")} *</>}
                 value={form.featureType}
                 options={featureTypes}
@@ -105,16 +108,17 @@ export default function FeaturesCreate() {
                   value={form.meterId}
                   onChange={(e) => setForm(p => ({ ...p, meterId: e.target.value }))}
                   placeholder={t("features_create.placeholders.meter_hint")}
+                  data-testid="features-create-meter-id"
                 />
               </div>
             )}
           </div>
           {error && <div className="inline-error">{error}</div>}
           <div className="action-buttons">
-            <Button onClick={handleSubmit} disabled={disabled}>
+            <Button onClick={handleSubmit} disabled={disabled} data-testid="features-create-submit">
               {saving ? t("common.creating") : t("features_create.actions.save")}
             </Button>
-            <Button variant="secondary" onClick={() => navigate(orgPath("/features"))} disabled={saving}>
+            <Button variant="secondary" onClick={() => navigate(orgPath("/features"))} disabled={saving} data-testid="features-create-cancel">
               {t("common.cancel")}
             </Button>
           </div>

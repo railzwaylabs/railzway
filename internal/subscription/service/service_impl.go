@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -13,15 +14,20 @@ import (
 	"github.com/railzwaylabs/railzway/internal/db/pagination"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	"github.com/railzwaylabs/railzway/internal/subscription/domain"
+	"github.com/railzwaylabs/railzway/internal/telemetry"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 )
+
+const subscriptionCacheTTL = 15 * time.Second
 
 type service struct {
 	db    *gorm.DB
 	repo  domain.Repository
 	audit *auditlog.Service
 	clock clock.Clock
+	cache *redis.Client
 }
 
 type Params struct {
@@ -31,6 +37,7 @@ type Params struct {
 	Repo  domain.Repository
 	Audit *auditlog.Service `optional:"true"`
 	Clock clock.Clock       `optional:"true"`
+	Cache *redis.Client     `name:"redis_cache" optional:"true"`
 }
 
 func NewService(p Params) domain.Service {
@@ -43,14 +50,29 @@ func NewService(p Params) domain.Service {
 		repo:  p.Repo,
 		audit: p.Audit,
 		clock: clk,
+		cache: p.Cache,
 	}
 }
 
-func (s *service) CreateSubscription(ctx context.Context, req domain.CreateSubscriptionRequest) (domain.SubscriptionResponse, error) {
+func (s *service) CreateSubscription(ctx context.Context, req domain.CreateSubscriptionRequest) (resp domain.SubscriptionResponse, err error) {
 	orgID, ok := orgcontext.OrgIDFromContext(ctx)
 	if !ok || orgID == uuid.Nil {
 		return domain.SubscriptionResponse{}, domain.ErrInvalidOrganization
 	}
+
+	ctx, span := telemetry.StartSpan(
+		ctx,
+		"subscription.create",
+		telemetry.UUIDAttr("billing.org_id", orgID),
+		telemetry.StringAttr("billing.customer_id", strings.TrimSpace(req.CustomerID)),
+		telemetry.StringAttr("billing.plan_id", strings.TrimSpace(req.PlanID)),
+		telemetry.Int64Attr("billing.subscription_items_count", int64(len(req.Items))),
+		telemetry.StringAttr("billing.idempotency_key", strings.TrimSpace(req.IdempotencyKey)),
+	)
+	defer func() { telemetry.EndSpan(span, err) }()
+
+	startedAt := time.Now()
+	defer func() { telemetry.ObserveOperation("subscription.create", time.Since(startedAt), err) }()
 
 	if len(req.Items) == 0 {
 		return domain.SubscriptionResponse{}, domain.ErrMissingItems
@@ -120,13 +142,17 @@ func (s *service) CreateSubscription(ctx context.Context, req domain.CreateSubsc
 			return domain.SubscriptionResponse{}, err
 		}
 		if existing != nil {
-			resp := toSubscriptionResponse(*existing)
+			resp = toSubscriptionResponse(*existing)
 			items, err := s.listSubscriptionItemsBySubscription(ctx, orgID, existing.ID)
 			if err != nil {
 				return domain.SubscriptionResponse{}, err
 			}
 
 			resp.Items = items
+			span.SetAttributes(
+				telemetry.UUIDAttr("billing.subscription_id", existing.ID),
+				telemetry.BoolAttr("billing.idempotent_hit", true),
+			)
 
 			return resp, nil
 		}
@@ -263,16 +289,27 @@ func (s *service) CreateSubscription(ctx context.Context, req domain.CreateSubsc
 				return domain.SubscriptionResponse{}, findErr
 			}
 			if existing != nil {
-				return toSubscriptionResponse(*existing), nil
+				resp = toSubscriptionResponse(*existing)
+				span.SetAttributes(
+					telemetry.UUIDAttr("billing.subscription_id", existing.ID),
+					telemetry.BoolAttr("billing.idempotent_hit", true),
+				)
+				return resp, nil
 			}
 		}
 		return domain.SubscriptionResponse{}, err
 	}
 
-	resp := toSubscriptionResponse(sub)
+	resp = toSubscriptionResponse(sub)
 	if len(itemResponses) > 0 {
 		resp.Items = itemResponses
 	}
+	span.SetAttributes(
+		telemetry.UUIDAttr("billing.subscription_id", sub.ID),
+		telemetry.UUIDAttr("billing.customer_id", sub.CustomerID),
+		telemetry.UUIDAttr("billing.plan_id", sub.PlanID),
+	)
+	s.setSubscriptionCache(ctx, orgID, sub.ID, resp)
 	s.recordAudit(ctx, "subscription.create", "subscription", resp.ID, nil, resp, nil)
 	return resp, nil
 }
@@ -347,6 +384,7 @@ func (s *service) UpdateSubscription(ctx context.Context, id string, req domain.
 	if err := s.repo.UpdateSubscription(ctx, orgID, subID, updates); err != nil {
 		return domain.SubscriptionResponse{}, err
 	}
+	s.deleteSubscriptionCache(ctx, orgID, subID)
 
 	item, err := s.repo.FindSubscriptionByID(ctx, orgID, subID)
 	if err != nil {
@@ -357,6 +395,7 @@ func (s *service) UpdateSubscription(ctx context.Context, id string, req domain.
 	}
 
 	resp := toSubscriptionResponse(*item)
+	s.setSubscriptionCache(ctx, orgID, subID, resp)
 	s.recordAudit(ctx, "subscription.update", "subscription", resp.ID, toSubscriptionResponse(*beforeSub), resp, nil)
 	return resp, nil
 }
@@ -371,6 +410,9 @@ func (s *service) GetSubscriptionByID(ctx context.Context, req domain.GetSubscri
 	if err != nil {
 		return domain.SubscriptionResponse{}, domain.ErrInvalidID
 	}
+	if cached, ok := s.getSubscriptionCache(ctx, orgID, id); ok {
+		return cached, nil
+	}
 
 	item, err := s.repo.FindSubscriptionByID(ctx, orgID, id)
 	if err != nil {
@@ -380,7 +422,46 @@ func (s *service) GetSubscriptionByID(ctx context.Context, req domain.GetSubscri
 		return domain.SubscriptionResponse{}, domain.ErrNotFound
 	}
 
-	return toSubscriptionResponse(*item), nil
+	resp := toSubscriptionResponse(*item)
+	s.setSubscriptionCache(ctx, orgID, id, resp)
+	return resp, nil
+}
+
+func subscriptionCacheKey(orgID uuid.UUID, subscriptionID uuid.UUID) string {
+	return fmt.Sprintf("cache:subscription:%s:%s", orgID.String(), subscriptionID.String())
+}
+
+func (s *service) getSubscriptionCache(ctx context.Context, orgID, subscriptionID uuid.UUID) (domain.SubscriptionResponse, bool) {
+	if s.cache == nil {
+		return domain.SubscriptionResponse{}, false
+	}
+	raw, err := s.cache.Get(ctx, subscriptionCacheKey(orgID, subscriptionID)).Result()
+	if err != nil {
+		return domain.SubscriptionResponse{}, false
+	}
+	var cached domain.SubscriptionResponse
+	if err := json.Unmarshal([]byte(raw), &cached); err != nil {
+		return domain.SubscriptionResponse{}, false
+	}
+	return cached, true
+}
+
+func (s *service) setSubscriptionCache(ctx context.Context, orgID, subscriptionID uuid.UUID, resp domain.SubscriptionResponse) {
+	if s.cache == nil {
+		return
+	}
+	raw, err := json.Marshal(resp)
+	if err != nil {
+		return
+	}
+	_ = s.cache.Set(ctx, subscriptionCacheKey(orgID, subscriptionID), raw, subscriptionCacheTTL).Err()
+}
+
+func (s *service) deleteSubscriptionCache(ctx context.Context, orgID, subscriptionID uuid.UUID) {
+	if s.cache == nil {
+		return
+	}
+	_ = s.cache.Del(ctx, subscriptionCacheKey(orgID, subscriptionID)).Err()
 }
 
 func (s *service) ListSubscriptions(ctx context.Context, req domain.ListSubscriptionRequest) (domain.ListSubscriptionResponse, error) {

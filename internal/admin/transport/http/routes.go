@@ -22,6 +22,9 @@ func registerAdminRoutes(r *gin.Engine, h *Handler, basePath string) {
 	protected.POST("/auth/using/:org_id", h.SwitchOrganization)
 	protected.PUT("/auth/change-password", h.ChangePassword)
 	protected.POST("/auth/skip-password-change", h.SkipPasswordChange)
+	protected.GET("/profile/sessions", h.ListProfileSessions)
+	protected.POST("/profile/sessions/revoke-others", h.RevokeOtherProfileSessions)
+	protected.POST("/profile/sessions/:session_id/revoke", h.RevokeProfileSession)
 	protected.GET("/reference/countries", h.ListCountries)
 	protected.GET("/reference/timezones", h.ListTimezones)
 	protected.GET("/reference/currencies", h.ListCurrencies)
@@ -41,6 +44,8 @@ func registerAdminRoutes(r *gin.Engine, h *Handler, basePath string) {
 	orgRequired.GET("/organizations/:org_id", h.GetOrganization)
 	orgRequired.PATCH("/organizations/:org_id", h.UpdateOrganization)
 	orgRequired.GET("/organizations/:org_id/members", h.ListOrganizationMembers)
+	orgRequired.GET("/organizations/:org_id/sessions", h.ListOrganizationSessions)
+	orgRequired.POST("/organizations/:org_id/sessions/:session_id/revoke", h.RevokeOrganizationSession)
 	orgRequired.POST("/organizations/:org_id/invites", h.InviteOrganizationMembers)
 	orgRequired.PUT("/organizations/:org_id/billing-preferences", h.UpsertOrganizationBillingPreferences)
 	orgRequired.POST("/organizations/:org_id/invoice-formats", h.CreateOrganizationInvoiceFormat)
@@ -162,6 +167,19 @@ func registerAdminRoutes(r *gin.Engine, h *Handler, basePath string) {
 	orgRequired.POST("/apps/installations", h.InstallApp)
 	orgRequired.PATCH("/apps/installations/:installation_id", h.UpdateAppInstallation)
 	orgRequired.GET("/apps/oauth/stripe/start", h.StartStripeOAuth)
+
+	// AI Assistant
+	orgRequired.GET("/ai-assistant/overview", h.AIAssistantOverview)
+	orgRequired.POST("/ai-assistant/runs", h.CreateAIAssistantRun)
+	orgRequired.GET("/ai-assistant/runs", h.ListAIAssistantRuns)
+	orgRequired.GET("/ai-assistant/runs/:run_id", h.GetAIAssistantRun)
+
+	// AI Workflow
+	orgRequired.POST("/ai-workflows", h.CreateAIWorkflow)
+	orgRequired.GET("/ai-workflows", h.ListAIWorkflows)
+	orgRequired.GET("/ai-workflows/:workflow_id", h.GetAIWorkflow)
+	orgRequired.POST("/ai-workflows/:workflow_id/approvals", h.ApproveAIWorkflow)
+	orgRequired.POST("/ai-workflows/:workflow_id/execute", h.ExecuteAIWorkflow)
 
 	// Misc
 	orgRequired.GET("/warnings", h.ConfigWarnings)

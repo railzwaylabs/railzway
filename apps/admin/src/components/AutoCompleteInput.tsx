@@ -142,6 +142,7 @@ export default function AutoCompleteInput({
               placeholder={searchPlaceholder}
               value={query}
               onValueChange={setQuery}
+              data-testid={`${id}-search`}
             />
             <CommandList>
               <CommandEmpty>{emptyLabel}</CommandEmpty>
@@ -154,6 +155,7 @@ export default function AutoCompleteInput({
                       onChange(option.value);
                       setOpen(false);
                     }}
+                    data-testid={`${id}-option-${option.value}`}
                   >
                     <Check
                       className={cn(

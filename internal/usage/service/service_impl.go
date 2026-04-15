@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -12,14 +13,18 @@ import (
 	"github.com/railzwaylabs/railzway/internal/db/pagination"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	"github.com/railzwaylabs/railzway/internal/usage/domain"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 )
+
+const meterCacheTTL = 15 * time.Second
 
 type service struct {
 	db    *gorm.DB
 	repo  domain.Repository
 	audit *auditlog.Service
+	cache *redis.Client
 }
 
 type Params struct {
@@ -28,6 +33,7 @@ type Params struct {
 	DB    *gorm.DB
 	Repo  domain.Repository
 	Audit *auditlog.Service `optional:"true"`
+	Cache *redis.Client     `name:"redis_cache" optional:"true"`
 }
 
 func NewService(p Params) domain.Service {
@@ -35,6 +41,7 @@ func NewService(p Params) domain.Service {
 		db:    p.DB,
 		repo:  p.Repo,
 		audit: p.Audit,
+		cache: p.Cache,
 	}
 }
 
@@ -111,6 +118,7 @@ func (s *service) CreateMeter(ctx context.Context, req domain.CreateMeterRequest
 	}
 
 	resp := toMeterResponse(meter)
+	s.setMeterCache(ctx, orgID, meter.ID, resp)
 	s.recordAudit(ctx, "meter.create", "meter", resp.ID, nil, resp, nil)
 	return resp, nil
 }
@@ -165,6 +173,7 @@ func (s *service) UpdateMeter(ctx context.Context, id string, req domain.UpdateM
 	if err := s.repo.UpdateMeter(ctx, orgID, meterID, updates); err != nil {
 		return domain.MeterResponse{}, err
 	}
+	s.deleteMeterCache(ctx, orgID, meterID)
 
 	item, err := s.repo.FindMeterByID(ctx, orgID, meterID)
 	if err != nil {
@@ -175,6 +184,7 @@ func (s *service) UpdateMeter(ctx context.Context, id string, req domain.UpdateM
 	}
 
 	resp := toMeterResponse(*item)
+	s.setMeterCache(ctx, orgID, meterID, resp)
 	s.recordAudit(ctx, "meter.update", "meter", resp.ID, toMeterResponse(*beforeMeter), resp, nil)
 	return resp, nil
 }
@@ -189,6 +199,9 @@ func (s *service) GetMeterByID(ctx context.Context, req domain.GetMeterRequest) 
 	if err != nil {
 		return domain.MeterResponse{}, domain.ErrInvalidID
 	}
+	if cached, ok := s.getMeterCache(ctx, orgID, id); ok {
+		return cached, nil
+	}
 
 	item, err := s.repo.FindMeterByID(ctx, orgID, id)
 	if err != nil {
@@ -198,7 +211,9 @@ func (s *service) GetMeterByID(ctx context.Context, req domain.GetMeterRequest) 
 		return domain.MeterResponse{}, domain.ErrNotFound
 	}
 
-	return toMeterResponse(*item), nil
+	resp := toMeterResponse(*item)
+	s.setMeterCache(ctx, orgID, id, resp)
+	return resp, nil
 }
 
 func (s *service) ListMeters(ctx context.Context, req domain.ListMeterRequest) (domain.ListMeterResponse, error) {
@@ -547,6 +562,43 @@ func (s *service) recordAudit(ctx context.Context, action, resourceType, resourc
 		Reason:       reasonPtr,
 		RequestID:    requestPtr,
 	})
+}
+
+func meterCacheKey(orgID uuid.UUID, meterID uuid.UUID) string {
+	return fmt.Sprintf("cache:meter:%s:%s", orgID.String(), meterID.String())
+}
+
+func (s *service) getMeterCache(ctx context.Context, orgID, meterID uuid.UUID) (domain.MeterResponse, bool) {
+	if s.cache == nil {
+		return domain.MeterResponse{}, false
+	}
+	raw, err := s.cache.Get(ctx, meterCacheKey(orgID, meterID)).Result()
+	if err != nil {
+		return domain.MeterResponse{}, false
+	}
+	var cached domain.MeterResponse
+	if err := json.Unmarshal([]byte(raw), &cached); err != nil {
+		return domain.MeterResponse{}, false
+	}
+	return cached, true
+}
+
+func (s *service) setMeterCache(ctx context.Context, orgID, meterID uuid.UUID, resp domain.MeterResponse) {
+	if s.cache == nil {
+		return
+	}
+	raw, err := json.Marshal(resp)
+	if err != nil {
+		return
+	}
+	_ = s.cache.Set(ctx, meterCacheKey(orgID, meterID), raw, meterCacheTTL).Err()
+}
+
+func (s *service) deleteMeterCache(ctx context.Context, orgID, meterID uuid.UUID) {
+	if s.cache == nil {
+		return
+	}
+	_ = s.cache.Del(ctx, meterCacheKey(orgID, meterID)).Err()
 }
 
 func mergeMetadata(primary, secondary map[string]interface{}) map[string]interface{} {

@@ -20,6 +20,7 @@ type Config struct {
 	SubscriptionConfig
 	RatingConfig
 	ReconciliationConfig
+	RateLimitConfig
 	AppsConfig
 	StripeConfig
 	PublicLinkConfig
@@ -125,6 +126,15 @@ type ReconciliationConfig struct {
 	ReconciliationInvoiceLimit   int `mapstructure:"RECONCILIATION_INVOICE_LIMIT"`
 }
 
+type RateLimitConfig struct {
+	UsageEventsWindowSec                   int `mapstructure:"RATE_LIMIT_USAGE_EVENTS_WINDOW_SEC"`
+	UsageEventsSubscriptionPerMin          int `mapstructure:"RATE_LIMIT_USAGE_EVENTS_SUBSCRIPTION_PER_MIN"`
+	UsageEventsCustomerPerMin              int `mapstructure:"RATE_LIMIT_USAGE_EVENTS_CUSTOMER_PER_MIN"`
+	UsageEventsOrgPerMin                   int `mapstructure:"RATE_LIMIT_USAGE_EVENTS_ORG_PER_MIN"`
+	UsageEventsConcurrencyPerCustomerMeter int `mapstructure:"RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_PER_CUSTOMER_METER"`
+	UsageEventsConcurrencyTTLSeconds       int `mapstructure:"RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_TTL_SEC"`
+}
+
 type AppsConfig struct {
 	AppsCredentialsKey string `mapstructure:"APPS_CREDENTIALS_KEY"`
 }
@@ -165,6 +175,12 @@ func Register() (*Config, error) {
 	v.SetDefault("RECONCILIATION_JOB_INTERVAL_SEC", 21600)
 	v.SetDefault("RECONCILIATION_WINDOW_DAYS", 7)
 	v.SetDefault("RECONCILIATION_INVOICE_LIMIT", 200)
+	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_WINDOW_SEC", 60)
+	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_SUBSCRIPTION_PER_MIN", 120)
+	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_CUSTOMER_PER_MIN", 600)
+	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_ORG_PER_MIN", 3000)
+	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_PER_CUSTOMER_METER", 1)
+	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_TTL_SEC", 5)
 
 	v.SetEnvKeyReplacer(
 		strings.NewReplacer(".", "_"),
@@ -200,154 +216,104 @@ func Register() (*Config, error) {
 }
 
 func applyEnvOverrides(cfg *Config) {
-	if v, ok := envString("APP_NAME"); ok {
-		cfg.AppName = v
-	}
-	if v, ok := envString("APP_ENV"); ok {
-		cfg.AppEnv = AppEnv(v)
-	}
-	if v, ok := envInt("PORT"); ok {
-		cfg.AppPort = v
-	}
-	if v, ok := envString("APP_TLS_MODE"); ok {
-		cfg.AppTLSMode = TLSMode(v)
-	}
-	if v, ok := envString("APP_TLS_CERT_FILE"); ok {
-		cfg.AppTLSCertFile = v
-	}
-	if v, ok := envString("APP_TLS_KEY_FILE"); ok {
-		cfg.AppTLSKeyFile = v
-	}
-	if v, ok := envString("CSP_EXTRA_DIRECTIVES"); ok {
-		cfg.CSPExtraDirectives = v
-	}
 
-	if v, ok := envString("DB_TYPE"); ok {
-		cfg.DBType = v
-	}
-	if v, ok := envString("DB_HOST"); ok {
-		cfg.DBHost = v
-	}
-	if v, ok := envString("DB_PORT"); ok {
-		cfg.DBPort = v
-	}
-	if v, ok := envString("DB_USER"); ok {
-		cfg.DBUser = v
-	}
-	if v, ok := envString("DB_PASSWORD"); ok {
-		cfg.DBPass = v
-	}
-	if v, ok := envString("DB_NAME"); ok {
-		cfg.DBName = v
-	}
-	if v, ok := envString("DB_SSL_MODE"); ok {
-		cfg.DBSSLMode = v
-	}
-	if v, ok := envString("DB_TIMEZONE"); ok {
-		cfg.DBTimezone = v
-	}
-	if v, ok := envInt("DB_MAX_IDLE_CONN"); ok {
-		cfg.DBMaxIdleConn = v
-	}
-	if v, ok := envInt("DB_MAX_OPEN_CONN"); ok {
-		cfg.DBMaxOpenConn = v
-	}
-	if v, ok := envInt("DB_CONN_MAX_LIFETIME"); ok {
-		cfg.DBConnMaxLifetime = v
-	}
-	if v, ok := envInt("DB_CONN_MAX_IDLE_TIME"); ok {
-		cfg.DBConnMaxIdleTime = v
-	}
+	// App
+	applyEnvString("APP_NAME", func(v string) { cfg.AppName = v })
+	applyEnvString("APP_ENV", func(v string) { cfg.AppEnv = AppEnv(v) })
+	applyEnvInt("PORT", func(v int) { cfg.AppPort = v })
+	applyEnvString("APP_TLS_MODE", func(v string) { cfg.AppTLSMode = TLSMode(v) })
+	applyEnvString("APP_TLS_CERT_FILE", func(v string) { cfg.AppTLSCertFile = v })
+	applyEnvString("APP_TLS_KEY_FILE", func(v string) { cfg.AppTLSKeyFile = v })
+	applyEnvString("CSP_EXTRA_DIRECTIVES", func(v string) { cfg.CSPExtraDirectives = v })
 
-	if v, ok := envString("REDIS_URL"); ok {
-		cfg.RedisURL = v
-	}
-	if v, ok := envString("REDIS_USERNAME"); ok {
-		cfg.RedisUsername = v
-	}
-	if v, ok := envString("REDIS_PASSWORD"); ok {
-		cfg.RedisPassword = v
-	}
-	if v, ok := envInt("REDIS_DB"); ok {
-		cfg.RedisDB = v
-	}
+	// Database
+	applyEnvString("DB_TYPE", func(v string) { cfg.DBType = v })
+	applyEnvString("DB_HOST", func(v string) { cfg.DBHost = v })
+	applyEnvString("DB_PORT", func(v string) { cfg.DBPort = v })
+	applyEnvString("DB_USER", func(v string) { cfg.DBUser = v })
+	applyEnvString("DB_PASSWORD", func(v string) { cfg.DBPass = v })
+	applyEnvString("DB_NAME", func(v string) { cfg.DBName = v })
+	applyEnvString("DB_SSL_MODE", func(v string) { cfg.DBSSLMode = v })
+	applyEnvString("DB_TIMEZONE", func(v string) { cfg.DBTimezone = v })
+	applyEnvInt("DB_MAX_IDLE_CONN", func(v int) { cfg.DBMaxIdleConn = v })
+	applyEnvInt("DB_MAX_OPEN_CONN", func(v int) { cfg.DBMaxOpenConn = v })
+	applyEnvInt("DB_CONN_MAX_LIFETIME", func(v int) { cfg.DBConnMaxLifetime = v })
+	applyEnvInt("DB_CONN_MAX_IDLE_TIME", func(v int) { cfg.DBConnMaxIdleTime = v })
 
-	if v, ok := envString("CACHE_URL"); ok {
-		cfg.CacheURL = v
-	}
-	if v, ok := envString("CACHE_USERNAME"); ok {
-		cfg.CacheUsername = v
-	}
-	if v, ok := envString("CACHE_PASSWORD"); ok {
-		cfg.CachePassword = v
-	}
-	if v, ok := envInt("CACHE_DB"); ok {
-		cfg.CacheDB = v
-	}
+	// Redis (sessions/idempotency)
+	applyEnvString("REDIS_URL", func(v string) { cfg.RedisURL = v })
+	applyEnvString("REDIS_USERNAME", func(v string) { cfg.RedisUsername = v })
+	applyEnvString("REDIS_PASSWORD", func(v string) { cfg.RedisPassword = v })
+	applyEnvInt("REDIS_DB", func(v int) { cfg.RedisDB = v })
 
-	if v, ok := envInt("SUMMARY_CONCURRENCY"); ok {
-		cfg.SummaryConcurrency = v
-	}
-	if v, ok := envInt("SUMMARY_TIMEOUT_MS"); ok {
-		cfg.SummaryTimeoutMs = v
-	}
-	if v, ok := envInt("SUMMARY_REFRESH_INTERVAL_SEC"); ok {
-		cfg.SummaryRefreshIntervalSec = v
-	}
-	if v, ok := envInt("SUBSCRIPTION_CLOSE_PERIOD_INTERVAL_SEC"); ok {
-		cfg.SubscriptionClosePeriodIntervalSec = v
-	}
-	if v, ok := envInt("SUBSCRIPTION_CLOSE_PERIOD_BATCH_SIZE"); ok {
-		cfg.SubscriptionClosePeriodBatchSize = v
-	}
-	if v, ok := envInt("RATING_JOB_INTERVAL_SEC"); ok {
-		cfg.RatingJobIntervalSec = v
-	}
-	if v, ok := envInt("RATING_JOB_BATCH_SIZE"); ok {
-		cfg.RatingJobBatchSize = v
-	}
-	if v, ok := envString("APPS_CREDENTIALS_KEY"); ok {
-		cfg.AppsCredentialsKey = v
-	}
-	if v, ok := envString("STRIPE_CONNECT_CLIENT_ID"); ok {
-		cfg.StripeConnectClientID = v
-	}
-	if v, ok := envString("STRIPE_CONNECT_SECRET"); ok {
-		cfg.StripeConnectSecret = v
-	}
-	if v, ok := envString("STRIPE_CONNECT_REDIRECT_URL"); ok {
-		cfg.StripeConnectRedirectURL = v
-	}
-	if v, ok := envString("PUBLIC_LINK_SECRET"); ok {
-		cfg.PublicLinkSecret = v
-	}
-	if v, ok := envInt("PUBLIC_LINK_TTL_HOURS"); ok {
-		cfg.PublicLinkTTLHours = v
-	}
-	if v, ok := envString("PUBLIC_LINK_BASE_URL"); ok {
-		cfg.PublicLinkBaseURL = v
-	}
+	// Cache
+	applyEnvString("CACHE_URL", func(v string) { cfg.CacheURL = v })
+	applyEnvString("CACHE_USERNAME", func(v string) { cfg.CacheUsername = v })
+	applyEnvString("CACHE_PASSWORD", func(v string) { cfg.CachePassword = v })
+	applyEnvInt("CACHE_DB", func(v int) { cfg.CacheDB = v })
 
-	if v, ok := envBool("ENSURE_DEFAULT_ORG_AND_USER"); ok {
-		cfg.BootstrapConfig.EnsureDefaultOrgAndUser = v
+	// Summaries
+	applyEnvInt("SUMMARY_CONCURRENCY", func(v int) { cfg.SummaryConcurrency = v })
+	applyEnvInt("SUMMARY_TIMEOUT_MS", func(v int) { cfg.SummaryTimeoutMs = v })
+	applyEnvInt("SUMMARY_REFRESH_INTERVAL_SEC", func(v int) { cfg.SummaryRefreshIntervalSec = v })
+	// Subscription scheduling
+	applyEnvInt("SUBSCRIPTION_CLOSE_PERIOD_INTERVAL_SEC", func(v int) { cfg.SubscriptionClosePeriodIntervalSec = v })
+	applyEnvInt("SUBSCRIPTION_CLOSE_PERIOD_BATCH_SIZE", func(v int) { cfg.SubscriptionClosePeriodBatchSize = v })
+
+	// Rating scheduling
+	applyEnvInt("RATING_JOB_INTERVAL_SEC", func(v int) { cfg.RatingJobIntervalSec = v })
+	applyEnvInt("RATING_JOB_BATCH_SIZE", func(v int) { cfg.RatingJobBatchSize = v })
+
+	// Public API rate limits
+	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_WINDOW_SEC", func(v int) { cfg.RateLimitConfig.UsageEventsWindowSec = v })
+	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_SUBSCRIPTION_PER_MIN", func(v int) { cfg.RateLimitConfig.UsageEventsSubscriptionPerMin = v })
+	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_CUSTOMER_PER_MIN", func(v int) { cfg.RateLimitConfig.UsageEventsCustomerPerMin = v })
+	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_ORG_PER_MIN", func(v int) { cfg.RateLimitConfig.UsageEventsOrgPerMin = v })
+	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_PER_CUSTOMER_METER", func(v int) {
+		cfg.RateLimitConfig.UsageEventsConcurrencyPerCustomerMeter = v
+	})
+	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_TTL_SEC", func(v int) {
+		cfg.RateLimitConfig.UsageEventsConcurrencyTTLSeconds = v
+	})
+
+	// Apps & providers
+	applyEnvString("APPS_CREDENTIALS_KEY", func(v string) { cfg.AppsCredentialsKey = v })
+	applyEnvString("STRIPE_CONNECT_CLIENT_ID", func(v string) { cfg.StripeConnectClientID = v })
+	applyEnvString("STRIPE_CONNECT_SECRET", func(v string) { cfg.StripeConnectSecret = v })
+	applyEnvString("STRIPE_CONNECT_REDIRECT_URL", func(v string) { cfg.StripeConnectRedirectURL = v })
+
+	// Public links
+	applyEnvString("PUBLIC_LINK_SECRET", func(v string) { cfg.PublicLinkSecret = v })
+	applyEnvInt("PUBLIC_LINK_TTL_HOURS", func(v int) { cfg.PublicLinkTTLHours = v })
+	applyEnvString("PUBLIC_LINK_BASE_URL", func(v string) { cfg.PublicLinkBaseURL = v })
+
+	// Bootstrap
+	applyEnvBool("ENSURE_DEFAULT_ORG_AND_USER", func(v bool) { cfg.BootstrapConfig.EnsureDefaultOrgAndUser = v })
+	applyEnvString("RAILZWAY_ORG_NAME", func(v string) { cfg.BootstrapConfig.OrgName = v })
+	applyEnvString("RAILZWAY_USER_EMAIL", func(v string) { cfg.BootstrapConfig.UserEmail = v })
+	applyEnvString("RAILZWAY_USER_PASSWORD", func(v string) { cfg.BootstrapConfig.UserPassword = v })
+
+	// Sessions
+	applyEnvInt("SESSION_TTL_HOURS", func(v int) { cfg.SessionConfig.SessionTTLHours = v })
+	applyEnvString("SESSION_SECRET", func(v string) { cfg.SessionConfig.SessionSecret = v })
+	applyEnvString("SESSION_COOKIE_NAME", func(v string) { cfg.SessionConfig.SessionCookie = v })
+}
+
+func applyEnvString(key string, apply func(string)) {
+	if v, ok := envString(key); ok {
+		apply(v)
 	}
-	if v, ok := envString("RAILZWAY_ORG_NAME"); ok {
-		cfg.BootstrapConfig.OrgName = v
+}
+
+func applyEnvInt(key string, apply func(int)) {
+	if v, ok := envInt(key); ok {
+		apply(v)
 	}
-	if v, ok := envString("RAILZWAY_USER_EMAIL"); ok {
-		cfg.BootstrapConfig.UserEmail = v
-	}
-	if v, ok := envString("RAILZWAY_USER_PASSWORD"); ok {
-		cfg.BootstrapConfig.UserPassword = v
-	}
-	if v, ok := envInt("SESSION_TTL_HOURS"); ok {
-		cfg.SessionConfig.SessionTTLHours = v
-	}
-	if v, ok := envString("SESSION_SECRET"); ok {
-		cfg.SessionConfig.SessionSecret = v
-	}
-	if v, ok := envString("SESSION_COOKIE_NAME"); ok {
-		cfg.SessionConfig.SessionCookie = v
+}
+
+func applyEnvBool(key string, apply func(bool)) {
+	if v, ok := envBool(key); ok {
+		apply(v)
 	}
 }
 
@@ -434,6 +400,12 @@ func bindEnvKeys(v *viper.Viper) {
 		"SUBSCRIPTION_CLOSE_PERIOD_BATCH_SIZE",
 		"RATING_JOB_INTERVAL_SEC",
 		"RATING_JOB_BATCH_SIZE",
+		"RATE_LIMIT_USAGE_EVENTS_WINDOW_SEC",
+		"RATE_LIMIT_USAGE_EVENTS_SUBSCRIPTION_PER_MIN",
+		"RATE_LIMIT_USAGE_EVENTS_CUSTOMER_PER_MIN",
+		"RATE_LIMIT_USAGE_EVENTS_ORG_PER_MIN",
+		"RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_PER_CUSTOMER_METER",
+		"RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_TTL_SEC",
 		"APPS_CREDENTIALS_KEY",
 		"STRIPE_CONNECT_CLIENT_ID",
 		"STRIPE_CONNECT_SECRET",

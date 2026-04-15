@@ -68,7 +68,7 @@ export default function Features() {
     {
       key: "actions", label: "", width: "80px", className: "col-actions",
       render: (row: Feature) => (
-        <Button asChild variant="secondary" size="sm">
+        <Button asChild variant="secondary" size="sm" data-testid={`features-edit-${row.id}`}>
           <Link to={orgPath(`/features/${row.id}/edit`)}>{t("common.edit")}</Link>
         </Button>
       ),
@@ -82,7 +82,7 @@ export default function Features() {
         title={t("features.header.title")}
         description={t("features.header.description")}
         actions={
-          <Button asChild>
+          <Button asChild data-testid="features-new-button">
             <Link to={orgPath("/features/new")}>+ {t("features.actions.new")}</Link>
           </Button>
         }

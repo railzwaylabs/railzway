@@ -1,6 +1,7 @@
 package httpmiddleware
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -102,6 +103,7 @@ func TestZapRequestLoggerEmitsLog(t *testing.T) {
 	r := gin.New()
 	core, logs := observer.New(zap.InfoLevel)
 	logger := zap.New(core)
+	r.Use(Correlation())
 	r.Use(ZapRequestLogger(logger))
 	r.GET("/", func(c *gin.Context) { c.Status(http.StatusNoContent) })
 
@@ -111,6 +113,66 @@ func TestZapRequestLoggerEmitsLog(t *testing.T) {
 
 	if logs.Len() == 0 {
 		t.Fatalf("expected at least one log entry")
+	}
+	entry := logs.All()[0]
+	fields := entry.ContextMap()
+	if fields["request_id"] == "" {
+		t.Fatalf("expected request_id field in log")
+	}
+	if fields["correlation_id"] == "" {
+		t.Fatalf("expected correlation_id field in log")
+	}
+	if fields["trace_id"] == "" {
+		t.Fatalf("expected trace_id field in log")
+	}
+}
+
+func TestCorrelationAddsHeadersAndContext(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(Correlation())
+	r.GET("/", func(c *gin.Context) {
+		requestID := RequestIDFromContext(c.Request.Context())
+		correlationID := CorrelationIDFromContext(c.Request.Context())
+		traceID := TraceIDFromContext(c.Request.Context())
+		if requestID == "" || correlationID == "" || traceID == "" {
+			t.Fatalf("expected correlation IDs in request context")
+		}
+		c.Status(http.StatusNoContent)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Header().Get("X-Request-ID") == "" {
+		t.Fatalf("expected X-Request-ID response header")
+	}
+	if w.Header().Get("X-Correlation-ID") == "" {
+		t.Fatalf("expected X-Correlation-ID response header")
+	}
+	if w.Header().Get("X-Trace-ID") == "" {
+		t.Fatalf("expected X-Trace-ID response header")
+	}
+}
+
+func TestCorrelationRespectsIncomingHeaders(t *testing.T) {
+	ctx := context.Background()
+	rid := "req-123"
+	cid := "corr-123"
+	tid := "0123456789abcdef0123456789abcdef"
+	ctx = context.WithValue(ctx, requestIDContextKey, rid)
+	ctx = context.WithValue(ctx, correlationIDContextKey, cid)
+	ctx = context.WithValue(ctx, traceIDContextKey, tid)
+
+	if got := RequestIDFromContext(ctx); got != rid {
+		t.Fatalf("expected request id %q, got %q", rid, got)
+	}
+	if got := CorrelationIDFromContext(ctx); got != cid {
+		t.Fatalf("expected correlation id %q, got %q", cid, got)
+	}
+	if got := TraceIDFromContext(ctx); got != tid {
+		t.Fatalf("expected trace id %q, got %q", tid, got)
 	}
 }
 

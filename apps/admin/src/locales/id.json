@@ -70,6 +70,8 @@
     "items": {
       "dashboard": "Dasbor",
       "customers": "Pelanggan",
+      "ai_assistant": "AI Assistant",
+      "ai_workflows": "AI Workflow",
       "plans": "Paket",
       "subscriptions": "Langganan",
       "usage": "Pemakaian",
@@ -694,9 +696,208 @@
       "label": "Pengaturan",
       "desc": "Konfigurasi dan preferensi sistem"
     },
+    "ai_assistant": {
+      "label": "AI Assistant",
+      "desc": "Intelijen billing dan insight admin"
+    },
+    "ai_workflows": {
+      "label": "AI Workflow",
+      "desc": "Setujui dan jalankan aksi rekomendasi AI"
+    },
     "default": {
       "label": "Billing Admin",
       "desc": "Panel kontrol Railzway"
+    }
+  },
+  "ai_assistant": {
+    "header": {
+      "title": "AI Assistant",
+      "description": "Jelaskan tagihan, forecast pendapatan, rekomendasi paket, dan risiko churn."
+    },
+    "loading": "Memuat AI assistant…",
+    "summary": {
+      "forecast": {
+        "label": "Forecast 30 Hari",
+        "sub": "Proyeksi pendapatan"
+      },
+      "risk": {
+        "label": "Pendapatan Berisiko",
+        "sub": "Tunggakan + churn"
+      },
+      "upgrade": {
+        "label": "Potensi Upgrade",
+        "sub": "Pelanggan potensial"
+      },
+      "churn": {
+        "label": "Watchlist Churn",
+        "sub": "Perlu perhatian"
+      }
+    },
+    "workspace": {
+      "title": "Ruang Kerja Assistant",
+      "description": "Analisis pelanggan dengan data tersensor dan konteks read-only."
+    },
+    "badges": {
+      "masking": "PII tersensor",
+      "provider": "OpenAI",
+      "scope": "Admin internal"
+    },
+    "fields": {
+      "customer": "Pelanggan",
+      "customer_placeholder": "ID pelanggan, email, atau perusahaan",
+      "time_range": "Rentang waktu",
+      "intent": "Tujuan",
+      "prompt": "Prompt",
+      "prompt_placeholder": "Minta assistant menjelaskan tren atau meringkas event billing."
+    },
+    "intents": {
+      "billing": "Jelaskan Tagihan",
+      "forecast": "Peramalan",
+      "plan": "Rekomendasi Paket",
+      "churn": "Churn Pelanggan"
+    },
+    "ranges": {
+      "30d": "30 hari terakhir",
+      "90d": "90 hari terakhir",
+      "12m": "12 bulan terakhir"
+    },
+    "actions": {
+      "run": "Buat Insight"
+    },
+    "how": {
+      "title": "Cara Kerja",
+      "description": "Ubah insight menjadi aksi yang disetujui.",
+      "step_1": "Buat insight dari data billing.",
+      "step_2": "Tinjau driver, anomali, dan aksi.",
+      "step_3": "Buat workflow untuk persetujuan.",
+      "step_4": "Setujui dan eksekusi di AI Workflow."
+    },
+    "workflow": {
+      "title": "Workflow",
+      "description": "Ubah aksi ini menjadi workflow persetujuan untuk tim Anda.",
+      "create": "Buat workflow",
+      "created": "Workflow dibuat",
+      "failed": "Gagal membuat workflow",
+      "default_title": "AI Insight"
+    },
+    "prompt_hint": "Konteks tersensor aktif",
+    "prompt_detail": "Cakupan: {{intent}} · Periode: {{range}}",
+    "output_blocks": {
+      "summary": "Ringkasan",
+      "plan_recommendation": "Rekomendasi Paket",
+      "current_plan": "Paket saat ini",
+      "recommended_plan": "Paket rekomendasi",
+      "drivers": "Penggerak",
+      "drivers_count": "{{count}} item",
+      "product_recs": "Rekomendasi Produk",
+      "target_segment": "Segmen target",
+      "pricing": "Harga",
+      "capabilities": "Kemampuan yang dibutuhkan",
+      "expected_impact": "Dampak yang diharapkan",
+      "anomalies": "Pantauan Anomali",
+      "anomaly_watch": "Pantau",
+      "anomaly_risk": "Perlu perhatian",
+      "data_quality": "Kualitas data",
+      "previous": "Sebelumnya",
+      "snapshot_note": "Delta dihitung dari rentang waktu terpilih. Gunakan untuk validasi pricing dan perencanaan kapasitas.",
+      "proration": "Prorata",
+      "empty_title": "Jalankan analisis untuk melihat insight.",
+      "empty_desc": "Buat ringkasan dengan driver, risiko, dan aksi lanjutan.",
+      "error_title": "Gagal memuat insight AI.",
+      "error_desc": "Periksa sumber data atau coba ulang analisis.",
+      "retry": "Coba lagi",
+      "confidence_label": "Confidence {{level}}"
+    },
+    "output": {
+      "title": "Output AI",
+      "description": "Pratinjau respons sebelum dibagikan.",
+      "last_run": "Run terakhir",
+      "placeholder": "Jalankan analisis untuk melihat hasil."
+    },
+    "runs": {
+      "empty_title": "Belum ada run",
+      "empty_desc": "Buat insight pertama Anda."
+    },
+    "guardrails": {
+      "title": "Guardrail",
+      "description": "Kontrol keamanan dan compliance",
+      "item_1": "Field PII otomatis disensor",
+      "item_2": "Hanya baca, tanpa write",
+      "item_3": "Konteks terbatas per organisasi",
+      "item_4": "Audit trail tersimpan per run"
+    },
+    "recent": {
+      "title": "Riwayat Run",
+      "description": "Query admin terbaru"
+    },
+    "signals": {
+      "title": "Sinyal Churn",
+      "description": "Indikator perilaku dan billing",
+      "badge": "Sinyal"
+    },
+    "masked": "[tersensor]",
+    "no_customer": "Belum pilih pelanggan"
+  },
+  "ai_workflows": {
+    "header": {
+      "title": "AI Workflow",
+      "description": "Setujui dan jalankan aksi rekomendasi AI."
+    },
+    "loading": "Memuat workflow…",
+    "loading_detail": "Memuat detail workflow…",
+    "actions": {
+      "refresh": "Refresh",
+      "open_assistant": "Buka AI Assistant",
+      "approve": "Setujui",
+      "reject": "Tolak",
+      "execute": "Jalankan workflow"
+    },
+    "list": {
+      "title": "Antrian Workflow",
+      "description": "Workflow queued, disetujui, dan selesai.",
+      "empty_title": "Belum ada workflow",
+      "empty_desc": "Buat insight AI untuk membuat workflow.",
+      "summary_placeholder": "Belum ada ringkasan"
+    },
+    "detail": {
+      "title": "Detail Workflow",
+      "description": "Tinjau aksi sebelum eksekusi.",
+      "empty": "Pilih workflow untuk melihat detail.",
+      "summary_placeholder": "Tambahkan ringkasan singkat untuk workflow ini.",
+      "hint_idle": "Pilih workflow untuk ditinjau dan disetujui.",
+      "hint_pending": "Workflow ini menunggu persetujuan sebelum eksekusi.",
+      "hint_approved": "Sudah disetujui. Klik Eksekusi untuk menjalankan aksi.",
+      "hint_executing": "Aksi sedang dijalankan. Status akan diperbarui di sini.",
+      "hint_completed": "Workflow selesai. Aksi berhasil dijalankan.",
+      "hint_failed": "Eksekusi gagal. Periksa detail error aksi.",
+      "intent": "Intent",
+      "created": "Dibuat",
+      "updated": "Diperbarui",
+      "source_run": "Sumber run",
+      "actions_title": "Aksi",
+      "approvals_title": "Persetujuan",
+      "no_approvals": "Belum ada persetujuan.",
+      "no_note": "Tidak ada catatan.",
+      "note_placeholder": "Catatan persetujuan (opsional)",
+      "execute_ready": "Disetujui dan siap dieksekusi.",
+      "executing": "Menjalankan aksi workflow…",
+      "status_placeholder": "Status"
+    },
+    "action_status": {
+      "pending": "Menunggu",
+      "running": "Berjalan",
+      "done": "Selesai",
+      "failed": "Gagal"
+    },
+    "toast": {
+      "approval_saved": "Persetujuan disimpan",
+      "approval_failed": "Gagal menyimpan persetujuan",
+      "execution_started": "Eksekusi dimulai",
+      "execution_failed": "Gagal menjalankan workflow"
+    },
+    "errors": {
+      "load_list": "Gagal memuat workflow",
+      "load_detail": "Gagal memuat detail workflow"
     }
   },
   "organizations": {
