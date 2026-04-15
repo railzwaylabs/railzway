@@ -1,6 +1,36 @@
 # Railzway
 
-Railzway is an open-source billing engine for teams that want to model subscriptions, usage-based pricing, rating, proration, and invoicing. It focuses on determining what should be billed; payment execution is handled by integrations.
+Railzway is an open-source billing computation engine for SaaS products.
+
+It ingests usage events, rates them against pricing, applies subscription and proration rules, generates invoices, and records ledger transactions. Railzway computes what should be billed and stores the results so they can be reproduced and audited later.
+
+It is for teams building SaaS billing systems with usage-based, tiered, or hybrid pricing. It is not a payment processor: providers such as Stripe or Xendit belong on the integration side, outside the billing core.
+
+## What Railzway Is
+
+- A billing engine for metered and subscription SaaS products
+- A system for turning usage events and plan prices into rating results, invoice lines, and invoice totals
+- A ledger-backed billing record so billing outputs can be inspected, reproduced, and audited
+- A billing core that can integrate with payment providers instead of coupling billing logic to one processor
+
+## What Railzway Is Not
+
+- Not a payment gateway or payment processor
+- Not the system that charges cards, settles funds, or moves money
+- Not a checkout-only product with billing rules embedded inside a payment provider
+
+## When to Use Railzway
+
+- Usage-based SaaS billing where raw events must be metered, aggregated, and priced
+- Subscription billing with mid-cycle changes, start/end windows, or proration
+- Tiered, flat, or hybrid pricing models that are hard to express cleanly in a payment processor
+- Invoice generation where each bill needs a clear audit trail from usage and pricing inputs to ledger entries
+
+## Mental Model
+
+`usage events -> rating -> rating results -> invoices -> ledger -> payment adapter/provider`
+
+Railzway owns the billing computation path from usage to invoice and ledger. Payment providers sit after that boundary as adapters that collect payment for an amount Railzway has already computed.
 
 ## Status
 
@@ -111,6 +141,7 @@ Long-form documentation lives in `docs/`. Start from `docs/` if you want deeper 
 - Org-scoped resources require the `X-Org-ID` header.
 - The admin UI sets this after you choose an organization.
 - The public API (API-key auth) is evolving; documentation will be published when stable.
+- Public API rate limits: see [`docs/rate-limits.md`](./docs/rate-limits.md).
 - If you do not have the `migrate` CLI:
   - `brew install golang-migrate`, or
   - `go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest`
