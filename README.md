@@ -136,7 +136,12 @@ Where to start:
 
 Long-form documentation lives in `docs/`. Start from `docs/` if you want deeper design context.
 
-- [`docs/architecture/catalog-model.md`](./docs/architecture/catalog-model.md) – explains the product/plan/price mental model.
+- [`docs/architecture/catalog-model.md`](./docs/architecture/catalog-model.md) – Product/Plan/Price mental model.
+- [`docs/architecture/metering.md`](./docs/architecture/metering.md) – Usage events ingestion and aggregation logic.
+- [`docs/architecture/ledger.md`](./docs/architecture/ledger.md) – Double-entry accounting and financial integrity.
+- [`docs/architecture/invoicing.md`](./docs/architecture/invoicing.md) – Invoicing lifecycle and the Rating engine.
+- [`docs/architecture/subscriptions.md`](./docs/architecture/subscriptions.md) – Subscription lifecycle and proration logic.
+- [`docs/architecture/taxes-discounts.md`](./docs/architecture/taxes-discounts.md) – Global tax compliance and price adjustments.
 
 ## Notes
 
