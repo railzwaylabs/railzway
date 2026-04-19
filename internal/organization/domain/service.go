@@ -9,11 +9,13 @@ import (
 )
 
 const (
-	RoleOwner     = "OWNER"
-	RoleAdmin     = "ADMIN"
-	RoleFinOps    = "FINOPS"
-	RoleDeveloper = "DEVELOPER"
-	RoleMember    = "MEMBER"
+	RoleOwner           = "OWNER"
+	RoleAdmin           = "ADMIN"
+	RoleFinance         = "FINANCE"
+	RoleOperations      = "OPERATIONS"
+	RoleDeveloper       = "DEVELOPER"
+	RoleCustomerSupport = "CUSTOMER_SUPPORT"
+	RoleAuditor         = "AUDITOR"
 
 	LinkModeManaged     = "MANAGED"
 	LinkModeIndependent = "INDEPENDENT"

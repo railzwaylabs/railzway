@@ -142,6 +142,8 @@ Long-form documentation lives in `docs/`. Start from `docs/` if you want deeper 
 - [`docs/architecture/invoicing.md`](./docs/architecture/invoicing.md) – Invoicing lifecycle and the Rating engine.
 - [`docs/architecture/subscriptions.md`](./docs/architecture/subscriptions.md) – Subscription lifecycle and proration logic.
 - [`docs/architecture/taxes-discounts.md`](./docs/architecture/taxes-discounts.md) – Global tax compliance and price adjustments.
+- [`docs/architecture/reconciliation.md`](./docs/architecture/reconciliation.md) – Automated data integrity and cross-module verification.
+- [`docs/architecture/security.md`](./docs/architecture/security.md) – Enterprise RBAC model and security governance.
 
 ## Notes
 

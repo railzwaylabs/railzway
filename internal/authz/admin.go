@@ -73,7 +73,7 @@ func (a *AdminAuthorizer) Enforce(role, path, method string) (bool, error) {
 	}
 	role = normalizeRole(role)
 	if role == "" {
-		role = organizationdomain.RoleMember
+		role = organizationdomain.RoleCustomerSupport
 	}
 	path = strings.TrimSpace(path)
 	if path == "" {
@@ -167,27 +167,33 @@ func ensureAdminPolicies(enforcer *casbin.Enforcer) error {
 	if enforcer == nil {
 		return nil
 	}
-	adminPatterns := []string{
-		`^/admin(/v1)?/.*$`,
-	}
 	policies := [][]string{}
+	// OWNER and ADMIN get full access.
 	for _, role := range []string{
 		organizationdomain.RoleOwner,
 		organizationdomain.RoleAdmin,
 	} {
-		for _, pattern := range adminPatterns {
-			policies = append(policies, []string{role, pattern, ".*"})
-		}
+		policies = append(policies, []string{role, `^/admin(/v1)?/.*$`, ".*"})
 	}
-	for _, role := range []string{
-		organizationdomain.RoleMember,
-		organizationdomain.RoleDeveloper,
-		organizationdomain.RoleFinOps,
-	} {
-		for _, pattern := range adminPatterns {
-			policies = append(policies, []string{role, pattern, "GET|HEAD|OPTIONS"})
-		}
-	}
+
+	// FINANCE: Write access to money-related modules.
+	policies = append(policies, []string{organizationdomain.RoleFinance, `^/admin(/v1)?/(invoices|ledger|taxes|payments|reconciliation)/.*$`, ".*"})
+	policies = append(policies, []string{organizationdomain.RoleFinance, `^/admin(/v1)?/.*$`, "GET|HEAD|OPTIONS"})
+
+	// OPERATIONS: Write access to catalog and customer lifecycle.
+	policies = append(policies, []string{organizationdomain.RoleOperations, `^/admin(/v1)?/(products|plans|prices|features|customers|subscriptions)/.*$`, ".*"})
+	policies = append(policies, []string{organizationdomain.RoleOperations, `^/admin(/v1)?/.*$`, "GET|HEAD|OPTIONS"})
+
+	// DEVELOPER: Write access to technical integration and tools.
+	policies = append(policies, []string{organizationdomain.RoleDeveloper, `^/admin(/v1)?/(meters|apikeys|webhooks|ai|test-clock|feature-flags|warnings)/.*$`, ".*"})
+	policies = append(policies, []string{organizationdomain.RoleDeveloper, `^/admin(/v1)?/.*$`, "GET|HEAD|OPTIONS"})
+
+	// CUSTOMER_SUPPORT: Targeted Read-only access to customer-facing data.
+	policies = append(policies, []string{organizationdomain.RoleCustomerSupport, `^/admin(/v1)?/(customers|subscriptions|invoices|products|plans|features|usage|rating)/.*$`, "GET|HEAD|OPTIONS"})
+
+	// AUDITOR: Universal Read-only access for compliance.
+	policies = append(policies, []string{organizationdomain.RoleAuditor, `^/admin(/v1)?/.*$`, "GET|HEAD|OPTIONS"})
+
 	changed := false
 	for _, policy := range policies {
 		ok, err := enforcer.HasPolicy(policy)

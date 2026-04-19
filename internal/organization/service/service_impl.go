@@ -653,7 +653,7 @@ func (s *service) LinkChildOrganization(ctx context.Context, parentOrgID, childO
 
 func isValidRole(role string) bool {
 	switch strings.ToUpper(strings.TrimSpace(role)) {
-	case domain.RoleOwner, domain.RoleAdmin, domain.RoleFinOps, domain.RoleDeveloper, domain.RoleMember:
+	case domain.RoleOwner, domain.RoleAdmin, domain.RoleFinance, domain.RoleOperations, domain.RoleDeveloper, domain.RoleCustomerSupport, domain.RoleAuditor:
 		return true
 	default:
 		return false
