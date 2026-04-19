@@ -26,8 +26,7 @@ func (h *Handler) CreateCustomer(c *gin.Context) {
 	ctx := h.withAuditContext(c, orgcontext.WithOrgID(c.Request.Context(), orgID))
 
 	var payload createCustomerRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -62,8 +61,7 @@ func (h *Handler) UpdateCustomer(c *gin.Context) {
 
 	customerID := strings.TrimSpace(c.Param("customer_id"))
 	var payload updateCustomerRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 

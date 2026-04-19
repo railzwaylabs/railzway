@@ -66,7 +66,7 @@ Cypress.Commands.add("ensureOrg", () => {
 
 Cypress.Commands.add("createOrg", (name?: string) => {
   const orgName = name || `Example ${Date.now()}`;
-  return cy.request("POST", "/admin/v1/organizations", {
+  return cy.csrfRequest("POST", "/admin/v1/organizations", {
     name: orgName,
     country_code: "US",
     timezone_name: "UTC"

@@ -64,14 +64,13 @@
       "core": "Utama",
       "billing": "Penagihan",
       "finance": "Keuangan",
+      "ai": "Asisten AI",
       "system": "Sistem",
       "developer": "Pengembang"
     },
     "items": {
       "dashboard": "Dasbor",
       "customers": "Pelanggan",
-      "ai_assistant": "AI Assistant",
-      "ai_workflows": "AI Workflow",
       "plans": "Paket",
       "subscriptions": "Langganan",
       "usage": "Pemakaian",
@@ -83,6 +82,13 @@
       "taxes": "Pajak",
       "audit_logs": "Audit Log",
       "apps": "Aplikasi",
+      "products": "Produk",
+      "features": "Fitur",
+      "sessions": "Sesi",
+      "api_keys": "Kunci API",
+      "ai_assistant": "Asisten",
+      "ai_workflows": "Workflow",
+      "ai_scheduled_jobs": "Pekerjaan Terjadwal",
       "test_clock": "Jam Uji",
       "settings": "Pengaturan"
     }
@@ -775,6 +781,11 @@
     "workflow": {
       "title": "Workflow",
       "description": "Ubah aksi ini menjadi workflow persetujuan untuk tim Anda.",
+      "preview_title": "Pratinjau workflow",
+      "preview_agents": "{{count}} agent",
+      "preview_actions": "{{count}} aksi",
+      "preview_agent_actions": "{{count}} aksi",
+      "empty": "Insight ini belum memiliki aksi workflow yang benar-benar bisa dieksekusi.",
       "create": "Buat workflow",
       "created": "Workflow dibuat",
       "failed": "Gagal membuat workflow",
@@ -874,6 +885,9 @@
       "created": "Dibuat",
       "updated": "Diperbarui",
       "source_run": "Sumber run",
+      "agents_title": "Agent",
+      "no_agents": "Belum ada agent untuk workflow ini.",
+      "agent_actions_count": "{{count}} aksi",
       "actions_title": "Aksi",
       "approvals_title": "Persetujuan",
       "no_approvals": "Belum ada persetujuan.",
@@ -884,6 +898,12 @@
       "status_placeholder": "Status"
     },
     "action_status": {
+      "pending": "Menunggu",
+      "running": "Berjalan",
+      "done": "Selesai",
+      "failed": "Gagal"
+    },
+    "agent_status": {
       "pending": "Menunggu",
       "running": "Berjalan",
       "done": "Selesai",
@@ -1318,7 +1338,7 @@
   "products_create": {
     "header": {
       "title": "Produk Baru",
-      "description": "Buat produk baru yang mendefinisikan nama, kode, dan rencana komersialnya."
+      "description": "Buat produk dan, bila perlu, satu atau lebih paket langganan di bawahnya."
     },
     "actions": {
       "save": "Buat Produk",
@@ -1329,9 +1349,16 @@
     },
     "sections": {
       "product": "Detail Produk",
-      "pricing": "Konfigurasi Harga"
+      "pricing": "Konfigurasi Harga",
+      "plans": "Paket",
+      "plan_item": "Paket {{number}}"
     },
     "fields": {
+      "product_code": "Kode Produk",
+      "product_name": "Nama Produk",
+      "plan_name": "Nama Paket",
+      "plan_code": "Kode Paket",
+      "description": "Deskripsi",
       "price_code": "Kode Harga",
       "pricing_tiers": "Tingkatan Harga",
       "tier_start": "Mulai",
@@ -1350,6 +1377,10 @@
     },
     "hints": {
       "idempotency": "Key pembuatan root untuk keamanan transaksional.",
+      "product_identity": "Produk adalah penawaran tingkat atas. Gunakan untuk menamai apa yang Anda jual.",
+      "product_plan_boundary": "Paket adalah kemasan langganan di bawah sebuah produk. Satu produk bisa punya satu atau banyak paket.",
+      "plan_identity": "Nama paket tidak harus sama dengan nama produk. Kalau hanya ada satu paket, memakai nama produk yang sama juga tidak masalah.",
+      "mirror_primary_plan": "Gunakan nama dan kode produk untuk paket pertama",
       "no_plans": "Belum ada paket. Pelanggan tidak bisa berlangganan produk ini tanpa minimal satu paket.",
       "price_recommendation": "Minimal satu harga direkomendasikan agar paket bersifat komersial."
     },
@@ -2074,6 +2105,38 @@
   "reference": {
     "toast": {
       "currencies_failed": "Gagal memuat mata uang"
+    }
+  },
+  "ai_scheduled_jobs": {
+    "header": {
+      "title": "Pekerjaan Terjadwal AI",
+      "description": "Pantau dan kelola tugas latar belakang yang dijadwalkan oleh AI Assistant."
+    },
+    "table": {
+      "columns": {
+        "task_type": "Tipe Tugas",
+        "schedule": "Jadwal",
+        "status": "Status",
+        "next_run": "Run Berikutnya",
+        "health": "Kesehatan"
+      },
+      "one_off": "Sekali jalan",
+      "healthy": "Sehat",
+      "errors": "{{count}} error",
+      "empty_title": "Tidak ada pekerjaan terjadwal",
+      "empty_desc": "AI Assistant belum menjadwalkan tugas apa pun."
+    },
+    "actions": {
+      "retry": "Coba Lagi",
+      "cancel": "Batalkan",
+      "cancel_confirm": "Apakah Anda yakin ingin membatalkan pekerjaan ini?"
+    },
+    "toast": {
+      "retry_success": "Pekerjaan dijadwalkan untuk dicoba lagi",
+      "retry_failed": "Gagal mencoba lagi",
+      "cancel_success": "Pekerjaan dibatalkan",
+      "cancel_failed": "Gagal membatalkan",
+      "load_failed": "Gagal memuat pekerjaan AI"
     }
   }
 }

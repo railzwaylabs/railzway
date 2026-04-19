@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import PageHeader from "../components/PageHeader"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -10,12 +10,14 @@ import { formatDateTime } from "../lib/display"
 import { useOrgPath } from "../lib/org"
 import type {
   AIWorkflowAction,
+  AIWorkflowAgent,
   AIWorkflowDetail,
   AIWorkflowListItem,
   AIWorkflowListResponse
 } from "../lib/types"
 
 type ActionStatus = AIWorkflowAction["status"]
+type AgentStatus = AIWorkflowAgent["status"]
 
 function IconWorkflow() {
   return (
@@ -34,6 +36,13 @@ const actionStatusTone: Record<ActionStatus, string> = {
   failed: "danger"
 }
 
+const agentStatusTone: Record<AgentStatus, string> = {
+  pending: "muted",
+  running: "info",
+  done: "success",
+  failed: "danger"
+}
+
 function resolveActionMeta(action: AIWorkflowAction) {
   const payload = action.payload ?? {}
   if (typeof payload.path === "string" && payload.path.trim() !== "") {
@@ -46,6 +55,8 @@ export default function AIWorkflows() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const orgPath = useOrgPath()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedWorkflowID = searchParams.get("workflow_id")
 
   const [workflows, setWorkflows] = useState<AIWorkflowListResponse | null>(null)
   const [activeWorkflow, setActiveWorkflow] = useState<AIWorkflowDetail | null>(null)
@@ -72,7 +83,9 @@ export default function AIWorkflows() {
       const resp = await api.aiWorkflows.list({ page_size: 20 })
       setWorkflows(resp)
       const first = resp.workflows[0]
-      if (!keepActive || !activeId) {
+      if (requestedWorkflowID && resp.workflows.some((workflow) => workflow.id === requestedWorkflowID)) {
+        setActiveId(requestedWorkflowID)
+      } else if (!keepActive || !activeId) {
         if (first) {
           setActiveId(first.id)
         } else {
@@ -87,7 +100,7 @@ export default function AIWorkflows() {
     } finally {
       setLoading(false)
     }
-  }, [activeId, t])
+  }, [activeId, requestedWorkflowID, t])
 
   const loadWorkflow = useCallback(async (workflowId: string) => {
     try {
@@ -132,6 +145,11 @@ export default function AIWorkflows() {
 
   const handleSelect = (workflow: AIWorkflowListItem) => {
     setActiveId(workflow.id)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set("workflow_id", workflow.id)
+      return next
+    })
   }
 
   const handleApprove = async (status: "approved" | "rejected") => {
@@ -204,6 +222,16 @@ export default function AIWorkflows() {
       running: t("ai_workflows.action_status.running"),
       done: t("ai_workflows.action_status.done"),
       failed: t("ai_workflows.action_status.failed")
+    }
+    return map[status]
+  }
+
+  const agentStatusLabel = (status: AgentStatus) => {
+    const map: Record<AgentStatus, string> = {
+      pending: t("ai_workflows.agent_status.pending"),
+      running: t("ai_workflows.agent_status.running"),
+      done: t("ai_workflows.agent_status.done"),
+      failed: t("ai_workflows.agent_status.failed")
     }
     return map[status]
   }
@@ -309,6 +337,41 @@ export default function AIWorkflows() {
                       <span>{activeWorkflow.source_run_id.slice(0, 8)}…</span>
                     </div>
                   ) : null}
+                </div>
+
+                <div className="ai-workflow-section">
+                  <div className="ai-workflow-section-title">{t("ai_workflows.detail.agents_title")}</div>
+                  {activeWorkflow.agents.length === 0 ? (
+                    <div className="text-xs muted">{t("ai_workflows.detail.no_agents")}</div>
+                  ) : (
+                    <div className="ai-workflow-approvals">
+                      {activeWorkflow.agents.map((agent) => {
+                        const agentActions = activeWorkflow.actions.filter((action) => action.agent_id === agent.id)
+                        return (
+                          <div key={agent.id} className="ai-workflow-approval">
+                            <div style={{ minWidth: 0 }}>
+                              <div className="ai-workflow-action-title">{agent.role}</div>
+                              <div className="ai-workflow-action-meta">{agent.objective}</div>
+                              <div className="mt-2 text-xs muted">
+                                {agent.key}{agentActions.length > 0 ? ` · ${t("ai_workflows.detail.agent_actions_count", { count: agentActions.length })}` : ""}
+                              </div>
+                              {agent.steps.length > 0 ? (
+                                <div className="mt-2 space-y-2">
+                                  {agent.steps.map((step) => (
+                                    <div key={step.id} className="flex items-center justify-between gap-3 text-xs">
+                                      <span>{step.title}</span>
+                                      <span className={`badge badge-${agentStatusTone[step.status]}`}>{agentStatusLabel(step.status)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                            <span className={`badge badge-${agentStatusTone[agent.status]}`}>{agentStatusLabel(agent.status)}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <div className="ai-workflow-section">

@@ -110,8 +110,7 @@ func (h *Handler) GenerateInvoice(c *gin.Context) {
 	ctx := h.withAuditContext(c, orgcontext.WithOrgID(c.Request.Context(), orgID))
 
 	var payload generateInvoiceRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 	periodStart, err := parseTime(payload.PeriodStart)
@@ -255,8 +254,7 @@ func (h *Handler) PayInvoice(c *gin.Context) {
 
 	invoiceID := strings.TrimSpace(c.Param("invoice_id"))
 	var payload invoiceActionRequest
-	if err := bindOptionalJSON(c, &payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindOptionalJSONOrAbort(c, &payload) {
 		return
 	}
 	meta := payload.toMeta()
@@ -285,8 +283,7 @@ func (h *Handler) VoidInvoice(c *gin.Context) {
 
 	invoiceID := strings.TrimSpace(c.Param("invoice_id"))
 	var payload invoiceActionRequest
-	if err := bindOptionalJSON(c, &payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindOptionalJSONOrAbort(c, &payload) {
 		return
 	}
 	meta := payload.toMeta()
@@ -335,8 +332,7 @@ func (h *Handler) MarkInvoicePaid(c *gin.Context) {
 
 	invoiceID := strings.TrimSpace(c.Param("invoice_id"))
 	var payload invoiceActionRequest
-	if err := bindOptionalJSON(c, &payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindOptionalJSONOrAbort(c, &payload) {
 		return
 	}
 	meta := payload.toMeta()

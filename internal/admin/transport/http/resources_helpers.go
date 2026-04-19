@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -10,10 +11,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	adminauth "github.com/railzwaylabs/railzway/internal/admin/auth"
-	aiassistantdomain "github.com/railzwaylabs/railzway/internal/aiassistant/domain"
-	aiworkflowdomain "github.com/railzwaylabs/railzway/internal/aiworkflow/domain"
 	appsdomain "github.com/railzwaylabs/railzway/internal/apps/domain"
 	"github.com/railzwaylabs/railzway/internal/auditlog"
 	customerdomain "github.com/railzwaylabs/railzway/internal/customer/domain"
@@ -32,6 +32,11 @@ import (
 	testclockdomain "github.com/railzwaylabs/railzway/internal/testclock/domain"
 	usagedomain "github.com/railzwaylabs/railzway/internal/usage/domain"
 )
+
+type validationErrorDetail struct {
+	Field   string `json:"field,omitempty"`
+	Message string `json:"message"`
+}
 
 func parseBoolPtr(value string) (*bool, error) {
 	raw := strings.TrimSpace(strings.ToLower(value))
@@ -76,6 +81,122 @@ func bindOptionalJSON(c *gin.Context, dst interface{}) error {
 		return err
 	}
 	return nil
+}
+
+func bindJSONOrAbort(c *gin.Context, dst interface{}) bool {
+	if err := c.ShouldBindJSON(dst); err != nil {
+		writeBindJSONError(c, err)
+		return false
+	}
+	return true
+}
+
+func bindOptionalJSONOrAbort(c *gin.Context, dst interface{}) bool {
+	if err := bindOptionalJSON(c, dst); err != nil {
+		writeBindJSONError(c, err)
+		return false
+	}
+	return true
+}
+
+func writeBindJSONError(c *gin.Context, err error) {
+	var syntaxErr *json.SyntaxError
+	if errors.As(err, &syntaxErr) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "invalid_json",
+			"message": "Request body contains invalid JSON syntax.",
+		})
+		return
+	}
+
+	var typeErr *json.UnmarshalTypeError
+	if errors.As(err, &typeErr) {
+		field := strings.TrimSpace(typeErr.Field)
+		if field == "" {
+			field = "request_body"
+		}
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "validation_failed",
+			"details": []validationErrorDetail{
+				{
+					Field:   field,
+					Message: "must be a " + typeErr.Type.String(),
+				},
+			},
+		})
+		return
+	}
+
+	var validationErrs validator.ValidationErrors
+	if errors.As(err, &validationErrs) {
+		details := make([]validationErrorDetail, 0, len(validationErrs))
+		for _, verr := range validationErrs {
+			field := toSnakeCase(verr.Field())
+			message := validationMessage(verr)
+			details = append(details, validationErrorDetail{
+				Field:   field,
+				Message: message,
+			})
+		}
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "validation_failed",
+			"details": details,
+		})
+		return
+	}
+
+	if errors.Is(err, io.EOF) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "invalid_json",
+			"message": "Request body is empty.",
+		})
+		return
+	}
+
+	c.JSON(http.StatusBadRequest, gin.H{
+		"error":   "invalid_json",
+		"message": "Request body could not be parsed.",
+	})
+}
+
+func validationMessage(err validator.FieldError) string {
+	switch err.Tag() {
+	case "required":
+		return "is required"
+	case "oneof":
+		return "must be one of: " + err.Param()
+	case "min":
+		return "must be at least " + err.Param()
+	case "max":
+		return "must be at most " + err.Param()
+	case "gt":
+		return "must be greater than " + err.Param()
+	case "gte":
+		return "must be greater than or equal to " + err.Param()
+	case "lt":
+		return "must be less than " + err.Param()
+	case "lte":
+		return "must be less than or equal to " + err.Param()
+	default:
+		return "is invalid"
+	}
+}
+
+func toSnakeCase(value string) string {
+	if value == "" {
+		return value
+	}
+	var b strings.Builder
+	for i, r := range value {
+		if i > 0 && r >= 'A' && r <= 'Z' {
+			b.WriteByte('_')
+		}
+		if r >= 'A' && r <= 'Z' {
+			r = r - 'A' + 'a'
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
 }
 
 func (h *Handler) withAuditContext(c *gin.Context, ctx context.Context) context.Context {
@@ -419,44 +540,6 @@ func writeTestClockError(c *gin.Context, err error) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	case errors.Is(err, testclockdomain.ErrNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-	default:
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal_error"})
-	}
-}
-
-func writeAIAssistantError(c *gin.Context, err error) {
-	switch err {
-	case aiassistantdomain.ErrInvalidOrganization:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_org_id"})
-	case aiassistantdomain.ErrInvalidIntent:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_intent"})
-	case aiassistantdomain.ErrInvalidTimeRange:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_time_range"})
-	case aiassistantdomain.ErrInvalidPrompt:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_prompt"})
-	case aiassistantdomain.ErrInvalidID:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_id"})
-	case aiassistantdomain.ErrNotFound:
-		c.JSON(http.StatusNotFound, gin.H{"error": "not_found"})
-	default:
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal_error"})
-	}
-}
-
-func writeAIWorkflowError(c *gin.Context, err error) {
-	switch err {
-	case aiworkflowdomain.ErrInvalidOrganization:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_org_id"})
-	case aiworkflowdomain.ErrInvalidID:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_id"})
-	case aiworkflowdomain.ErrInvalidTitle:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_title"})
-	case aiworkflowdomain.ErrInvalidActions:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_actions"})
-	case aiworkflowdomain.ErrInvalidStatus:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_status"})
-	case aiworkflowdomain.ErrNotFound:
-		c.JSON(http.StatusNotFound, gin.H{"error": "not_found"})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal_error"})
 	}

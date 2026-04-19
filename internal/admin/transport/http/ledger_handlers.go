@@ -29,8 +29,7 @@ func (h *Handler) CreateLedgerAccount(c *gin.Context) {
 	ctx := h.withAuditContext(c, orgcontext.WithOrgID(c.Request.Context(), orgID))
 
 	var payload createLedgerAccountRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -145,8 +144,7 @@ func (h *Handler) CreateLedgerTransaction(c *gin.Context) {
 	ctx := h.withAuditContext(c, orgcontext.WithOrgID(c.Request.Context(), orgID))
 
 	var payload createLedgerTransactionRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 

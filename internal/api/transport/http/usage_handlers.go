@@ -32,8 +32,7 @@ func (h *Handler) CreateUsageEvent(c *gin.Context) {
 	ctx := orgcontext.WithOrgID(c.Request.Context(), orgID)
 
 	var payload ingestUsageRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 	recordedAt, err := parseTime(payload.RecordedAt)

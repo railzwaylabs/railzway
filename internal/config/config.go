@@ -26,6 +26,7 @@ type Config struct {
 	PublicLinkConfig
 	BootstrapConfig
 	SessionConfig
+	AIWorkflowConfig
 }
 
 type AppEnv string
@@ -164,6 +165,13 @@ type SessionConfig struct {
 	SessionCookie   string `mapstructure:"SESSION_COOKIE_NAME"`
 }
 
+type AIWorkflowConfig struct {
+	AIWorkflowGenkitEnabled bool   `mapstructure:"AI_WORKFLOW_GENKIT_ENABLED"`
+	AIWorkflowModel         string `mapstructure:"AI_WORKFLOW_MODEL"`
+	AIWorkflowTimeoutMs     int    `mapstructure:"AI_WORKFLOW_TIMEOUT_MS"`
+	AIWorkflowAPIKey        string `mapstructure:"AI_WORKFLOW_API_KEY"`
+}
+
 func Register() (*Config, error) {
 	_ = godotenv.Load()
 
@@ -181,6 +189,9 @@ func Register() (*Config, error) {
 	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_ORG_PER_MIN", 3000)
 	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_PER_CUSTOMER_METER", 1)
 	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_TTL_SEC", 5)
+	v.SetDefault("AI_WORKFLOW_GENKIT_ENABLED", false)
+	v.SetDefault("AI_WORKFLOW_MODEL", "googleai/gemini-2.5-flash")
+	v.SetDefault("AI_WORKFLOW_TIMEOUT_MS", 12000)
 
 	v.SetEnvKeyReplacer(
 		strings.NewReplacer(".", "_"),
@@ -297,6 +308,12 @@ func applyEnvOverrides(cfg *Config) {
 	applyEnvInt("SESSION_TTL_HOURS", func(v int) { cfg.SessionConfig.SessionTTLHours = v })
 	applyEnvString("SESSION_SECRET", func(v string) { cfg.SessionConfig.SessionSecret = v })
 	applyEnvString("SESSION_COOKIE_NAME", func(v string) { cfg.SessionConfig.SessionCookie = v })
+
+	// AI workflow planner
+	applyEnvBool("AI_WORKFLOW_GENKIT_ENABLED", func(v bool) { cfg.AIWorkflowConfig.AIWorkflowGenkitEnabled = v })
+	applyEnvString("AI_WORKFLOW_MODEL", func(v string) { cfg.AIWorkflowConfig.AIWorkflowModel = v })
+	applyEnvInt("AI_WORKFLOW_TIMEOUT_MS", func(v int) { cfg.AIWorkflowConfig.AIWorkflowTimeoutMs = v })
+	applyEnvString("AI_WORKFLOW_API_KEY", func(v string) { cfg.AIWorkflowConfig.AIWorkflowAPIKey = v })
 }
 
 func applyEnvString(key string, apply func(string)) {
@@ -420,6 +437,10 @@ func bindEnvKeys(v *viper.Viper) {
 		"SESSION_TTL_HOURS",
 		"SESSION_SECRET",
 		"SESSION_COOKIE_NAME",
+		"AI_WORKFLOW_GENKIT_ENABLED",
+		"AI_WORKFLOW_MODEL",
+		"AI_WORKFLOW_TIMEOUT_MS",
+		"AI_WORKFLOW_API_KEY",
 	}
 
 	for _, key := range keys {

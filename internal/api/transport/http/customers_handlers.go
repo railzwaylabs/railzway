@@ -28,8 +28,7 @@ func (h *Handler) CreateCustomer(c *gin.Context) {
 	ctx := orgcontext.WithOrgID(c.Request.Context(), orgID)
 
 	var payload createCustomerRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 	resp, err := h.customers.Create(ctx, customerdomain.CreateCustomerRequest{

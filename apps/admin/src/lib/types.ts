@@ -806,6 +806,28 @@ export type ProductFeature = {
   active: boolean;
 };
 
+export type AIScheduledJob = {
+  id: string;
+  org_id: string;
+  task_type: string;
+  payload: any;
+  schedule_cron?: string;
+  status: string;
+  next_run_at: string;
+  last_run_at?: string;
+  error_count: number;
+  last_error?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AIJobsListResponse = {
+  jobs: AIScheduledJob[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
 export type AIAssistantOption = {
   value: string;
   label: string;
@@ -896,6 +918,12 @@ export type AIAssistantProration = {
   detail: string;
 };
 
+export type AIAssistantGroundingItem = {
+  label: string;
+  detail: string;
+  source: string;
+};
+
 export type AIAssistantPlanRecommendation = {
   current_plan: string;
   recommended_plan: string;
@@ -928,6 +956,17 @@ export type AIAssistantAction = {
   disabled?: boolean;
 };
 
+export type AIAssistantContextMention = {
+  type: "customer" | "product" | "plan" | "meter" | "feature" | "segment";
+  value: string;
+  label: string;
+  detail?: string;
+};
+
+export type AIAssistantRunContext = {
+  mentions?: AIAssistantContextMention[];
+};
+
 export type AIAssistantInsight = {
   summary: AIAssistantSummary;
   snapshot?: AIAssistantSnapshot;
@@ -936,6 +975,7 @@ export type AIAssistantInsight = {
   proration?: AIAssistantProration;
   plan_recommendation?: AIAssistantPlanRecommendation;
   product_recommendations?: AIAssistantProductRecommendation[];
+  grounding?: AIAssistantGroundingItem[];
   confidence: AIAssistantConfidence;
   data_quality: string;
   actions: AIAssistantAction[];
@@ -949,6 +989,7 @@ export type AIAssistantRunDetail = {
   time_range: string;
   prompt: string;
   customer_label: string;
+  context: AIAssistantRunContext;
   created_at: string;
   updated_at: string;
   started_at?: string;
@@ -964,6 +1005,7 @@ export type AIAssistantRunHistoryItem = {
   subtitle: string;
   intent: string;
   customer_label: string;
+  context: AIAssistantRunContext;
   status: AIAssistantStatusBadge;
   created_at: string;
   duration_ms?: number;
@@ -989,11 +1031,150 @@ export type AIAssistantRunDetailResponse = {
   run: AIAssistantRunDetail;
 };
 
+export type AIAssistantWorkflowPreviewStep = {
+  key: string;
+  title: string;
+  order: number;
+};
+
+export type AIAssistantWorkflowPreviewAgent = {
+  key: string;
+  role: string;
+  objective: string;
+  order: number;
+  steps: AIAssistantWorkflowPreviewStep[];
+};
+
+export type AIAssistantWorkflowPreviewAction = {
+  agent_key?: string;
+  type: string;
+  label: string;
+  payload?: Record<string, unknown>;
+  order: number;
+};
+
+export type AIAssistantWorkflowPreview = {
+  title: string;
+  intent: string;
+  summary: string;
+  agents: AIAssistantWorkflowPreviewAgent[];
+  actions: AIAssistantWorkflowPreviewAction[];
+};
+
+export type AIAssistantWorkflowPreviewResponse = {
+  workflow: AIAssistantWorkflowPreview;
+};
+
 export type AIAssistantCreateRunRequest = {
   customer_ref: string;
   time_range: string;
   intent: string;
   prompt: string;
+  context?: AIAssistantRunContext;
+};
+
+export type AIPromptTokenResourceType =
+  | "customer"
+  | "invoice"
+  | "product"
+  | "subscription"
+  | "meter"
+  | "usage"
+  | "feature"
+  | "audit_log";
+
+export type AIPromptTokenTimeType = "date" | "month" | "range" | "relative";
+
+export type AIPromptTokenBase = {
+  id: string;
+  kind: "resource" | "time";
+  key: string;
+  label: string;
+  secondary_label?: string;
+};
+
+export type AIPromptResourceToken = AIPromptTokenBase & {
+  kind: "resource";
+  type: AIPromptTokenResourceType;
+  resource_id: string;
+  metadata?: Record<string, unknown>;
+};
+
+export type AIPromptTimeToken = AIPromptTokenBase & {
+  kind: "time";
+  type: AIPromptTokenTimeType;
+  value?: string;
+  from?: string;
+  to?: string;
+  timezone?: string;
+  preset?: string;
+};
+
+export type AIPromptToken = AIPromptResourceToken | AIPromptTimeToken;
+
+export type AIPromptMessageBlock = {
+  type: "heading" | "quote" | "text" | "markdown" | "data" | "json" | "cards" | "chart" | "list" | "alert" | "table" | "timeline" | "badge" | "steps";
+  tone?: "error" | "warning" | "info" | "positive" | "negative" | "neutral";
+  title?: string;
+  text?: string;
+  data?: unknown;
+};
+
+export type AIPromptMessage = {
+  id: string;
+  role: "user" | "assistant" | "system";
+  prompt?: string;
+  tokens?: AIPromptToken[];
+  blocks?: AIPromptMessageBlock[];
+  created_at: string;
+};
+
+export type AIPromptCreateRequest = {
+  prompt: string;
+  tokens: AIPromptToken[];
+  conversation_id?: string;
+  thread_id?: string;
+};
+
+export type AIPromptResponse = {
+  conversation_id?: string;
+  thread_id?: string;
+  message: AIPromptMessage;
+};
+
+export type AIThread = {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AIThreadListResponse = {
+  threads: AIThread[];
+};
+
+export type AIThreadDetailResponse = {
+  thread: AIThread;
+  messages: AIPromptMessage[];
+};
+
+export type AIPromptTokenSearchItem = {
+  key: string;
+  kind: "resource" | "time";
+  type: AIPromptTokenResourceType | AIPromptTokenTimeType;
+  label: string;
+  secondary_label?: string;
+  resource_id?: string;
+  value?: string;
+  from?: string;
+  to?: string;
+  timezone?: string;
+  preset?: string;
+  metadata?: Record<string, unknown>;
+};
+
+export type AIPromptTokenSearchResponse = {
+  items: AIPromptTokenSearchItem[];
 };
 
 export type AIWorkflowStatusBadge = {
@@ -1004,6 +1185,7 @@ export type AIWorkflowStatusBadge = {
 
 export type AIWorkflowAction = {
   id: string;
+  agent_id?: string;
   type: string;
   label: string;
   status: "pending" | "running" | "done" | "failed";
@@ -1020,6 +1202,33 @@ export type AIWorkflowApproval = {
   status: "approved" | "rejected";
   note?: string;
   created_at: string;
+};
+
+export type AIWorkflowAgentStep = {
+  id: string;
+  key: string;
+  title: string;
+  status: "pending" | "running" | "done" | "failed";
+  order: number;
+  error?: string;
+  created_at: string;
+  updated_at: string;
+  started_at?: string;
+  finished_at?: string;
+};
+
+export type AIWorkflowAgent = {
+  id: string;
+  key: string;
+  role: string;
+  objective: string;
+  status: "pending" | "running" | "done" | "failed";
+  order: number;
+  created_at: string;
+  updated_at: string;
+  started_at?: string;
+  finished_at?: string;
+  steps: AIWorkflowAgentStep[];
 };
 
 export type AIWorkflowListItem = {
@@ -1045,6 +1254,7 @@ export type AIWorkflowDetail = {
   updated_at: string;
   started_at?: string;
   finished_at?: string;
+  agents: AIWorkflowAgent[];
   actions: AIWorkflowAction[];
   approvals: AIWorkflowApproval[];
 };
@@ -1061,9 +1271,22 @@ export type AIWorkflowDetailResponse = {
 };
 
 export type AIWorkflowCreateAction = {
+  agent_key?: string;
   type: string;
   label: string;
   payload?: Record<string, unknown>;
+};
+
+export type AIWorkflowCreateAgentStep = {
+  key?: string;
+  title: string;
+};
+
+export type AIWorkflowCreateAgent = {
+  key: string;
+  role: string;
+  objective: string;
+  steps?: AIWorkflowCreateAgentStep[];
 };
 
 export type AIWorkflowCreateRequest = {
@@ -1071,6 +1294,7 @@ export type AIWorkflowCreateRequest = {
   summary: string;
   intent: string;
   source_run_id?: string;
+  agents?: AIWorkflowCreateAgent[];
   actions: AIWorkflowCreateAction[];
 };
 

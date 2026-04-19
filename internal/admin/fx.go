@@ -2,13 +2,10 @@ package admin
 
 import (
 	"github.com/railzwaylabs/railzway/internal/admin/auth"
-	"github.com/railzwaylabs/railzway/internal/admin/scheduler"
 	adminservice "github.com/railzwaylabs/railzway/internal/admin/service"
 	adminhandler "github.com/railzwaylabs/railzway/internal/admin/transport/http"
-	"github.com/railzwaylabs/railzway/internal/aiassistant"
-	aiassistantdomain "github.com/railzwaylabs/railzway/internal/aiassistant/domain"
-	"github.com/railzwaylabs/railzway/internal/aiworkflow"
-	aiworkflowdomain "github.com/railzwaylabs/railzway/internal/aiworkflow/domain"
+	aiassistant "github.com/railzwaylabs/railzway/internal/ai/assistant"
+	aischeduler "github.com/railzwaylabs/railzway/internal/ai/scheduler"
 	apikeyrepo "github.com/railzwaylabs/railzway/internal/apikey/repository"
 	apikeyservice "github.com/railzwaylabs/railzway/internal/apikey/service"
 	appsdomain "github.com/railzwaylabs/railzway/internal/apps/domain"
@@ -38,8 +35,6 @@ import (
 
 // Module provides admin summary services and handlers.
 var Module = fx.Module("admin",
-	aiassistant.Module,
-	aiworkflow.Module,
 	fx.Provide(
 		auth.NewService,
 		auditlog.NewService,
@@ -74,11 +69,11 @@ var Module = fx.Module("admin",
 			taxes taxdomain.Service,
 			testclocks testclockdomain.Service,
 			references referencedomain.Repository,
-			aiAssistant aiassistantdomain.Service,
-			aiWorkflow aiworkflowdomain.Service,
+			aiAssistant *aiassistant.AssistantWorkflow,
+			aiThreadStore *aiassistant.ThreadStore,
+			aiScheduler *aischeduler.Service,
 		) *adminhandler.Handler {
-			return adminhandler.NewHandler(summary, flags, authSvc, adminAuthz, auditSvc, cfg, apps, apiKeys, plans, products, features, productFeatures, customers, organizations, subscriptions, usage, invoices, ledger, rating, payments, taxes, testclocks, references, aiAssistant, aiWorkflow)
+			return adminhandler.NewHandler(summary, flags, authSvc, adminAuthz, auditSvc, cfg, apps, apiKeys, plans, products, features, productFeatures, customers, organizations, subscriptions, usage, invoices, ledger, rating, payments, taxes, testclocks, references, aiAssistant, aiThreadStore, aiScheduler)
 		},
 	),
-	fx.Invoke(scheduler.StartSummaryRefresher),
 )

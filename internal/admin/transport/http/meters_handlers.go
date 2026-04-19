@@ -27,8 +27,7 @@ func (h *Handler) CreateMeter(c *gin.Context) {
 	ctx := h.withAuditContext(c, orgcontext.WithOrgID(c.Request.Context(), orgID))
 
 	var payload createMeterRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -64,8 +63,7 @@ func (h *Handler) UpdateMeter(c *gin.Context) {
 
 	meterID := strings.TrimSpace(c.Param("meter_id"))
 	var payload updateMeterRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 

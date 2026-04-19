@@ -50,7 +50,7 @@ const ApiKeys = lazy(() => import("./pages/ApiKeys"))
 const ProfileSessions = lazy(() => import("./pages/ProfileSessions"))
 const OrganizationSessions = lazy(() => import("./pages/OrganizationSessions"))
 const AIAssistant = lazy(() => import("./pages/AIAssistant"))
-const AIWorkflows = lazy(() => import("./pages/AIWorkflows"))
+const AIScheduledJobs = lazy(() => import("./pages/AIScheduledJobs"))
 
 // ── Nav Icons ─────────────────────────────────
 const icons: Record<string, JSX.Element> = {
@@ -227,7 +227,6 @@ function usePageTitle() {
     "/api-keys": "api_keys",
     "/profile/sessions": "profile_sessions",
     "/ai-assistant": "ai_assistant",
-    "/ai-workflows": "ai_workflows",
   }
   if (pathname === "/profile/sessions") {
     return { label: "My Sessions", desc: "Review and revoke your admin sessions" }
@@ -603,6 +602,7 @@ function AppLayout() {
   }, [activeOrg])
 
   const orgBase = activeOrgId ? `/organizations/${activeOrgId}` : ""
+  const isAssistantImmersive = location.pathname.includes("/ai-assistant")
   const navGroups = useMemo(() => {
     const withOrg = (path: string) => (orgBase ? `${orgBase}${path}` : "/organizations")
     const canManageOrgSessions = activeOrg?.role === "OWNER" || activeOrg?.role === "ADMIN"
@@ -617,8 +617,8 @@ function AppLayout() {
       {
         label: t("nav.groups.billing"),
         items: [
-          { label: "Products", path: withOrg("/products"), icon: icons.products },
-          { label: "Features", path: withOrg("/features"), icon: icons.features },
+          { label: t("nav.items.products"), path: withOrg("/products"), icon: icons.products },
+          { label: t("nav.items.features"), path: withOrg("/features"), icon: icons.features },
           { label: t("nav.items.plans"), path: withOrg("/plans"), icon: icons.plans },
           { label: t("nav.items.subscriptions"), path: withOrg("/subscriptions"), icon: icons.subscriptions },
           { label: t("nav.items.usage"), path: withOrg("/usage"), icon: icons.usage },
@@ -642,13 +642,20 @@ function AppLayout() {
           { label: t("nav.items.apps"), path: withOrg("/apps"), icon: icons.apps },
           { label: t("nav.items.test_clock"), path: withOrg("/test-clock"), icon: icons.settings },
           { label: t("nav.items.settings"), path: withOrg("/settings"), icon: icons.settings },
-          ...(canManageOrgSessions ? [{ label: "Sessions", path: withOrg("/sessions"), icon: icons.settings }] : []),
+          ...(canManageOrgSessions ? [{ label: t("nav.items.sessions"), path: withOrg("/sessions"), icon: icons.settings }] : []),
         ],
       },
       {
-        label: "Developers",
+        label: t("nav.groups.ai"),
         items: [
-          { label: "API Keys", path: withOrg("/api-keys"), icon: icons.apikeys },
+          { label: t("nav.items.ai_assistant"), path: withOrg("/ai-assistant"), icon: icons.ai_assistant },
+          { label: t("nav.items.ai_scheduled_jobs"), path: withOrg("/ai-scheduled-jobs"), icon: icons.ai_workflows },
+        ],
+      },
+      {
+        label: t("nav.groups.developer"),
+        items: [
+          { label: t("nav.items.api_keys"), path: withOrg("/api-keys"), icon: icons.apikeys },
         ],
       },
     ]
@@ -701,7 +708,7 @@ function AppLayout() {
       <Route path="features/:id/edit" element={<FeaturesEdit />} />
       <Route path="api-keys" element={<ApiKeys />} />
       <Route path="ai-assistant" element={<AIAssistant />} />
-      <Route path="ai-workflows" element={<AIWorkflows />} />
+      <Route path="ai-scheduled-jobs" element={<AIScheduledJobs />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   )
@@ -730,6 +737,17 @@ function AppLayout() {
   if (isOrgCreate) {
     return (
       <div className="org-create-layout">
+        {content}
+        <ToastContainer />
+      </div>
+    )
+  }
+
+  const showAssistantLauncher = Boolean(activeOrgId) && !location.pathname.includes("/ai-assistant")
+
+  if (isAssistantImmersive) {
+    return (
+      <div className="min-h-screen bg-[hsl(var(--bg-surface))]">
         {content}
         <ToastContainer />
       </div>
@@ -779,6 +797,16 @@ function AppLayout() {
         <Topbar authRequired={authRequired} />
         {content}
       </main>
+      {showAssistantLauncher ? (
+        <button
+          type="button"
+          onClick={() => navigate(`${orgBase}/ai-assistant`)}
+          className="fixed bottom-6 right-6 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-slate-950 text-white shadow-[0_18px_40px_rgba(15,23,42,0.28)] transition hover:-translate-y-0.5 hover:bg-slate-900"
+          aria-label="Open AI Assistant"
+        >
+          {icons.ai_assistant}
+        </button>
+      ) : null}
       <ToastContainer />
     </div>
   )

@@ -10,16 +10,16 @@ import (
 )
 
 type createSubscriptionRequest struct {
-	CustomerID         string `json:"customer_id"`
-	PlanID             string `json:"plan_id"`
-	Currency           string `json:"currency"`
-	StartAt            string `json:"start_at"`
-	CurrentPeriodStart string `json:"current_period_start"`
-	CurrentPeriodEnd   string `json:"current_period_end"`
-	TrialEnd           string `json:"trial_end"`
-	CancelAt           string `json:"cancel_at"`
-	Status             string `json:"status"`
-	IdempotencyKey     string `json:"idempotency_key"`
+	CustomerID         string                        `json:"customer_id"`
+	PlanID             string                        `json:"plan_id"`
+	Currency           string                        `json:"currency"`
+	StartAt            string                        `json:"start_at"`
+	CurrentPeriodStart string                        `json:"current_period_start"`
+	CurrentPeriodEnd   string                        `json:"current_period_end"`
+	TrialEnd           string                        `json:"trial_end"`
+	CancelAt           string                        `json:"cancel_at"`
+	Status             string                        `json:"status"`
+	IdempotencyKey     string                        `json:"idempotency_key"`
 	Items              []createSubscriptionItemInput `json:"items"`
 }
 
@@ -40,8 +40,7 @@ func (h *Handler) CreateSubscription(c *gin.Context) {
 	ctx := h.withAuditContext(c, orgcontext.WithOrgID(c.Request.Context(), orgID))
 
 	var payload createSubscriptionRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -130,8 +129,7 @@ func (h *Handler) CreateSubscriptionItem(c *gin.Context) {
 
 	subscriptionID := strings.TrimSpace(c.Param("subscription_id"))
 	var payload createSubscriptionItemRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 	startAt, err := parseTimePtr(payload.StartAt)
@@ -177,8 +175,7 @@ func (h *Handler) UpdateSubscription(c *gin.Context) {
 
 	subscriptionID := strings.TrimSpace(c.Param("subscription_id"))
 	var payload updateSubscriptionRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 

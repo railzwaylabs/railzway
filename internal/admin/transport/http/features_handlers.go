@@ -28,8 +28,7 @@ func (h *Handler) CreateFeature(c *gin.Context) {
 	ctx := h.withAuditContext(c, orgcontext.WithOrgID(c.Request.Context(), orgID))
 
 	var payload createFeatureRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -67,8 +66,7 @@ func (h *Handler) UpdateFeature(c *gin.Context) {
 
 	featureID := strings.TrimSpace(c.Param("feature_id"))
 	var payload updateFeatureRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 

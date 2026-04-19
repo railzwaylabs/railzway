@@ -34,8 +34,7 @@ func (h *Handler) CreateSubscription(c *gin.Context) {
 	ctx := orgcontext.WithOrgID(c.Request.Context(), orgID)
 
 	var payload createSubscriptionRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 	startAt, err := parseTimePtrValue(payload.StartAt)

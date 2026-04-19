@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/railzwaylabs/railzway/internal/admin"
 	adminhandler "github.com/railzwaylabs/railzway/internal/admin/transport/http"
+	aimodule "github.com/railzwaylabs/railzway/internal/ai"
 	"github.com/railzwaylabs/railzway/internal/bootstrap"
 	"github.com/railzwaylabs/railzway/internal/cache"
 	"github.com/railzwaylabs/railzway/internal/clock"
@@ -82,6 +83,7 @@ func main() {
 		reference.Module,
 		featureflag.Module,
 		tax.Module,
+		aimodule.Module,
 		admin.Module,
 		fx.Invoke(registerLoggerLifecycle),
 		fx.Invoke(registerTelemetryLifecycle),

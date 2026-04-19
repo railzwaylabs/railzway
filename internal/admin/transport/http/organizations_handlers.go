@@ -24,8 +24,7 @@ func (h *Handler) CreateOrganization(c *gin.Context) {
 	ctx := h.withAuditContext(c, c.Request.Context())
 
 	var payload createOrganizationRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -88,8 +87,7 @@ func (h *Handler) UpdateOrganization(c *gin.Context) {
 
 	orgID := strings.TrimSpace(c.Param("org_id"))
 	var payload updateOrganizationRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -135,8 +133,7 @@ func (h *Handler) InviteOrganizationMembers(c *gin.Context) {
 
 	orgID := strings.TrimSpace(c.Param("org_id"))
 	var payload inviteMembersRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -184,8 +181,7 @@ func (h *Handler) UpsertOrganizationBillingPreferences(c *gin.Context) {
 
 	orgID := strings.TrimSpace(c.Param("org_id"))
 	var payload billingPreferencesRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -222,8 +218,7 @@ func (h *Handler) CreateOrganizationInvoiceFormat(c *gin.Context) {
 
 	orgID := strings.TrimSpace(c.Param("org_id"))
 	var payload createInvoiceFormatRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 	effectiveFrom, err := parseTime(payload.EffectiveFrom)
@@ -282,8 +277,7 @@ func (h *Handler) CloseOrganizationInvoiceFormat(c *gin.Context) {
 	formatID := strings.TrimSpace(c.Param("format_id"))
 
 	var payload closeInvoiceFormatRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 	effectiveTo, err := parseTime(payload.EffectiveTo)
@@ -318,8 +312,7 @@ func (h *Handler) LinkChildOrganization(c *gin.Context) {
 
 	parentOrgID := strings.TrimSpace(c.Param("org_id"))
 	var payload linkOrganizationRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 

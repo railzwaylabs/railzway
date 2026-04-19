@@ -32,6 +32,7 @@ export default function ProductsCreate() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [mirrorPrimaryPlan, setMirrorPrimaryPlan] = useState(true)
 
   const methods = useForm<FormValues>({
     defaultValues: {
@@ -63,6 +64,8 @@ export default function ProductsCreate() {
   })
 
   const { register, control, handleSubmit, setValue, watch, formState: { errors } } = methods
+  const productName = watch("name")
+  const productCode = watch("code")
 
   const { fields: planFields, append: appendPlan, remove: removePlan } = useFieldArray({
     control,
@@ -93,6 +96,18 @@ export default function ProductsCreate() {
     bootstrap.meters.map(m => ({ value: m.id, label: `${m.name} (${m.code})` })),
     [bootstrap.meters]
   )
+
+  useEffect(() => {
+    if (planFields.length > 1 && mirrorPrimaryPlan) {
+      setMirrorPrimaryPlan(false)
+    }
+  }, [mirrorPrimaryPlan, planFields.length])
+
+  useEffect(() => {
+    if (!mirrorPrimaryPlan || planFields.length !== 1) return
+    setValue("plans.0.name", productName?.trim() ?? "", { shouldDirty: false, shouldTouch: false, shouldValidate: false })
+    setValue("plans.0.code", productCode?.trim() ?? "", { shouldDirty: false, shouldTouch: false, shouldValidate: false })
+  }, [mirrorPrimaryPlan, planFields.length, productName, productCode, setValue])
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -143,19 +158,20 @@ export default function ProductsCreate() {
                   <Package className="w-5 h-5 text-primary" />
                   <h3 className="font-semibold text-lg">{t("products_create.sections.product")}</h3>
                 </div>
+                <p className="mb-4 text-sm muted">{t("products_create.hints.product_identity")}</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{t("plans_create.fields.plan_code")} *</Label>
+                    <Label>{t("products_create.fields.product_code")} *</Label>
                     <Input {...register("code", { required: true })} placeholder={t("products_create.placeholders.product_code")} data-testid="products-create-code" />
                     {errors.code && <span className="text-destructive text-xs">{t("products_create.validation.required")}</span>}
                   </div>
                   <div className="space-y-2">
-                    <Label>{t("plans_create.fields.plan_name")} *</Label>
+                    <Label>{t("products_create.fields.product_name")} *</Label>
                     <Input {...register("name", { required: true })} placeholder={t("products_create.placeholders.product_name")} data-testid="products-create-name" />
                     {errors.name && <span className="text-destructive text-xs">{t("products_create.validation.required")}</span>}
                   </div>
                   <div className="col-span-2 space-y-2">
-                    <Label>{t("plans_create.fields.description")}</Label>
+                    <Label>{t("products_create.fields.description")}</Label>
                     <Input {...register("description")} placeholder={t("plans_create.fields.description_placeholder")} data-testid="products-create-description" />
                   </div>
                 </div>
@@ -166,19 +182,23 @@ export default function ProductsCreate() {
                 <div className="flex items-center justify-between px-2">
                   <div className="flex items-center gap-2">
                     <Layers className="w-5 h-5 text-primary" />
-                    <h3 className="font-semibold text-lg">{t("plans.header.title")}</h3>
+                    <h3 className="font-semibold text-lg">{t("products_create.sections.plans")}</h3>
                   </div>
                   <Button 
                     type="button" 
                     variant="outline" 
                     size="sm"
-                    onClick={() => appendPlan({ code: "", name: "", active: true, prices: [] })}
+                    onClick={() => {
+                      setMirrorPrimaryPlan(false)
+                      appendPlan({ code: "", name: "", active: true, prices: [] })
+                    }}
                     data-testid="products-create-add-plan"
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     {t("plans.actions.create")}
                   </Button>
                 </div>
+                <div className="px-2 text-sm muted">{t("products_create.hints.product_plan_boundary")}</div>
 
                 {planFields.map((plan: CreateProductPlanInput & { id: string }, index: number) => (
                   <PlanFormItem 
@@ -188,6 +208,10 @@ export default function ProductsCreate() {
                     currencyOptions={currencyOptions}
                     meterOptions={meterOptions}
                     t={t}
+                    isPrimary={index === 0}
+                    canMirror={planFields.length === 1}
+                    mirrorPlanIdentity={mirrorPrimaryPlan}
+                    onToggleMirrorPlanIdentity={setMirrorPrimaryPlan}
                   />
                 ))}
 
@@ -265,7 +289,17 @@ export default function ProductsCreate() {
   )
 }
 
-function PlanFormItem({ index, remove, currencyOptions, meterOptions, t }: any) {
+function PlanFormItem({
+  index,
+  remove,
+  currencyOptions,
+  meterOptions,
+  t,
+  isPrimary,
+  canMirror,
+  mirrorPlanIdentity,
+  onToggleMirrorPlanIdentity,
+}: any) {
   const { control, register } = useFormContext<FormValues>()
   const { fields: priceFields, append: appendPrice, remove: removePrice } = useFieldArray({
     control,
@@ -279,7 +313,7 @@ function PlanFormItem({ index, remove, currencyOptions, meterOptions, t }: any) 
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
             {index + 1}
           </div>
-          <h4 className="font-semibold">{t("plans_create.sections.product")}</h4>
+          <h4 className="font-semibold">{t("products_create.sections.plan_item", { number: index + 1 })}</h4>
         </div>
         <Button 
           type="button" 
@@ -293,14 +327,35 @@ function PlanFormItem({ index, remove, currencyOptions, meterOptions, t }: any) 
         </Button>
       </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-8">
+      <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="col-span-2 text-xs muted">{t("products_create.hints.plan_identity")}</div>
+        {isPrimary && canMirror ? (
+          <label className="col-span-2 flex items-center gap-2 rounded-md border border-border bg-subtle/30 px-3 py-2 text-xs">
+            <input
+              type="checkbox"
+              checked={mirrorPlanIdentity}
+              onChange={(event) => onToggleMirrorPlanIdentity(event.target.checked)}
+            />
+            <span>{t("products_create.hints.mirror_primary_plan")}</span>
+          </label>
+        ) : null}
         <div className="space-y-2">
-          <Label>{t("plans_create.fields.plan_name")} *</Label>
-          <Input {...register(`plans.${index}.name`, { required: true })} placeholder={t("products_create.placeholders.plan_name")} data-testid={`plans-name-${index}`} />
+          <Label>{t("products_create.fields.plan_name")} *</Label>
+          <Input
+            {...register(`plans.${index}.name`, { required: true })}
+            placeholder={t("products_create.placeholders.plan_name")}
+            data-testid={`plans-name-${index}`}
+            disabled={isPrimary && canMirror && mirrorPlanIdentity}
+          />
         </div>
         <div className="space-y-2">
-          <Label>{t("plans_create.fields.plan_code")} *</Label>
-          <Input {...register(`plans.${index}.code`, { required: true })} placeholder={t("products_create.placeholders.plan_code")} data-testid={`plans-code-${index}`} />
+          <Label>{t("products_create.fields.plan_code")} *</Label>
+          <Input
+            {...register(`plans.${index}.code`, { required: true })}
+            placeholder={t("products_create.placeholders.plan_code")}
+            data-testid={`plans-code-${index}`}
+            disabled={isPrimary && canMirror && mirrorPlanIdentity}
+          />
         </div>
       </div>
 

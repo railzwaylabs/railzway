@@ -28,8 +28,7 @@ func (h *Handler) ReplaceProductFeatures(c *gin.Context) {
 	productID := strings.TrimSpace(c.Param("product_id"))
 
 	var req replaceProductFeaturesRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &req) {
 		return
 	}
 

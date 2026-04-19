@@ -9,9 +9,9 @@ import (
 )
 
 type authzPolicyRequest struct {
-	Subject string `json:"subject"`
-	Object  string `json:"object"`
-	Action  string `json:"action"`
+	Subject string `json:"subject" binding:"required"`
+	Object  string `json:"object" binding:"required"`
+	Action  string `json:"action" binding:"required"`
 }
 
 func (h *Handler) ListAuthzPolicies(c *gin.Context) {
@@ -33,18 +33,13 @@ func (h *Handler) AddAuthzPolicy(c *gin.Context) {
 		return
 	}
 	var req authzPolicyRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_request"})
+	if !bindJSONOrAbort(c, &req) {
 		return
 	}
 	policy := authz.Policy{
 		Subject: strings.TrimSpace(req.Subject),
 		Object:  strings.TrimSpace(req.Object),
 		Action:  strings.TrimSpace(req.Action),
-	}
-	if policy.Subject == "" || policy.Object == "" || policy.Action == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_request"})
-		return
 	}
 	added, err := h.adminAuthz.AddPolicy(policy)
 	if err != nil {
@@ -60,18 +55,13 @@ func (h *Handler) RemoveAuthzPolicy(c *gin.Context) {
 		return
 	}
 	var req authzPolicyRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_request"})
+	if !bindJSONOrAbort(c, &req) {
 		return
 	}
 	policy := authz.Policy{
 		Subject: strings.TrimSpace(req.Subject),
 		Object:  strings.TrimSpace(req.Object),
 		Action:  strings.TrimSpace(req.Action),
-	}
-	if policy.Subject == "" || policy.Object == "" || policy.Action == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_request"})
-		return
 	}
 	removed, err := h.adminAuthz.RemovePolicy(policy)
 	if err != nil {

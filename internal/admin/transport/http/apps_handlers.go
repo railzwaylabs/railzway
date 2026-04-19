@@ -72,8 +72,7 @@ func (h *Handler) InstallApp(c *gin.Context) {
 	ctx := orgcontext.WithOrgID(c.Request.Context(), orgID)
 
 	var payload installAppPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 	resp, err := h.apps.InstallApp(ctx, appsdomain.InstallAppRequest{
@@ -99,8 +98,7 @@ func (h *Handler) UpdateAppInstallation(c *gin.Context) {
 
 	installID := c.Param("installation_id")
 	var payload updateInstallationPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 	resp, err := h.apps.UpdateInstallation(ctx, installID, appsdomain.UpdateInstallationRequest{

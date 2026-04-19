@@ -77,10 +77,18 @@ import {
   AIAssistantRunsResponse,
   AIAssistantRunDetailResponse,
   AIAssistantCreateRunRequest,
+  AIAssistantWorkflowPreviewResponse,
+  AIPromptCreateRequest,
+  AIPromptResponse,
+  AIPromptTokenSearchResponse,
+  AIThreadDetailResponse,
+  AIThreadListResponse,
   AIWorkflowListResponse,
   AIWorkflowDetailResponse,
   AIWorkflowCreateRequest,
   AIWorkflowApproveRequest,
+  AIScheduledJob,
+  AIJobsListResponse,
   CreateProductRequest,
   UpdateProductRequest,
   ProductCreateBootstrap,
@@ -105,6 +113,10 @@ type ApiErrorPayload = {
   code?: string;
   message?: string;
   detail?: string;
+  details?: Array<{
+    field?: string;
+    message?: string;
+  }>;
 };
 
 const defaultConfig: ApiConfig = {
@@ -150,6 +162,13 @@ const friendlyErrorMessages: Record<string, string> = {
   unbalanced_entry: "Ledger entries must be balanced.",
   slug_already_exists: "Organization slug already exists.",
   organization_slug_exists: "Organization slug already exists."
+  ,
+  ai_quota_exceeded: "AI quota is exhausted for the configured provider. Retry shortly or update the provider plan.",
+  ai_rate_limited: "AI provider is rate limiting requests right now. Retry shortly.",
+  ai_provider_auth_failed: "AI provider credentials are invalid or do not have access to the configured model.",
+  ai_timeout: "AI provider did not finish in time. Retry in a moment.",
+  ai_model_not_available: "Configured AI model is not available.",
+  ai_provider_failed: "AI provider failed to generate a response. Retry in a moment."
 };
 
 function orgIdFromPath(): string {
@@ -243,6 +262,22 @@ function parseErrorPayload(raw: string): ApiErrorPayload | null {
   }
 }
 
+function formatValidationDetails(details?: ApiErrorPayload["details"]): string {
+  if (!details || details.length === 0) {
+    return "";
+  }
+  return details
+    .map((detail) => {
+      const field = typeof detail?.field === "string" ? detail.field.trim() : "";
+      const message = typeof detail?.message === "string" ? detail.message.trim() : "";
+      if (field && message) return `${field}: ${message}`;
+      if (message) return message;
+      return field;
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
 function formatErrorMessage(raw: string, status?: number): string {
   const trimmed = raw.trim();
   if (!trimmed) {
@@ -257,9 +292,13 @@ function formatErrorMessage(raw: string, status?: number): string {
     (payload?.message && String(payload.message)) ||
     (payload?.detail && String(payload.detail)) ||
     "";
+  const detailsMessage = formatValidationDetails(payload?.details);
 
   if (code && friendlyErrorMessages[code]) {
-    return friendlyErrorMessages[code];
+    return detailsMessage ? `${friendlyErrorMessages[code]}\n${detailsMessage}` : friendlyErrorMessages[code];
+  }
+  if (detailsMessage) {
+    return detailsMessage;
   }
   if (message) {
     return message;
@@ -935,7 +974,7 @@ export const api = {
     upsert: (payload: { current_time: string; status?: string }, config?: ApiConfig) =>
       request<TestClock>(
         `${adminBasePath}/test-clock`,
-        { method: "PUT", body: JSON.stringify(payload) },
+        { method: "POST", body: JSON.stringify(payload) },
         { ...defaultConfig, ...config }
       ),
     advance: (payload: { advance_by_seconds: number }, config?: ApiConfig) =>
@@ -1017,7 +1056,7 @@ export const api = {
         { ...defaultConfig, ...config }
       ),
     void: (invoiceId: string, payload?: { reason?: string; attachment_url?: string; note?: string }, config?: ApiConfig) =>
-      request<Invoice>(
+      request<InvoiceDetailResponse>(
         `${adminBasePath}/invoices/${invoiceId}/void`,
         { method: "POST", body: JSON.stringify(payload) },
         { ...defaultConfig, ...config }
@@ -1035,25 +1074,25 @@ export const api = {
         { ...defaultConfig, ...config }
       ),
     open: (invoiceId: string, config?: ApiConfig) =>
-      request<Invoice>(
+      request<InvoiceDetailResponse>(
         `${adminBasePath}/invoices/${invoiceId}/open`,
         { method: "POST" },
         { ...defaultConfig, ...config }
       ),
     pay: (invoiceId: string, payload?: { reason?: string; attachment_url?: string; note?: string }, config?: ApiConfig) =>
-      request<Invoice>(
+      request<InvoiceDetailResponse>(
         `${adminBasePath}/invoices/${invoiceId}/pay`,
         { method: "POST", body: JSON.stringify(payload) },
         { ...defaultConfig, ...config }
       ),
     markPaid: (invoiceId: string, payload?: { reason?: string; attachment_url?: string; note?: string }, config?: ApiConfig) =>
-      request<Invoice>(
+      request<InvoiceDetailResponse>(
         `${adminBasePath}/invoices/${invoiceId}/mark-paid`,
         { method: "POST", body: JSON.stringify(payload) },
         { ...defaultConfig, ...config }
       ),
     generate: (payload: { customer_id?: string; subscription_id?: string; currency?: string; period_start: string; period_end: string; issue_at?: string; due_at?: string }, config?: ApiConfig) =>
-      request<Invoice>(
+      request<InvoiceDetailResponse>(
         `${adminBasePath}/invoices/generate`,
         { method: "POST", body: JSON.stringify(payload) },
         { ...defaultConfig, ...config }
@@ -1164,6 +1203,62 @@ export const api = {
     startStripeOAuth: (config?: ApiConfig) =>
       request<{ url: string }>(`${adminBasePath}/apps/oauth/stripe/start`, undefined, { ...defaultConfig, ...config }),
   },
+  ai: {
+    listThreads: (params?: { page_size?: number }, config?: ApiConfig) =>
+      request<AIThreadListResponse>(
+        `${adminBasePath}/ai/threads${buildQuery(withDefaultPageSize(params))}`,
+        undefined,
+        { ...defaultConfig, ...config }
+      ),
+    createThread: (payload?: { title?: string }, config?: ApiConfig) =>
+      request<{ thread: { id: string; title: string; created_at: string; updated_at: string } }>(
+        `${adminBasePath}/ai/threads`,
+        { method: "POST", body: JSON.stringify(payload ?? {}) },
+        { ...defaultConfig, ...config }
+      ),
+    getThread: (threadId: string, config?: ApiConfig) =>
+      request<AIThreadDetailResponse>(
+        `${adminBasePath}/ai/threads/${threadId}`,
+        undefined,
+        { ...defaultConfig, ...config }
+      ),
+    deleteThread: (threadId: string, config?: ApiConfig) =>
+      request<{ deleted: boolean }>(
+        `${adminBasePath}/ai/threads/${threadId}`,
+        { method: "DELETE" },
+        { ...defaultConfig, ...config }
+      ),
+    createPrompt: (payload: AIPromptCreateRequest, config?: ApiConfig) =>
+      request<AIPromptResponse>(
+        `${adminBasePath}/ai/prompts`,
+        { method: "POST", body: JSON.stringify(payload) },
+        { ...defaultConfig, ...config }
+      ),
+    searchTokens: (payload: { query?: string; kinds?: Array<"resource" | "time"> }, config?: ApiConfig) =>
+      request<AIPromptTokenSearchResponse>(
+        `${adminBasePath}/ai/tokens/search`,
+        { method: "POST", body: JSON.stringify(payload) },
+        { ...defaultConfig, ...config }
+      ),
+    listJobs: (params?: { page?: number; page_size?: number; status?: string }, config?: ApiConfig) =>
+      request<AIJobsListResponse>(
+        `${adminBasePath}/ai/jobs${buildQuery(params ?? {})}`,
+        undefined,
+        { ...defaultConfig, ...config }
+      ),
+    retryJob: (jobId: string, config?: ApiConfig) =>
+      request<{ status: string }>(
+        `${adminBasePath}/ai/jobs/${jobId}/retry`,
+        { method: "POST" },
+        { ...defaultConfig, ...config }
+      ),
+    cancelJob: (jobId: string, config?: ApiConfig) =>
+      request<{ status: string }>(
+        `${adminBasePath}/ai/jobs/${jobId}`,
+        { method: "DELETE" },
+        { ...defaultConfig, ...config }
+      ),
+  },
   aiAssistant: {
     overview: (config?: ApiConfig) =>
       request<AIAssistantOverviewResponse>(`${adminBasePath}/ai-assistant/overview`, undefined, { ...defaultConfig, ...config }),
@@ -1183,6 +1278,18 @@ export const api = {
       request<AIAssistantRunDetailResponse>(
         `${adminBasePath}/ai-assistant/runs/${runId}`,
         undefined,
+        { ...defaultConfig, ...config }
+      ),
+    previewWorkflowFromRun: (runId: string, config?: ApiConfig) =>
+      request<AIAssistantWorkflowPreviewResponse>(
+        `${adminBasePath}/ai-assistant/runs/${runId}/workflow-preview`,
+        undefined,
+        { ...defaultConfig, ...config }
+      ),
+    createWorkflowFromRun: (runId: string, config?: ApiConfig) =>
+      request<AIWorkflowDetailResponse>(
+        `${adminBasePath}/ai-assistant/runs/${runId}/workflow`,
+        { method: "POST" },
         { ...defaultConfig, ...config }
       ),
   },

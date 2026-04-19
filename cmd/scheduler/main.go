@@ -14,6 +14,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/rating"
 	"github.com/railzwaylabs/railzway/internal/reconciliation"
 	"github.com/railzwaylabs/railzway/internal/subscription"
+	aimodule "github.com/railzwaylabs/railzway/internal/ai"
 	subscriptionrepo "github.com/railzwaylabs/railzway/internal/subscription/repository"
 	"github.com/railzwaylabs/railzway/internal/telemetry"
 	"github.com/railzwaylabs/railzway/internal/testclock"
@@ -48,6 +49,15 @@ func main() {
 		Short: "Run only subscription close period scheduler",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			buildClosePeriodApp().Run()
+			return nil
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "ai-worker",
+		Short: "Run only AI Assistant job worker",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			buildAIWorkerApp().Run()
 			return nil
 		},
 	})
@@ -125,6 +135,20 @@ func buildClosePeriodApp() *fx.App {
 		subscription.Module,
 		invoice.Module,
 		ledger.Module,
+		fx.Invoke(registerLoggerLifecycle),
+		fx.Invoke(telemetry.StartProfiler(6060)),
+	)
+}
+
+func buildAIWorkerApp() *fx.App {
+	return fx.New(
+		fx.Provide(
+			config.Register,
+			newLogger,
+		),
+		db.Module,
+		clock.Module,
+		aimodule.Module,
 		fx.Invoke(registerLoggerLifecycle),
 		fx.Invoke(telemetry.StartProfiler(6060)),
 	)

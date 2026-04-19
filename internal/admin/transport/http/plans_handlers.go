@@ -45,8 +45,7 @@ func (h *Handler) CreatePlan(c *gin.Context) {
 	ctx := h.withAuditContext(c, orgcontext.WithOrgID(c.Request.Context(), orgID))
 
 	var payload createPlanRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -169,8 +168,7 @@ func (h *Handler) CreatePlanPrice(c *gin.Context) {
 
 	planID := strings.TrimSpace(c.Param("plan_id"))
 	var payload createPlanPriceRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -216,8 +214,7 @@ func (h *Handler) CreatePlanAmount(c *gin.Context) {
 
 	priceID := strings.TrimSpace(c.Param("price_id"))
 	var payload createPlanAmountRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 	effectiveFrom, err := parseTimePtr(payload.EffectiveFrom)
@@ -268,8 +265,7 @@ func (h *Handler) CreatePlanTier(c *gin.Context) {
 
 	priceID := strings.TrimSpace(c.Param("price_id"))
 	var payload createPlanTierRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -307,8 +303,7 @@ func (h *Handler) UpdatePlan(c *gin.Context) {
 
 	planID := strings.TrimSpace(c.Param("plan_id"))
 	var payload updatePlanRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 

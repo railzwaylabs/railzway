@@ -149,6 +149,14 @@ func registerAdminRoutes(r *gin.Engine, h *Handler, basePath string) {
 	orgRequired.GET("/api-keys", h.ListAPIKeys)
 	orgRequired.POST("/api-keys", h.CreateAPIKey)
 	orgRequired.POST("/api-keys/:id/revoke", h.RevokeAPIKey)
+	orgRequired.GET("/ai/threads", h.ListAIThreads)
+	orgRequired.POST("/ai/threads", h.CreateAIThread)
+	orgRequired.GET("/ai/threads/:thread_id", h.GetAIThread)
+	orgRequired.DELETE("/ai/threads/:thread_id", h.DeleteAIThread)
+	orgRequired.POST("/ai/prompts", h.CreateAIPrompt)
+	orgRequired.GET("/ai/jobs", h.ListAIJobs)
+	orgRequired.POST("/ai/jobs/:id/retry", h.RetryAIJob)
+	orgRequired.DELETE("/ai/jobs/:id", h.CancelAIJob)
 
 	// Test Clock
 	orgRequired.GET("/test-clock", h.GetTestClock)
@@ -167,19 +175,6 @@ func registerAdminRoutes(r *gin.Engine, h *Handler, basePath string) {
 	orgRequired.POST("/apps/installations", h.InstallApp)
 	orgRequired.PATCH("/apps/installations/:installation_id", h.UpdateAppInstallation)
 	orgRequired.GET("/apps/oauth/stripe/start", h.StartStripeOAuth)
-
-	// AI Assistant
-	orgRequired.GET("/ai-assistant/overview", h.AIAssistantOverview)
-	orgRequired.POST("/ai-assistant/runs", h.CreateAIAssistantRun)
-	orgRequired.GET("/ai-assistant/runs", h.ListAIAssistantRuns)
-	orgRequired.GET("/ai-assistant/runs/:run_id", h.GetAIAssistantRun)
-
-	// AI Workflow
-	orgRequired.POST("/ai-workflows", h.CreateAIWorkflow)
-	orgRequired.GET("/ai-workflows", h.ListAIWorkflows)
-	orgRequired.GET("/ai-workflows/:workflow_id", h.GetAIWorkflow)
-	orgRequired.POST("/ai-workflows/:workflow_id/approvals", h.ApproveAIWorkflow)
-	orgRequired.POST("/ai-workflows/:workflow_id/execute", h.ExecuteAIWorkflow)
 
 	// Misc
 	orgRequired.GET("/warnings", h.ConfigWarnings)

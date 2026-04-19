@@ -220,6 +220,24 @@ func ZapRequestLogger(logger *zap.Logger) gin.HandlerFunc {
 		start := time.Now()
 		path := c.Request.URL.Path
 		raw := c.Request.URL.RawQuery
+
+		startFields := []zap.Field{
+			zap.String("method", c.Request.Method),
+			zap.String("path", path),
+			zap.String("ip", resolveClientIP(c)),
+			zap.String("user_agent", c.Request.UserAgent()),
+		}
+		if v := TraceIDFromContext(c.Request.Context()); v != "" {
+			startFields = append(startFields, zap.String("trace_id", v))
+		}
+		if v := RequestIDFromContext(c.Request.Context()); v != "" {
+			startFields = append(startFields, zap.String("request_id", v))
+		}
+		if v := CorrelationIDFromContext(c.Request.Context()); v != "" {
+			startFields = append(startFields, zap.String("correlation_id", v))
+		}
+		logger.Info("http request started", startFields...)
+
 		c.Next()
 
 		if raw != "" {
@@ -262,11 +280,11 @@ func ZapRequestLogger(logger *zap.Logger) gin.HandlerFunc {
 		}
 
 		if len(c.Errors) > 0 {
-			logger.Error("http request", append(fields, zap.String("errors", c.Errors.String()))...)
+			logger.Error("http request completed", append(fields, zap.String("errors", c.Errors.String()))...)
 			return
 		}
 
-		logger.Info("http request", fields...)
+		logger.Info("http request completed", fields...)
 	}
 }
 

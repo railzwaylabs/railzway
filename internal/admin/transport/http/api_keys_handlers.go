@@ -8,6 +8,14 @@ import (
 	apikeydomain "github.com/railzwaylabs/railzway/internal/apikey/domain"
 )
 
+type createAPIKeyRequest struct {
+	Name           string   `json:"name" binding:"required"`
+	KeyType        string   `json:"key_type" binding:"required"`
+	Scopes         []string `json:"scopes,omitempty"`
+	AllowedIPs     []string `json:"allowed_ips,omitempty"`
+	AllowedDomains []string `json:"allowed_domains,omitempty"`
+}
+
 func (h *Handler) ListAPIKeys(c *gin.Context) {
 	orgID, ok := orgIDFromContext(c)
 	if !ok {
@@ -29,13 +37,16 @@ func (h *Handler) CreateAPIKey(c *gin.Context) {
 		return
 	}
 	var req apikeydomain.CreateAPIKeyRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_payload"})
+	if !bindJSONOrAbort(c, &req) {
 		return
 	}
-	req.Name = strings.TrimSpace(req.Name)
-	req.KeyType = strings.TrimSpace(req.KeyType)
-	resp, err := h.apiKeys.CreateKey(c.Request.Context(), orgID.String(), req)
+	resp, err := h.apiKeys.CreateKey(c.Request.Context(), orgID.String(), apikeydomain.CreateAPIKeyRequest{
+		Name:           strings.TrimSpace(req.Name),
+		KeyType:        strings.TrimSpace(req.KeyType),
+		Scopes:         req.Scopes,
+		AllowedIPs:     req.AllowedIPs,
+		AllowedDomains: req.AllowedDomains,
+	})
 	if err != nil {
 		writeAPIKeysError(c, err)
 		return

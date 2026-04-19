@@ -70,8 +70,8 @@ export default function InvoicesCreate() {
         issue_at: generateForm.issueAt.trim() ? normalizeDate(generateForm.issueAt) : undefined,
         due_at: generateForm.dueAt.trim() ? normalizeDate(generateForm.dueAt) : undefined
       })
-      toast.success(t("invoices_create.toast.generated"), resp.number)
-      navigate(orgPath(`/invoices/${resp.id}/manage`))
+      toast.success(t("invoices_create.toast.generated"), resp.invoice.number)
+      navigate(orgPath(`/invoices/${resp.invoice.id}/manage`))
     } catch (err) {
       toast.error(t("invoices_create.toast.generate_failed"), err instanceof Error ? err.message : undefined)
     } finally {

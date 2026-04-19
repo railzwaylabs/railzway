@@ -136,12 +136,14 @@ Where to start:
 
 Long-form documentation lives in `docs/`. Start from `docs/` if you want deeper design context.
 
+- [`docs/architecture/catalog-model.md`](./docs/architecture/catalog-model.md) – explains the product/plan/price mental model.
+
 ## Notes
 
 - Org-scoped resources require the `X-Org-ID` header.
 - The admin UI sets this after you choose an organization.
 - The public API (API-key auth) is evolving; documentation will be published when stable.
-- Public API rate limits: see [`docs/rate-limits.md`](./docs/rate-limits.md).
+- Public API rate limits: see [`docs/api/rate-limits.md`](./docs/api/rate-limits.md).
 - If you do not have the `migrate` CLI:
   - `brew install golang-migrate`, or
   - `go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest`

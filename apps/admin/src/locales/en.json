@@ -64,14 +64,13 @@
       "core": "Core",
       "billing": "Billing",
       "finance": "Finance",
+      "ai": "AI Assistant",
       "system": "System",
-      "developer": "Developer"
+      "developer": "Developers"
     },
     "items": {
       "dashboard": "Dashboard",
       "customers": "Customers",
-      "ai_assistant": "AI Assistant",
-      "ai_workflows": "AI Workflows",
       "plans": "Plans",
       "subscriptions": "Subscriptions",
       "usage": "Usage",
@@ -83,6 +82,13 @@
       "taxes": "Taxes",
       "audit_logs": "Audit Logs",
       "apps": "Apps",
+      "products": "Products",
+      "features": "Features",
+      "sessions": "Sessions",
+      "api_keys": "API Keys",
+      "ai_assistant": "Assistant",
+      "ai_workflows": "Workflows",
+      "ai_scheduled_jobs": "Scheduled Jobs",
       "test_clock": "Test Clock",
       "settings": "Settings"
     }
@@ -791,6 +797,11 @@
     "workflow": {
       "title": "Workflow",
       "description": "Turn these actions into an approval workflow for your team.",
+      "preview_title": "Workflow preview",
+      "preview_agents": "{{count}} agents",
+      "preview_actions": "{{count}} actions",
+      "preview_agent_actions": "{{count}} actions",
+      "empty": "This insight does not contain executable workflow actions yet.",
       "create": "Create workflow",
       "created": "Workflow created",
       "failed": "Failed to create workflow",
@@ -890,6 +901,9 @@
       "created": "Created",
       "updated": "Updated",
       "source_run": "Source run",
+      "agents_title": "Agents",
+      "no_agents": "No agents defined for this workflow.",
+      "agent_actions_count": "{{count}} actions",
       "actions_title": "Actions",
       "approvals_title": "Approvals",
       "no_approvals": "No approvals yet.",
@@ -900,6 +914,12 @@
       "status_placeholder": "Status"
     },
     "action_status": {
+      "pending": "Pending",
+      "running": "Running",
+      "done": "Done",
+      "failed": "Failed"
+    },
+    "agent_status": {
       "pending": "Pending",
       "running": "Running",
       "done": "Done",
@@ -1334,7 +1354,7 @@
   "products_create": {
     "header": {
       "title": "New Product",
-      "description": "Create a new product defining its name, code, and commercial plans."
+      "description": "Create a product and, if needed, one or more subscription plans under it."
     },
     "actions": {
       "save": "Create Product",
@@ -1345,9 +1365,16 @@
     },
     "sections": {
       "product": "Product Details",
-      "pricing": "Pricing Configuration"
+      "pricing": "Pricing Configuration",
+      "plans": "Plans",
+      "plan_item": "Plan {{number}}"
     },
     "fields": {
+      "product_code": "Product Code",
+      "product_name": "Product Name",
+      "plan_name": "Plan Name",
+      "plan_code": "Plan Code",
+      "description": "Description",
       "price_code": "Price Code",
       "pricing_tiers": "Pricing Tiers",
       "tier_start": "Start",
@@ -1366,6 +1393,10 @@
     },
     "hints": {
       "idempotency": "Root creation key for transactional safety.",
+      "product_identity": "Product is the top-level offering. Use it to name what you sell.",
+      "product_plan_boundary": "Plans are subscription packages under a product. A single product can have one or many plans.",
+      "plan_identity": "Plan names do not have to match the product name. If you only have one plan, reusing the product name is fine.",
+      "mirror_primary_plan": "Use the product name and code for the first plan",
       "no_plans": "No plans added. Customers cannot subscribe to this product without at least one plan.",
       "price_recommendation": "At least one price is recommended for a plan to be commercial."
     },
@@ -2090,6 +2121,38 @@
   "reference": {
     "toast": {
       "currencies_failed": "Failed to load currencies"
+    }
+  },
+  "ai_scheduled_jobs": {
+    "header": {
+      "title": "AI Scheduled Jobs",
+      "description": "Monitor and manage background tasks scheduled by the AI Assistant."
+    },
+    "table": {
+      "columns": {
+        "task_type": "Task Type",
+        "schedule": "Schedule",
+        "status": "Status",
+        "next_run": "Next Run",
+        "health": "Health"
+      },
+      "one_off": "One-off",
+      "healthy": "Healthy",
+      "errors": "{{count}} errors",
+      "empty_title": "No scheduled jobs",
+      "empty_desc": "AI Assistant hasn't scheduled any tasks yet."
+    },
+    "actions": {
+      "retry": "Retry",
+      "cancel": "Cancel",
+      "cancel_confirm": "Are you sure you want to cancel this job?"
+    },
+    "toast": {
+      "retry_success": "Job scheduled for retry",
+      "retry_failed": "Retry failed",
+      "cancel_success": "Job cancelled",
+      "cancel_failed": "Cancellation failed",
+      "load_failed": "Failed to load AI jobs"
     }
   }
 }

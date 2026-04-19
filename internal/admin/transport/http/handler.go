@@ -12,8 +12,8 @@ import (
 	"github.com/google/uuid"
 	adminauth "github.com/railzwaylabs/railzway/internal/admin/auth"
 	adminservice "github.com/railzwaylabs/railzway/internal/admin/service"
-	aiassistantdomain "github.com/railzwaylabs/railzway/internal/aiassistant/domain"
-	aiworkflowdomain "github.com/railzwaylabs/railzway/internal/aiworkflow/domain"
+	aiassistant "github.com/railzwaylabs/railzway/internal/ai/assistant"
+	aischeduler "github.com/railzwaylabs/railzway/internal/ai/scheduler"
 	apikeyservice "github.com/railzwaylabs/railzway/internal/apikey/service"
 	appsdomain "github.com/railzwaylabs/railzway/internal/apps/domain"
 	"github.com/railzwaylabs/railzway/internal/auditlog"
@@ -61,8 +61,9 @@ type Handler struct {
 	taxes           taxdomain.Service
 	testclocks      testclockdomain.Service
 	references      referencedomain.Repository
-	aiAssistant     aiassistantdomain.Service
-	aiWorkflow      aiworkflowdomain.Service
+	aiAssistant     *aiassistant.AssistantWorkflow
+	aiThreadStore   *aiassistant.ThreadStore
+	aiScheduler     *aischeduler.Service
 }
 
 func NewHandler(
@@ -89,8 +90,9 @@ func NewHandler(
 	taxes taxdomain.Service,
 	testclocks testclockdomain.Service,
 	references referencedomain.Repository,
-	aiAssistant aiassistantdomain.Service,
-	aiWorkflow aiworkflowdomain.Service,
+	aiAssistant *aiassistant.AssistantWorkflow,
+	aiThreadStore *aiassistant.ThreadStore,
+	aiScheduler *aischeduler.Service,
 ) *Handler {
 	return &Handler{
 		summary:         summary,
@@ -117,7 +119,8 @@ func NewHandler(
 		testclocks:      testclocks,
 		references:      references,
 		aiAssistant:     aiAssistant,
-		aiWorkflow:      aiWorkflow,
+		aiThreadStore:   aiThreadStore,
+		aiScheduler:     aiScheduler,
 	}
 }
 
@@ -317,8 +320,7 @@ type upsertFeatureFlagResponse struct {
 
 func (h *Handler) UpsertFeatureFlag(c *gin.Context) {
 	var payload upsertFeatureFlagRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -380,8 +382,7 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	var payload loginRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 
@@ -501,8 +502,7 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 		return
 	}
 	var payload changePasswordRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_json"})
+	if !bindJSONOrAbort(c, &payload) {
 		return
 	}
 	if err := h.auth.ChangePassword(c.Request.Context(), userID, payload.CurrentPassword, payload.NewPassword); err != nil {
