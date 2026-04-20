@@ -16,6 +16,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/auditlog"
 	"github.com/railzwaylabs/railzway/internal/cache"
 	"github.com/railzwaylabs/railzway/internal/config"
+	"github.com/railzwaylabs/railzway/internal/coupon"
 	"github.com/railzwaylabs/railzway/internal/customer"
 	"github.com/railzwaylabs/railzway/internal/db"
 	"github.com/railzwaylabs/railzway/internal/entitlement"
@@ -52,6 +53,7 @@ func main() {
 		feature.Module,
 		productfeature.Module,
 		entitlement.Module,
+		coupon.Module,
 		invoice.Module,
 		cache.Register(),
 		redis.Register(),

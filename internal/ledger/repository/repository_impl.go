@@ -163,3 +163,17 @@ func (r *repository) ListEntriesByTransaction(ctx context.Context, orgID, transa
 	}
 	return entries, nil
 }
+
+func (r *repository) GetBalance(ctx context.Context, orgID uuid.UUID, customerID uuid.UUID, accountCode string, currency string) (int64, error) {
+	var balance int64
+	err := r.db.WithContext(ctx).
+		Table("ledger_entries").
+		Select("COALESCE(SUM(CASE WHEN entry_type = 'credit' THEN amount_cents ELSE -amount_cents END), 0)").
+		Joins("JOIN ledger_transactions ON ledger_transactions.id = ledger_entries.transaction_id").
+		Where("ledger_entries.org_id = ?", orgID).
+		Where("ledger_entries.account_code = ?", accountCode).
+		Where("ledger_entries.currency = ?", currency).
+		Where("ledger_transactions.customer_id = ?", customerID).
+		Scan(&balance).Error
+	return balance, err
+}

@@ -17,6 +17,7 @@ const (
 
 	LineTypeSubscription = "subscription"
 	LineTypeUsage        = "usage"
+	LineTypeDiscount     = "discount"
 	LineTypeAdjustment   = "adjustment"
 	LineTypeCredit       = "credit"
 	LineTypeTax          = "tax"

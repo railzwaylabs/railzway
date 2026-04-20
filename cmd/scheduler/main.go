@@ -4,8 +4,10 @@ import (
 	"context"
 	"os"
 
+	aimodule "github.com/railzwaylabs/railzway/internal/ai"
 	"github.com/railzwaylabs/railzway/internal/clock"
 	"github.com/railzwaylabs/railzway/internal/config"
+	"github.com/railzwaylabs/railzway/internal/coupon"
 	"github.com/railzwaylabs/railzway/internal/db"
 	"github.com/railzwaylabs/railzway/internal/invoice"
 	"github.com/railzwaylabs/railzway/internal/ledger"
@@ -14,7 +16,6 @@ import (
 	"github.com/railzwaylabs/railzway/internal/rating"
 	"github.com/railzwaylabs/railzway/internal/reconciliation"
 	"github.com/railzwaylabs/railzway/internal/subscription"
-	aimodule "github.com/railzwaylabs/railzway/internal/ai"
 	subscriptionrepo "github.com/railzwaylabs/railzway/internal/subscription/repository"
 	"github.com/railzwaylabs/railzway/internal/telemetry"
 	"github.com/railzwaylabs/railzway/internal/testclock"
@@ -96,6 +97,7 @@ func buildAllApp() *fx.App {
 		subscription.Module,
 		usage.Module,
 		rating.Module,
+		coupon.Module,
 		invoice.Module,
 		ledger.Module,
 		reconciliation.Module,
@@ -114,6 +116,7 @@ func buildRatingApp() *fx.App {
 			usagerepo.NewRepository,
 		),
 		db.Module,
+		coupon.Module,
 		invoice.Module,
 		ledger.Module,
 		rating.Module,
@@ -133,6 +136,7 @@ func buildClosePeriodApp() *fx.App {
 		testclock.Module,
 		plan.Module,
 		subscription.Module,
+		coupon.Module,
 		invoice.Module,
 		ledger.Module,
 		fx.Invoke(registerLoggerLifecycle),

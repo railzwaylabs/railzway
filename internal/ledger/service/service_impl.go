@@ -551,6 +551,38 @@ func (s *service) recordAudit(ctx context.Context, action, resourceType, resourc
 	})
 }
 
+func (s *service) GetBalance(ctx context.Context, req domain.GetBalanceRequest) (domain.GetBalanceResponse, error) {
+	orgID, ok := orgcontext.OrgIDFromContext(ctx)
+	if !ok || orgID == uuid.Nil {
+		return domain.GetBalanceResponse{}, domain.ErrInvalidOrganization
+	}
+
+	customerID, err := uuid.Parse(req.CustomerID)
+	if err != nil {
+		return domain.GetBalanceResponse{}, domain.ErrInvalidSource
+	}
+
+	accountCode := strings.TrimSpace(req.AccountCode)
+	if accountCode == "" {
+		return domain.GetBalanceResponse{}, domain.ErrInvalidCode
+	}
+
+	currency := strings.TrimSpace(strings.ToUpper(req.Currency))
+	if currency == "" {
+		return domain.GetBalanceResponse{}, domain.ErrInvalidCurrency
+	}
+
+	balance, err := s.repo.GetBalance(ctx, orgID, customerID, accountCode, currency)
+	if err != nil {
+		return domain.GetBalanceResponse{}, err
+	}
+
+	return domain.GetBalanceResponse{
+		BalanceCents: balance,
+		Currency:     currency,
+	}, nil
+}
+
 func mergeMetadata(primary, secondary map[string]interface{}) map[string]interface{} {
 	if len(primary) == 0 && len(secondary) == 0 {
 		return nil

@@ -18,6 +18,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/cache"
 	"github.com/railzwaylabs/railzway/internal/clock"
 	"github.com/railzwaylabs/railzway/internal/config"
+	"github.com/railzwaylabs/railzway/internal/coupon"
 	"github.com/railzwaylabs/railzway/internal/customer"
 	"github.com/railzwaylabs/railzway/internal/db"
 	"github.com/railzwaylabs/railzway/internal/feature"
@@ -75,6 +76,7 @@ func main() {
 		productfeature.Module,
 		subscription.Module,
 		usage.Module,
+		coupon.Module,
 		invoice.Module,
 		ledger.Module,
 		organization.Module,

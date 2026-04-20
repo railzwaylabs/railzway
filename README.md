@@ -1,8 +1,11 @@
 # Railzway
 
-Railzway is an open-source billing computation engine for SaaS products.
+Railzway is an open-source **Billing Computation Engine** developed as a solo project with AI assistance. It focuses on solving the core logic of SaaS billing through clear architectural patterns.
 
-It ingests usage events, rates them against pricing, applies subscription and proration rules, generates invoices, and records ledger transactions. Railzway computes what should be billed and stores the results so they can be reproduced and audited later.
+> [!NOTE]
+> **Why Railzway?** This project is an investigation into building a billing system that prioritizes **Financial Integrity** over convenience. By separating billing computation from payment collection, I've implemented a **Double-Entry Ledger** logic and **Reconciliation** prototype to explore how to build a 100% auditable billing core as a solo developer.
+
+It ingests usage events, rates them against pricing models, and generates ledger-linked invoices. It's a work-in-progress effort to learn and implement mission-critical billing logic at scale.
 
 It is for teams building SaaS billing systems with usage-based, tiered, or hybrid pricing. It is not a payment processor: providers such as Stripe or Xendit belong on the integration side, outside the billing core.
 

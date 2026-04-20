@@ -133,6 +133,18 @@ func reconcileInvoices(ctx context.Context, db *gorm.DB, logger *zap.Logger, win
 				"invoice_total_cents": inv.TotalCents,
 			})
 		}
+		if mismatch, meta, err := checkCouponDiscountMatch(ctx, db, inv); err != nil {
+			logger.Warn("reconciliation coupon check failed", zap.Error(err), zap.String("invoice_id", inv.ID.String()))
+		} else if mismatch {
+			mismatches++
+			recordIntegrityMismatch(ctx, db, logger, "reconciliation.coupon_mismatch", inv, meta)
+		}
+		if mismatch, meta, err := checkLedgerCreditMatch(ctx, db, inv); err != nil {
+			logger.Warn("reconciliation ledger credit check failed", zap.Error(err), zap.String("invoice_id", inv.ID.String()))
+		} else if mismatch {
+			mismatches++
+			recordIntegrityMismatch(ctx, db, logger, "reconciliation.ledger_credit_mismatch", inv, meta)
+		}
 	}
 
 	if len(invoices) > 0 {

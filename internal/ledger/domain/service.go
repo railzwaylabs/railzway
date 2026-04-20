@@ -86,6 +86,17 @@ type ListTransactionsResponse struct {
 	Transactions []LedgerTransaction `json:"transactions"`
 }
 
+type GetBalanceRequest struct {
+	CustomerID  string
+	AccountCode string
+	Currency    string
+}
+
+type GetBalanceResponse struct {
+	BalanceCents int64  `json:"balance_cents"`
+	Currency     string `json:"currency"`
+}
+
 type GetTransactionRequest struct {
 	ID string
 }
@@ -101,4 +112,5 @@ type Service interface {
 	ListAccounts(ctx context.Context) (ListAccountsResponse, error)
 	GetTransaction(ctx context.Context, req GetTransactionRequest) (GetTransactionResponse, error)
 	ListTransactions(ctx context.Context, req ListTransactionsRequest) (ListTransactionsResponse, error)
+	GetBalance(ctx context.Context, req GetBalanceRequest) (GetBalanceResponse, error)
 }

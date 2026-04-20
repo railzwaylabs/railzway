@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/railzwaylabs/railzway/internal/auditlog"
+	coupondomain "github.com/railzwaylabs/railzway/internal/coupon/domain"
 	"github.com/railzwaylabs/railzway/internal/db/pagination"
 	"github.com/railzwaylabs/railzway/internal/invoice/domain"
 	ledgerdomain "github.com/railzwaylabs/railzway/internal/ledger/domain"
@@ -29,33 +30,39 @@ import (
 )
 
 type service struct {
-	db       *gorm.DB
-	repo     domain.Repository
-	planRepo plandomain.Repository
-	subRepo  subscriptiondomain.Repository
-	audit    *auditlog.Service
-	ledger   ledgerdomain.Service
+	db         *gorm.DB
+	repo       domain.Repository
+	planRepo   plandomain.Repository
+	subRepo    subscriptiondomain.Repository
+	audit      *auditlog.Service
+	ledger     ledgerdomain.Service
+	ledgerRepo ledgerdomain.Repository
+	coupons    coupondomain.Service
 }
 
 type Params struct {
 	fx.In
 
-	DB       *gorm.DB
-	Repo     domain.Repository
-	PlanRepo plandomain.Repository
-	SubRepo  subscriptiondomain.Repository
-	Audit    *auditlog.Service    `optional:"true"`
-	Ledger   ledgerdomain.Service `optional:"true"`
+	DB         *gorm.DB
+	Repo       domain.Repository
+	PlanRepo   plandomain.Repository
+	SubRepo    subscriptiondomain.Repository
+	Audit      *auditlog.Service       `optional:"true"`
+	Ledger     ledgerdomain.Service    `optional:"true"`
+	LedgerRepo ledgerdomain.Repository `optional:"true"`
+	Coupons    coupondomain.Service    `optional:"true"`
 }
 
 func NewService(p Params) domain.Service {
 	return &service{
-		db:       p.DB,
-		repo:     p.Repo,
-		planRepo: p.PlanRepo,
-		subRepo:  p.SubRepo,
-		audit:    p.Audit,
-		ledger:   p.Ledger,
+		db:         p.DB,
+		repo:       p.Repo,
+		planRepo:   p.PlanRepo,
+		subRepo:    p.SubRepo,
+		audit:      p.Audit,
+		ledger:     p.Ledger,
+		ledgerRepo: p.LedgerRepo,
+		coupons:    p.Coupons,
 	}
 }
 
@@ -167,20 +174,10 @@ func (s *service) GenerateInvoice(ctx context.Context, req domain.GenerateInvoic
 		inv.IdempotencyKey = &idempotencyKey
 	}
 
-	items, err := s.buildInvoiceItems(ctx, orgID, sub, inv.PeriodStart, inv.PeriodEnd)
+	items, subtotal, taxTotals, err := s.buildDraftInvoiceItems(ctx, orgID, sub, inv.PeriodStart, inv.PeriodEnd)
 	if err != nil {
 		return domain.GenerateInvoiceResponse{}, err
 	}
-	var subtotal int64
-	for _, item := range items {
-		subtotal += item.AmountCents
-	}
-
-	taxItems, taxTotals, err := s.buildTaxLines(ctx, orgID, sub, subtotal, periodStart, periodEnd)
-	if err != nil {
-		return domain.GenerateInvoiceResponse{}, err
-	}
-	items = append(items, taxItems...)
 
 	inv.SubtotalCents = subtotal
 	inv.TaxCents = taxTotals.Total
@@ -543,20 +540,10 @@ func (s *service) RecalculateDraftInvoice(ctx context.Context, req domain.Recalc
 
 	periodStart := inv.PeriodStart.UTC()
 	periodEnd := inv.PeriodEnd.UTC()
-	items, err := s.buildInvoiceItems(ctx, orgID, sub, periodStart, periodEnd)
+	items, subtotal, taxTotals, err := s.buildDraftInvoiceItems(ctx, orgID, sub, periodStart, periodEnd)
 	if err != nil {
 		return domain.RecalculateDraftInvoiceResponse{}, err
 	}
-	var subtotal int64
-	for _, item := range items {
-		subtotal += item.AmountCents
-	}
-
-	taxItems, taxTotals, err := s.buildTaxLines(ctx, orgID, sub, subtotal, periodStart, periodEnd)
-	if err != nil {
-		return domain.RecalculateDraftInvoiceResponse{}, err
-	}
-	items = append(items, taxItems...)
 
 	updates := map[string]interface{}{
 		"subtotal_cents":   subtotal,
@@ -702,11 +689,16 @@ func (s *service) OpenInvoice(ctx context.Context, req domain.OpenInvoiceRequest
 		return domain.OpenInvoiceResponse{}, err
 	}
 
-	resp = domain.OpenInvoiceResponse{Invoice: *updated, Items: derefItems(items)}
+	finalInvoice, finalItems, err := s.applyCreditDrawOnOpen(ctx, *updated, derefItems(items))
+	if err != nil {
+		return domain.OpenInvoiceResponse{}, err
+	}
+
+	resp = domain.OpenInvoiceResponse{Invoice: finalInvoice, Items: finalItems}
 	span.SetAttributes(
-		telemetry.UUIDAttr("billing.invoice_id", updated.ID),
-		telemetry.UUIDAttr("billing.customer_id", updated.CustomerID),
-		telemetry.Int64Attr("billing.invoice_total_cents", updated.TotalCents),
+		telemetry.UUIDAttr("billing.invoice_id", finalInvoice.ID),
+		telemetry.UUIDAttr("billing.customer_id", finalInvoice.CustomerID),
+		telemetry.Int64Attr("billing.invoice_total_cents", finalInvoice.TotalCents),
 	)
 	s.recordAudit(ctx, "invoice.open", "invoice", resp.Invoice.ID.String(), *inv, resp.Invoice, nil)
 	return resp, nil
@@ -744,13 +736,20 @@ func (s *service) PayInvoice(ctx context.Context, req domain.PayInvoiceRequest) 
 	if inv.Status != domain.StatusOpen {
 		return domain.PayInvoiceResponse{}, domain.ErrInvalidStatus
 	}
+	paymentAmount := inv.AmountDueCents
+	if paymentAmount <= 0 {
+		paymentAmount = inv.TotalCents - inv.AmountPaidCents
+	}
+	if paymentAmount < 0 {
+		paymentAmount = 0
+	}
 
 	now := time.Now().UTC()
 	updates := map[string]interface{}{
 		"status":            domain.StatusPaid,
 		"updated_at":        now,
 		"paid_at":           now,
-		"amount_paid_cents": inv.TotalCents,
+		"amount_paid_cents": inv.AmountPaidCents + paymentAmount,
 		"amount_due_cents":  int64(0),
 	}
 
@@ -771,7 +770,7 @@ func (s *service) PayInvoice(ctx context.Context, req domain.PayInvoiceRequest) 
 		return domain.PayInvoiceResponse{}, err
 	}
 
-	if err := s.postLedgerForInvoicePayment(ctx, *updated); err != nil {
+	if err := s.postLedgerForInvoicePayment(ctx, *updated, paymentAmount); err != nil {
 		_ = s.repo.UpdateInvoice(ctx, orgID, invoiceID, map[string]interface{}{
 			"status":            inv.Status,
 			"paid_at":           inv.PaidAt,
@@ -963,6 +962,37 @@ func (s *service) ListInvoices(ctx context.Context, req domain.ListInvoicesReque
 	return resp, nil
 }
 
+func (s *service) buildDraftInvoiceItems(ctx context.Context, orgID uuid.UUID, sub *subscriptiondomain.Subscription, periodStart, periodEnd time.Time) ([]domain.InvoiceItem, int64, taxTotals, error) {
+	items, err := s.buildInvoiceItems(ctx, orgID, sub, periodStart, periodEnd)
+	if err != nil {
+		return nil, 0, taxTotals{}, err
+	}
+
+	var grossSubtotal int64
+	for _, item := range items {
+		grossSubtotal += item.AmountCents
+	}
+
+	discountItems, discountTotal, err := s.buildDiscountLines(ctx, orgID, sub, grossSubtotal, periodStart, periodEnd)
+	if err != nil {
+		return nil, 0, taxTotals{}, err
+	}
+	items = append(items, discountItems...)
+
+	netSubtotal := grossSubtotal - discountTotal
+	if netSubtotal < 0 {
+		netSubtotal = 0
+	}
+
+	taxItems, taxes, err := s.buildTaxLines(ctx, orgID, sub, netSubtotal, periodStart, periodEnd)
+	if err != nil {
+		return nil, 0, taxTotals{}, err
+	}
+	items = append(items, taxItems...)
+
+	return items, netSubtotal, taxes, nil
+}
+
 func (s *service) buildInvoiceItems(ctx context.Context, orgID uuid.UUID, sub *subscriptiondomain.Subscription, periodStart, periodEnd time.Time) ([]domain.InvoiceItem, error) {
 	usageItems, err := s.aggregateUsageCharges(ctx, orgID, sub, periodStart, periodEnd)
 	if err != nil {
@@ -978,6 +1008,91 @@ func (s *service) buildInvoiceItems(ctx context.Context, orgID uuid.UUID, sub *s
 	items = append(items, flatItems...)
 	items = append(items, usageItems...)
 	return items, nil
+}
+
+func (s *service) buildDiscountLines(ctx context.Context, orgID uuid.UUID, sub *subscriptiondomain.Subscription, subtotal int64, periodStart, periodEnd time.Time) ([]domain.InvoiceItem, int64, error) {
+	if s.coupons == nil || sub == nil || subtotal <= 0 {
+		return nil, 0, nil
+	}
+	details, err := s.coupons.GetAttachedCouponDetails(ctx, sub.ID)
+	if err != nil {
+		return nil, 0, err
+	}
+	if details == nil || !couponAppliesToPeriod(details.Coupon, details.AppliedAt, periodStart, periodEnd) {
+		return nil, 0, nil
+	}
+
+	coupon := details.Coupon
+	amount := int64(0)
+	switch strings.ToUpper(strings.TrimSpace(coupon.Type)) {
+	case coupondomain.CouponTypeFixed:
+		if coupon.AmountCents == nil || *coupon.AmountCents <= 0 {
+			return nil, 0, nil
+		}
+		if coupon.Currency != nil && strings.TrimSpace(strings.ToUpper(*coupon.Currency)) != strings.TrimSpace(strings.ToUpper(sub.Currency)) {
+			return nil, 0, nil
+		}
+		amount = *coupon.AmountCents
+	case coupondomain.CouponTypePercent:
+		if coupon.Percentage == nil || *coupon.Percentage <= 0 {
+			return nil, 0, nil
+		}
+		amount = roundCents(float64(subtotal) * (*coupon.Percentage / 100.0))
+	default:
+		return nil, 0, nil
+	}
+	if amount <= 0 {
+		return nil, 0, nil
+	}
+	if amount > subtotal {
+		amount = subtotal
+	}
+
+	meta, _ := json.Marshal(map[string]interface{}{
+		"coupon_id":   coupon.ID.String(),
+		"coupon_type": coupon.Type,
+		"applied_at":  details.AppliedAt.UTC().Format(time.RFC3339),
+	})
+	now := time.Now().UTC()
+	item := domain.InvoiceItem{
+		ID:              uuid.New(),
+		OrgID:           orgID,
+		CustomerID:      sub.CustomerID,
+		SubscriptionID:  &sub.ID,
+		LineType:        domain.LineTypeDiscount,
+		Description:     "Coupon discount: " + coupon.Name,
+		Quantity:        1,
+		UnitAmountCents: amount,
+		AmountCents:     amount,
+		Currency:        sub.Currency,
+		PeriodStart:     &periodStart,
+		PeriodEnd:       &periodEnd,
+		Metadata:        json.RawMessage(meta),
+		CreatedAt:       now,
+	}
+	return []domain.InvoiceItem{item}, amount, nil
+}
+
+func couponAppliesToPeriod(coupon coupondomain.Coupon, appliedAt, periodStart, periodEnd time.Time) bool {
+	applied := appliedAt.UTC()
+	start := periodStart.UTC()
+	end := periodEnd.UTC()
+	if end.Before(applied) || end.Equal(applied) {
+		return false
+	}
+	switch strings.ToUpper(strings.TrimSpace(coupon.Duration)) {
+	case coupondomain.CouponDurationForever:
+		return true
+	case coupondomain.CouponDurationOnce:
+		return start.Before(applied.AddDate(0, 1, 0))
+	case coupondomain.CouponDurationRepeating:
+		if coupon.DurationMonths == nil || *coupon.DurationMonths <= 0 {
+			return false
+		}
+		return start.Before(applied.AddDate(0, *coupon.DurationMonths, 0))
+	default:
+		return false
+	}
 }
 
 func (s *service) buildFlatCharges(ctx context.Context, orgID uuid.UUID, sub *subscriptiondomain.Subscription, periodStart, periodEnd time.Time) ([]domain.InvoiceItem, error) {
@@ -1349,7 +1464,238 @@ const (
 	ledgerAccountRevenue    = "4000_revenue"
 	ledgerAccountTaxPayable = "2100_tax_payable"
 	ledgerAccountCash       = "1000_cash"
+	ledgerAccountCredits    = "credits"
 )
+
+func (s *service) applyCreditDrawOnOpen(ctx context.Context, inv domain.Invoice, items []domain.InvoiceItem) (domain.Invoice, []domain.InvoiceItem, error) {
+	if s.ledgerRepo == nil || inv.CustomerID == uuid.Nil || inv.AmountDueCents <= 0 {
+		return inv, items, nil
+	}
+
+	var updated domain.Invoice
+	outItems := items
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockInvoiceKey(ctx, tx, buildCreditDrawLockKey(inv.OrgID, inv.CustomerID, inv.Currency)); err != nil {
+			return err
+		}
+
+		repo := s.repo.WithTx(tx)
+		ledgerRepo := s.ledgerRepo.WithTx(tx)
+		current, err := repo.FindInvoiceByID(ctx, inv.OrgID, inv.ID)
+		if err != nil {
+			return err
+		}
+		if current == nil {
+			return domain.ErrNotFound
+		}
+		if current.AmountDueCents <= 0 {
+			updated = *current
+			outItems, _ = s.invoiceItemsWithRepo(ctx, repo, inv.OrgID, inv.ID)
+			return nil
+		}
+
+		idempotencyKey := "credit_draw:" + inv.ID.String()
+		var existingItems int64
+		if err := tx.WithContext(ctx).
+			Model(&domain.InvoiceItem{}).
+			Where("org_id = ? AND invoice_id = ? AND line_type = ? AND idempotency_key = ?", inv.OrgID, inv.ID, domain.LineTypeAdjustment, idempotencyKey).
+			Count(&existingItems).Error; err != nil {
+			return err
+		}
+		if existingItems > 0 {
+			updated = *current
+			outItems, _ = s.invoiceItemsWithRepo(ctx, repo, inv.OrgID, inv.ID)
+			return nil
+		}
+
+		balance, err := ledgerRepo.GetBalance(ctx, inv.OrgID, inv.CustomerID, ledgerAccountCredits, inv.Currency)
+		if err != nil {
+			return err
+		}
+		if balance <= 0 {
+			updated = *current
+			outItems, _ = s.invoiceItemsWithRepo(ctx, repo, inv.OrgID, inv.ID)
+			return nil
+		}
+		amount := balance
+		if amount > current.AmountDueCents {
+			amount = current.AmountDueCents
+		}
+		if amount <= 0 {
+			updated = *current
+			outItems, _ = s.invoiceItemsWithRepo(ctx, repo, inv.OrgID, inv.ID)
+			return nil
+		}
+
+		now := time.Now().UTC()
+		meta, _ := json.Marshal(map[string]interface{}{
+			"source":       "ledger_credit_draw",
+			"account_code": ledgerAccountCredits,
+		})
+		item := domain.InvoiceItem{
+			ID:              uuid.New(),
+			InvoiceID:       inv.ID,
+			OrgID:           inv.OrgID,
+			CustomerID:      inv.CustomerID,
+			SubscriptionID:  inv.SubscriptionID,
+			LineType:        domain.LineTypeAdjustment,
+			Description:     "Customer credit applied",
+			Quantity:        1,
+			UnitAmountCents: amount,
+			AmountCents:     amount,
+			Currency:        inv.Currency,
+			IdempotencyKey:  &idempotencyKey,
+			Metadata:        json.RawMessage(meta),
+			CreatedAt:       now,
+		}
+		if err := repo.CreateInvoiceItems(ctx, []domain.InvoiceItem{item}); err != nil {
+			return err
+		}
+		itemList, err := s.invoiceItemsWithRepo(ctx, repo, inv.OrgID, inv.ID)
+		if err != nil {
+			return err
+		}
+
+		newPaid := current.AmountPaidCents + amount
+		newDue := current.AmountDueCents - amount
+		if newDue < 0 {
+			newDue = 0
+		}
+		updates := map[string]interface{}{
+			"amount_paid_cents": newPaid,
+			"amount_due_cents":  newDue,
+			"updated_at":        now,
+			"checksum":          buildInvoiceChecksum(*current, itemList),
+		}
+		if newDue == 0 {
+			updates["status"] = domain.StatusPaid
+			updates["paid_at"] = now
+		}
+
+		if err := s.createCreditUseLedgerTransactionTx(ctx, ledgerRepo, *current, item.ID, amount, now); err != nil {
+			return err
+		}
+		if err := repo.UpdateInvoice(ctx, inv.OrgID, inv.ID, updates); err != nil {
+			return err
+		}
+
+		refreshed, err := repo.FindInvoiceByID(ctx, inv.OrgID, inv.ID)
+		if err != nil {
+			return err
+		}
+		if refreshed == nil {
+			return domain.ErrNotFound
+		}
+		updated = *refreshed
+		outItems = itemList
+		return nil
+	})
+	if err != nil {
+		return domain.Invoice{}, nil, err
+	}
+	if updated.ID == uuid.Nil {
+		updated = inv
+	}
+	return updated, outItems, nil
+}
+
+func (s *service) invoiceItemsWithRepo(ctx context.Context, repo domain.Repository, orgID, invoiceID uuid.UUID) ([]domain.InvoiceItem, error) {
+	itemPtrs, err := repo.ListInvoiceItemsByInvoice(ctx, orgID, invoiceID)
+	if err != nil {
+		return nil, err
+	}
+	return derefItems(itemPtrs), nil
+}
+
+func (s *service) createCreditUseLedgerTransactionTx(ctx context.Context, repo ledgerdomain.Repository, inv domain.Invoice, invoiceItemID uuid.UUID, amount int64, occurredAt time.Time) error {
+	if amount <= 0 {
+		return nil
+	}
+	if err := ensureLedgerAccount(ctx, repo, inv.OrgID, ledgerAccountCredits, ledgerdomain.LedgerAccountTypeLiability, "Customer Credits"); err != nil {
+		return err
+	}
+	if err := ensureLedgerAccount(ctx, repo, inv.OrgID, ledgerAccountReceivable, ledgerdomain.LedgerAccountTypeAssets, "Accounts Receivable"); err != nil {
+		return err
+	}
+
+	idempotencyKey := "invoice_credit_draw:" + inv.ID.String()
+	existing, err := repo.FindTransactionByIdempotencyKey(ctx, inv.OrgID, idempotencyKey)
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	sourceType := string(ledgerdomain.SourceTypeCreditUse)
+	tx := ledgerdomain.LedgerTransaction{
+		ID:             uuid.New(),
+		OrgID:          inv.OrgID,
+		Currency:       inv.Currency,
+		SourceType:     sourceType,
+		SourceID:       inv.ID,
+		CustomerID:     &inv.CustomerID,
+		SubscriptionID: inv.SubscriptionID,
+		InvoiceID:      &inv.ID,
+		InvoiceItemID:  &invoiceItemID,
+		OccurredAt:     occurredAt,
+		PostedAt:       now,
+		IdempotencyKey: &idempotencyKey,
+		Metadata:       json.RawMessage(`{"source":"invoice_credit_draw"}`),
+		CreatedAt:      now,
+	}
+	meta, _ := json.Marshal(map[string]interface{}{
+		"invoice_item_id": invoiceItemID.String(),
+	})
+	entries := []ledgerdomain.LedgerEntry{
+		{
+			ID:            uuid.New(),
+			TransactionID: tx.ID,
+			OrgID:         inv.OrgID,
+			AccountCode:   ledgerAccountCredits,
+			EntryType:     ledgerdomain.LedgerEntryTypeDebit,
+			AmountCents:   amount,
+			Currency:      inv.Currency,
+			Metadata:      json.RawMessage(meta),
+			CreatedAt:     now,
+		},
+		{
+			ID:            uuid.New(),
+			TransactionID: tx.ID,
+			OrgID:         inv.OrgID,
+			AccountCode:   ledgerAccountReceivable,
+			EntryType:     ledgerdomain.LedgerEntryTypeCredit,
+			AmountCents:   amount,
+			Currency:      inv.Currency,
+			Metadata:      json.RawMessage(meta),
+			CreatedAt:     now,
+		},
+	}
+
+	if err := repo.CreateTransaction(ctx, tx); err != nil {
+		return err
+	}
+	return repo.CreateEntries(ctx, entries)
+}
+
+func ensureLedgerAccount(ctx context.Context, repo ledgerdomain.Repository, orgID uuid.UUID, code string, accountType ledgerdomain.LedgerAccountType, name string) error {
+	account, err := repo.FindAccountByCode(ctx, orgID, code)
+	if err != nil {
+		return err
+	}
+	if account != nil {
+		return nil
+	}
+	return repo.CreateAccount(ctx, ledgerdomain.LedgerAccount{
+		ID:        uuid.New(),
+		OrgID:     orgID,
+		Code:      code,
+		Type:      accountType,
+		Name:      name,
+		CreatedAt: time.Now().UTC(),
+	})
+}
 
 func (s *service) postLedgerForInvoiceOpen(ctx context.Context, inv domain.Invoice, items []domain.InvoiceItem) error {
 	if s.ledger == nil {
@@ -1416,14 +1762,11 @@ func (s *service) postLedgerForInvoiceOpen(ctx context.Context, inv domain.Invoi
 	return err
 }
 
-func (s *service) postLedgerForInvoicePayment(ctx context.Context, inv domain.Invoice) error {
+func (s *service) postLedgerForInvoicePayment(ctx context.Context, inv domain.Invoice, paymentAmount int64) error {
 	if s.ledger == nil {
 		return nil
 	}
-	amount := inv.AmountPaidCents
-	if amount <= 0 {
-		amount = inv.TotalCents
-	}
+	amount := paymentAmount
 	if amount <= 0 {
 		return nil
 	}
@@ -1727,6 +2070,15 @@ func buildInvoiceLockKey(orgID, subscriptionID uuid.UUID, periodStart, periodEnd
 		subscriptionID.String(),
 		periodStart.UTC().Format(time.RFC3339Nano),
 		periodEnd.UTC().Format(time.RFC3339Nano),
+	)
+}
+
+func buildCreditDrawLockKey(orgID, customerID uuid.UUID, currency string) string {
+	return fmt.Sprintf(
+		"invoice.credit_draw:%s:%s:%s",
+		orgID.String(),
+		customerID.String(),
+		strings.ToUpper(strings.TrimSpace(currency)),
 	)
 }
 

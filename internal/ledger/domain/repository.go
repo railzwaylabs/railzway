@@ -23,6 +23,7 @@ type Repository interface {
 
 	CreateEntries(ctx context.Context, entries []LedgerEntry) error
 	ListEntriesByTransaction(ctx context.Context, orgID, transactionID uuid.UUID) ([]LedgerEntry, error)
+	GetBalance(ctx context.Context, orgID uuid.UUID, customerID uuid.UUID, accountCode string, currency string) (int64, error)
 }
 
 type ListCursor struct {
