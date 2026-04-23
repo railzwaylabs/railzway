@@ -7,11 +7,13 @@ RUN corepack enable
 # Install deps with maximum cache reuse
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/admin/package.json apps/admin/package.json
+COPY packages/invoice-ui/package.json packages/invoice-ui/package.json
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
   pnpm --dir apps/admin install --frozen-lockfile
 
 # Build admin UI
 COPY apps/admin apps/admin
+COPY packages/invoice-ui packages/invoice-ui
 RUN --mount=type=cache,target=/root/.cache \
   pnpm --dir apps/admin build
 
