@@ -62,6 +62,18 @@ At minimum, set:
 - `APPS_CREDENTIALS_KEY` (base64 32 bytes)
 - `RAILZWAY_ORG_NAME`, `RAILZWAY_USER_EMAIL`, `RAILZWAY_USER_PASSWORD`
 
+Binary-specific defaults are also available under `config/`, for example:
+
+- `config/base.defaults.yml`
+- `config/admin/defaults.yml`
+
+Runtime precedence is:
+
+1. built-in defaults
+2. `config/base.defaults.yml`
+3. `config/<binary>/defaults.yml`
+4. environment variables
+
 ### 2) Start dependencies
 
 ```bash

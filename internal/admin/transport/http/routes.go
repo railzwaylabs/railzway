@@ -58,6 +58,8 @@ func registerAdminRoutes(r *gin.Engine, h *Handler, basePath string) {
 	orgRequired.PATCH("/plans/:plan_id", h.UpdatePlan)
 	orgRequired.POST("/plans/:plan_id/prices", h.CreatePlanPrice)
 	orgRequired.GET("/plans/:plan_id/prices", h.ListPlanPrices)
+	orgRequired.GET("/plans/:plan_id/features", h.ListPlanFeatures)
+	orgRequired.PUT("/plans/:plan_id/features", h.ReplacePlanFeatures)
 
 	// Prices
 	orgRequired.GET("/prices/:price_id", h.GetPlanPrice)

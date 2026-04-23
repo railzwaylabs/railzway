@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom"
 import { useForm, useFieldArray, useWatch, FormProvider, useFormContext } from "react-hook-form"
 import { Plus, Trash2, Package, Layers, Wrench } from "lucide-react"
 
+import PlanFeatureEditor, { buildDraftPlanFeatures, type PlanFeatureDraft } from "../components/PlanFeatureEditor"
 import PageHeader from "../components/PageHeader"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -13,7 +14,7 @@ import { api } from "../lib/api"
 import { useOrgPath } from "../lib/org"
 import { useCurrencies } from "../lib/reference"
 import AutoCompleteInput from "../components/AutoCompleteInput"
-import type { CreateProductRequest, Feature, Meter, CreateProductPlanInput, CreateProductPlanPriceInput } from "../lib/types"
+import type { CreateProductRequest, Feature, Meter, CreateProductPlanInput, CreateProductPlanPriceInput, Product } from "../lib/types"
 import { DEFAULT_MONEY_INPUT, defaultMoneyInputForPriceType, isNonNegativeMoneyInput, moneyInputDecimalsForPriceType, moneyInputStepForPriceType, moneyInputToCents, optionalMoneyInputToCents } from "../lib/money"
 
 type ProductAmountFormInput = {
@@ -41,6 +42,7 @@ type ProductPriceFormInput = Omit<CreateProductPlanPriceInput, "amounts" | "tier
 
 type ProductPlanFormInput = Omit<CreateProductPlanInput, "prices"> & {
   prices?: ProductPriceFormInput[]
+  plan_features?: PlanFeatureDraft[]
 }
 
 type FormValues = Omit<CreateProductRequest, "plans"> & {
@@ -205,7 +207,8 @@ export default function ProductsCreate() {
 
       const payload = normalizeCreateProductPayload(data)
       
-      await api.products.create(payload)
+      const created = await api.products.create(payload)
+      await replaceCreatedPlanFeatures(created, data)
       navigate(orgPath("/products"))
     } catch (err) {
       setError(err instanceof Error ? err.message : t("products_create.toast.create_failed"))
@@ -219,6 +222,10 @@ export default function ProductsCreate() {
   }
 
   const selectedFeatures = watch("selected_features")
+  const selectedFeatureCatalog = useMemo(
+    () => bootstrap.features.filter((feature) => selectedFeatures.includes(feature.id)),
+    [bootstrap.features, selectedFeatures]
+  )
   const toggleFeature = (id: string) => {
     const next = selectedFeatures.includes(id)
       ? selectedFeatures.filter((f: string) => f !== id)
@@ -293,6 +300,7 @@ export default function ProductsCreate() {
                     remove={() => removePlan(index)}
                     currencyOptions={currencyOptions}
                     meterOptions={meterOptions}
+                    availableFeatures={selectedFeatureCatalog}
                     t={t}
                     isPrimary={index === 0}
                     canMirror={planFields.length === 1}
@@ -375,22 +383,82 @@ export default function ProductsCreate() {
   )
 }
 
+async function replaceCreatedPlanFeatures(created: Product, data: FormValues) {
+  const createdPlanByCode = new Map((created.plans ?? []).map((plan) => [plan.code, plan]))
+  const updates: Array<Promise<unknown>> = (data.plans ?? [])
+    .map((plan) => {
+      const createdPlan = createdPlanByCode.get(plan.code.trim())
+      if (!createdPlan) return null
+      const features = (plan.plan_features ?? [])
+        .filter((row) => row.active && !row.inherited)
+        .map((row) => ({
+          feature_id: row.feature_id,
+          enabled: row.enabled,
+          limit_numeric: row.enabled && row.limit_numeric.trim() ? Number(row.limit_numeric) : undefined,
+          limit_unit: row.enabled && row.limit_unit.trim() ? row.limit_unit.trim() : undefined,
+          reset_period: row.enabled ? row.reset_period : "none",
+        }))
+      if (features.length === 0) return null
+      return api.plans.replaceFeatures(createdPlan.id, { features })
+    })
+    .filter((request): request is NonNullable<typeof request> => request != null)
+
+  if (updates.length > 0) {
+    await Promise.all(updates)
+  }
+}
+
 function PlanFormItem({
   index,
   remove,
   currencyOptions,
   meterOptions,
+  availableFeatures,
   t,
   isPrimary,
   canMirror,
   mirrorPlanIdentity,
   onToggleMirrorPlanIdentity,
 }: any) {
-  const { control, register } = useFormContext<FormValues>()
+  const { control, register, setValue } = useFormContext<FormValues>()
   const { fields: priceFields, append: appendPrice, remove: removePrice } = useFieldArray({
     control,
     name: `plans.${index}.prices`
   })
+  const featurePath = `plans.${index}.plan_features` as const
+  const planFeatures = useWatch({
+    control,
+    name: featurePath
+  }) as PlanFeatureDraft[] | undefined
+
+  useEffect(() => {
+    const available = (availableFeatures ?? []).map((feature: Feature) => ({
+      id: feature.id,
+      code: feature.code,
+      name: feature.name,
+      feature_type: feature.feature_type,
+      meter_id: feature.meter_id,
+      active: feature.active,
+    }))
+    const existing = (planFeatures ?? [])
+      .filter((row) => !row.inherited)
+      .map((row) => ({
+        id: row.feature_id,
+        enabled: row.enabled,
+        limit_numeric: row.limit_numeric.trim() ? Number(row.limit_numeric) : undefined,
+        limit_unit: row.limit_unit.trim() || undefined,
+        reset_period: row.reset_period,
+      }))
+    const nextRows = buildDraftPlanFeatures(available, existing)
+    if (JSON.stringify(planFeatures ?? []) === JSON.stringify(nextRows)) {
+      return
+    }
+    setValue(featurePath, nextRows, {
+      shouldDirty: existing.length > 0,
+      shouldTouch: false,
+      shouldValidate: false,
+    })
+  }, [availableFeatures, featurePath, planFeatures, setValue])
 
   return (
     <div className="panel p-6 border-l-4 border-l-primary/40 relative overflow-hidden bg-white shadow-sm">
@@ -443,6 +511,24 @@ function PlanFormItem({
             disabled={isPrimary && canMirror && mirrorPlanIdentity}
           />
         </div>
+      </div>
+
+      <div className="mb-8 space-y-3">
+        <div>
+          <h5 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t("plans_edit.sections.plan_features")}</h5>
+          <p className="mt-2 text-sm muted">{t("products_create.hints.plan_features")}</p>
+        </div>
+        {(availableFeatures ?? []).length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border bg-subtle/30 px-4 py-5 text-sm muted">
+            {t("products_create.hints.plan_features_empty")}
+          </div>
+        ) : (
+          <PlanFeatureEditor
+            rows={planFeatures ?? []}
+            onChange={(rows) => setValue(featurePath, rows, { shouldDirty: true, shouldTouch: true, shouldValidate: false })}
+            t={t}
+          />
+        )}
       </div>
 
       <div className="space-y-4">

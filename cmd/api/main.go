@@ -24,6 +24,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/httpmiddleware"
 	"github.com/railzwaylabs/railzway/internal/invoice"
 	"github.com/railzwaylabs/railzway/internal/plan"
+	"github.com/railzwaylabs/railzway/internal/planfeature"
 	"github.com/railzwaylabs/railzway/internal/product"
 	"github.com/railzwaylabs/railzway/internal/productfeature"
 	"github.com/railzwaylabs/railzway/internal/ratelimit"
@@ -41,7 +42,7 @@ import (
 func main() {
 	app := fx.New(
 		fx.Provide(
-			config.Register,
+			config.RegisterFor("api"),
 			newLogger,
 			fx.Annotate(newRouter, fx.ParamTags("", "", "", "")),
 		),
@@ -49,6 +50,7 @@ func main() {
 		customer.Module,
 		usage.Module,
 		plan.Module,
+		planfeature.Module,
 		product.Module,
 		feature.Module,
 		productfeature.Module,

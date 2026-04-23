@@ -92,7 +92,7 @@ func registerLoggerLifecycle(lc fx.Lifecycle, logger *zap.Logger) {
 func buildAllApp() *fx.App {
 	return fx.New(
 		fx.Provide(
-			config.Register,
+			config.RegisterFor("scheduler"),
 			newLogger,
 		),
 		db.Module,
@@ -115,7 +115,7 @@ func buildAllApp() *fx.App {
 func buildRatingApp() *fx.App {
 	return fx.New(
 		fx.Provide(
-			config.Register,
+			config.RegisterFor("scheduler"),
 			newLogger,
 			planrepo.NewRepository,
 			subscriptionrepo.NewRepository,
@@ -137,7 +137,7 @@ func buildRatingApp() *fx.App {
 func buildClosePeriodApp() *fx.App {
 	return fx.New(
 		fx.Provide(
-			config.Register,
+			config.RegisterFor("scheduler"),
 			newLogger,
 		),
 		db.Module,
@@ -156,7 +156,7 @@ func buildClosePeriodApp() *fx.App {
 func buildAIWorkerApp() *fx.App {
 	return fx.New(
 		fx.Provide(
-			config.Register,
+			config.RegisterFor("scheduler"),
 			newLogger,
 		),
 		db.Module,

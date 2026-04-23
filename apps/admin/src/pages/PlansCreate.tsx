@@ -2,11 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 
+import PlanFeatureEditor, { buildDraftPlanFeatures, type PlanFeatureDraft } from "../components/PlanFeatureEditor"
 import { api } from "../lib/api"
 import { useOrgPath } from "../lib/org"
 import { currencyHint } from "../lib/hints"
 import { DEFAULT_MONEY_INPUT, defaultMoneyInputForPriceType, isNonNegativeMoneyInput, moneyInputDecimalsForPriceType, moneyInputStepForPriceType, moneyInputToCents } from "../lib/money"
 import { useCurrencies } from "../lib/reference"
+import type { ProductFeature } from "../lib/types"
 import { isCurrencyCode } from "../lib/validation"
 import PageHeader from "../components/PageHeader"
 import { toast } from "../components/Toast"
@@ -32,6 +34,9 @@ export default function PlansCreate() {
   const { options: currencyOptions, loading: currenciesLoading } = useCurrencies()
   const [loading, setLoading] = useState(false)
   const [meterOptions, setMeterOptions] = useState<Array<{ value: string; label: string }>>([])
+  const [productOptions, setProductOptions] = useState<Array<{ value: string; label: string }>>([])
+  const [productFeatures, setProductFeatures] = useState<ProductFeature[]>([])
+  const [planFeatureRows, setPlanFeatureRows] = useState<PlanFeatureDraft[]>([])
 
   // Load meters for usage-based plans
   useEffect(() => {
@@ -64,6 +69,7 @@ export default function PlansCreate() {
   }, [])
 
   const [form, setForm] = useState({
+    productId: "",
     // Plan Info
     planCode: "",
     planName: "",
@@ -79,6 +85,57 @@ export default function PlansCreate() {
     // Usage Info
     meterId: "",
   })
+
+  useEffect(() => {
+    let active = true
+    const loadProductFeatures = async () => {
+      if (!form.productId) {
+        if (active) {
+          setProductFeatures([])
+          setPlanFeatureRows([])
+        }
+        return
+      }
+      try {
+        const features = await api.productFeatures.listByProduct(form.productId)
+        if (!active) return
+        setProductFeatures(features)
+        setPlanFeatureRows((current) => {
+          const existing = current
+            .filter((row) => !row.inherited)
+            .map((row) => ({
+              id: row.feature_id,
+              enabled: row.enabled,
+              limit_numeric: row.limit_numeric.trim() ? Number(row.limit_numeric) : undefined,
+              limit_unit: row.limit_unit.trim() || undefined,
+              reset_period: row.reset_period,
+            }))
+          return buildDraftPlanFeatures(features, existing)
+        })
+      } catch (_err) {
+        if (!active) return
+        setProductFeatures([])
+        setPlanFeatureRows([])
+      }
+    }
+    void loadProductFeatures()
+    return () => { active = false }
+  }, [form.productId])
+
+  const searchProducts = useCallback(async (query: string) => {
+    const resp = await api.products.list({ page_size: 50, active: "true", name: query })
+    let products = resp.products
+    if (products.length === 0) {
+      const fallback = await api.products.list({ page_size: 50, active: "true", code: query })
+      products = fallback.products
+    }
+    const options = products.map((product) => ({
+      value: product.id,
+      label: `${product.name} · ${product.code}`,
+    }))
+    setProductOptions(options)
+    return options
+  }, [])
 
   const validation = useMemo(() => {
     const errors: string[] = []
@@ -96,15 +153,36 @@ export default function PlansCreate() {
 
     // Usage Validation
     if (form.priceType === "usage" && !form.meterId) errors.push(t("plans_create.validation.meter_required"))
+    const invalidFeatureLimit = planFeatureRows.some((row) => {
+      if (!row.active || row.inherited || !row.enabled || !row.limit_numeric.trim()) return false
+      const parsed = Number(row.limit_numeric)
+      return !Number.isFinite(parsed) || parsed < 0
+    })
+    if (invalidFeatureLimit) errors.push(t("plans_create.validation.plan_feature_limit"))
 
     return errors
-  }, [form, t])
+  }, [form, planFeatureRows, t])
+
+  const serializePlanFeatures = useCallback(
+    (rows: PlanFeatureDraft[]) =>
+      rows
+        .filter((row) => row.active && !row.inherited)
+        .map((row) => ({
+          feature_id: row.feature_id,
+          enabled: row.enabled,
+          limit_numeric: row.enabled && row.limit_numeric.trim() ? Number(row.limit_numeric) : undefined,
+          limit_unit: row.enabled && row.limit_unit.trim() ? row.limit_unit.trim() : undefined,
+          reset_period: row.enabled ? row.reset_period : "none",
+        })),
+    []
+  )
 
   const handleCreate = useCallback(async () => {
     try {
       setLoading(true)
 
-      await api.plans.create({
+      const plan = await api.plans.create({
+        product_id: form.productId || undefined,
         code: form.planCode.trim(),
         name: form.planName.trim(),
         description: form.planDescription.trim() || undefined,
@@ -128,6 +206,11 @@ export default function PlansCreate() {
         ]
       })
 
+      const featurePayload = serializePlanFeatures(planFeatureRows)
+      if (featurePayload.length > 0) {
+        await api.plans.replaceFeatures(plan.id, { features: featurePayload })
+      }
+
       toast.success(t("plans_create.toast.created_title"), t("plans_create.toast.created_desc"))
       navigate(orgPath("/plans"))
     } catch (err) {
@@ -135,7 +218,7 @@ export default function PlansCreate() {
     } finally {
       setLoading(false)
     }
-  }, [form, navigate, orgPath, t])
+  }, [form, navigate, orgPath, planFeatureRows, serializePlanFeatures, t])
 
   return (
     <div className="page-content">
@@ -154,6 +237,17 @@ export default function PlansCreate() {
         <div className="action-section" style={{ border: "none", paddingBottom: 0 }}>
           <div className="action-section-title">{t("plans_create.sections.product")}</div>
           <div className="action-fields">
+            <div className="action-field" style={{ gridColumn: "span 2" }}>
+              <AutoCompleteInput
+                id="plans-create-product"
+                label={t("plans_create.fields.product_label")}
+                value={form.productId}
+                options={productOptions}
+                placeholder={t("plans_create.fields.product_placeholder")}
+                onSearch={searchProducts}
+                onChange={(value) => setForm((p) => ({ ...p, productId: value }))}
+              />
+            </div>
             <div className="action-field">
               <Label className="action-label">{t("plans_create.fields.plan_name")}</Label>
               <Input className="action-input" value={form.planName} placeholder={t("plans_create.fields.plan_name_placeholder")} autoFocus
@@ -170,6 +264,20 @@ export default function PlansCreate() {
                 onChange={(e) => setForm((p) => ({ ...p, planDescription: e.target.value }))} data-testid="plans-create-description" />
             </div>
           </div>
+        </div>
+
+        <div className="action-section" style={{ border: "none" }}>
+          <div className="action-section-title" style={{ marginTop: 24 }}>{t("plans_edit.sections.plan_features")}</div>
+          <div className="muted" style={{ marginBottom: 16, fontSize: 13 }}>
+            {t("plans_create.plan_features.description")}
+          </div>
+          {!form.productId ? (
+            <div className="muted" style={{ fontSize: 13 }}>{t("plans_create.empty.product_required_for_features")}</div>
+          ) : productFeatures.length === 0 ? (
+            <div className="muted" style={{ fontSize: 13 }}>{t("plans_create.empty.features")}</div>
+          ) : (
+            <PlanFeatureEditor rows={planFeatureRows} onChange={setPlanFeatureRows} t={t} disabled={loading} />
+          )}
         </div>
 
         {/* Step 2: Pricing Configuration */}

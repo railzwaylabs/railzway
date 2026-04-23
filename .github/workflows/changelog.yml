@@ -1,0 +1,43 @@
+name: changelog
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  changelog-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.setFailed('No pull request payload found.');
+              return;
+            }
+
+            if (pr.draft) {
+              core.info('Draft pull request; skipping changelog label enforcement.');
+              return;
+            }
+
+            const labels = (pr.labels || []).map((label) => label.name);
+            const hasChangelog = labels.includes('changelog');
+            const hasNoChangelog = labels.includes('no-changelog');
+
+            if (hasChangelog && hasNoChangelog) {
+              core.setFailed('PR cannot have both `changelog` and `no-changelog` labels.');
+              return;
+            }
+
+            if (!hasChangelog && !hasNoChangelog) {
+              core.setFailed('Add either `changelog` or `no-changelog` label to this PR.');
+              return;
+            }
+
+            core.info(`Changelog label check passed with labels: ${labels.join(', ')}`);

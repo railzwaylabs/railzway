@@ -1,0 +1,98 @@
+name: pr-commands
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  actions: write
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  commands:
+    if: ${{ github.event.issue.pull_request != null }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.issue.number;
+            const body = (context.payload.comment.body || '').trim();
+            const association = context.payload.comment.author_association || '';
+            const allowed = ['OWNER', 'MEMBER', 'COLLABORATOR'].includes(association);
+
+            async function comment(message) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body: message,
+              });
+            }
+
+            async function ensureLabel(name, color, description) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                await github.rest.issues.createLabel({ owner, repo, name, color, description });
+              }
+            }
+
+            if (body === '/ok-to-test') {
+              if (!allowed) {
+                await comment('`/ok-to-test` is restricted to repository maintainers.');
+                return;
+              }
+              await ensureLabel('ok-to-test', '0E8A16', 'PR is approved to run checks');
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels: ['ok-to-test'],
+              });
+              await comment('Added `ok-to-test`.');
+              return;
+            }
+
+            if (body === '/retest') {
+              if (!allowed) {
+                await comment('`/retest` is restricted to repository maintainers.');
+                return;
+              }
+
+              const { data: pull } = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: issue_number,
+              });
+
+              const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
+                owner,
+                repo,
+                event: 'pull_request',
+                head_sha: pull.head.sha,
+                per_page: 20,
+              });
+
+              const rerunnable = runs.workflow_runs.find((run) =>
+                ['failure', 'cancelled', 'timed_out', 'action_required'].includes(run.conclusion || '')
+              );
+
+              if (!rerunnable) {
+                await comment('No failed workflow run found for the current PR head SHA.');
+                return;
+              }
+
+              await github.rest.actions.reRunWorkflowFailedJobs({
+                owner,
+                repo,
+                run_id: rerunnable.id,
+              });
+
+              await comment(`Requested failed-job rerun for workflow run \`${rerunnable.name}\` (${rerunnable.id}).`);
+            }

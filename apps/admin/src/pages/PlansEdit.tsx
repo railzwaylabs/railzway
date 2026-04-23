@@ -19,7 +19,7 @@ import { useCurrencies } from "../lib/reference"
 import { isCurrencyCode } from "../lib/validation"
 import { formatDate, normalizeDate, rfc3339Hint } from "../lib/display"
 import { statusClass } from "../lib/status"
-import type { Plan, PlanPrice } from "../lib/types"
+import type { Plan, PlanFeature, PlanPrice, ProductFeature } from "../lib/types"
 import PageHeader from "../components/PageHeader"
 import { toast } from "../components/Toast"
 
@@ -29,6 +29,54 @@ function IconBack() {
       <path d="M15 10H5M5 10L10 5M5 10L10 15" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   )
+}
+
+type PlanFeatureRow = {
+  featureId: string
+  code: string
+  name: string
+  featureType: string
+  meterId?: string
+  active: boolean
+  inherited: boolean
+  enabled: boolean
+  limitNumeric: string
+  limitUnit: string
+  resetPeriod: string
+}
+
+function buildPlanFeatureRows(productFeatures: ProductFeature[], planFeatures: PlanFeature[]): PlanFeatureRow[] {
+  const overrides = new Map(planFeatures.map((feature) => [feature.id, feature]))
+  return productFeatures
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((feature) => {
+      const override = overrides.get(feature.id)
+      return {
+        featureId: feature.id,
+        code: feature.code,
+        name: feature.name,
+        featureType: feature.feature_type,
+        meterId: feature.meter_id,
+        active: feature.active,
+        inherited: !override,
+        enabled: override?.enabled ?? true,
+        limitNumeric: override?.limit_numeric != null ? String(override.limit_numeric) : "",
+        limitUnit: override?.limit_unit ?? "",
+        resetPeriod: override?.reset_period ?? "none",
+      }
+    })
+}
+
+function serializePlanFeatureRows(rows: PlanFeatureRow[]) {
+  return JSON.stringify(rows.map((row) => ({
+    featureId: row.featureId,
+    active: row.active,
+    enabled: row.enabled,
+    limitNumeric: row.limitNumeric.trim(),
+    limitUnit: row.limitUnit.trim(),
+    resetPeriod: row.resetPeriod,
+  })))
 }
 
 export default function PlansEdit() {
@@ -42,6 +90,9 @@ export default function PlansEdit() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [meterOptions, setMeterOptions] = useState<Array<{ value: string; label: string }>>([])
+  const [productFeatures, setProductFeatures] = useState<ProductFeature[]>([])
+  const [planFeatureRows, setPlanFeatureRows] = useState<PlanFeatureRow[]>([])
+  const [initialPlanFeatureSignature, setInitialPlanFeatureSignature] = useState("")
 
   const [updatePlanForm, setUpdatePlanForm] = useState({
     name: "",
@@ -82,27 +133,33 @@ export default function PlansEdit() {
     if (!id) return
     try {
       setLoading(true)
-      // fetch options
-      const metersResp = await api.meters.list({ page_size: 50, active: "true" }).catch(() => null)
+      const [metersResp, found] = await Promise.all([
+        api.meters.list({ page_size: 50, active: "true" }).catch(() => null),
+        api.plans.get(id),
+      ])
       if (metersResp) {
         setMeterOptions(metersResp.meters.map((meter) => ({
           value: meter.id, label: `${meter.name} · ${meter.code}`
         })))
       }
-      
-      // We list and find by ID because there's no api.plans.get
-      let found: Plan | undefined
-      let pageToken: string | undefined
-      while (!found) {
-        const resp = await api.plans.list({ page_token: pageToken, page_size: 50 })
-        found = resp.plans.find(p => p.id === id)
-        pageToken = resp.next_page_token
-        if (!resp.has_more && !pageToken) break
-      }
 
       if (found) {
         setPlan(found)
         setUpdatePlanForm({ name: found.name, description: found.description || "", active: String(found.active) })
+        if (found.product_id) {
+          const [productFeatureResp, planFeatureResp] = await Promise.all([
+            api.productFeatures.listByProduct(found.product_id),
+            api.plans.listFeatures(found.id),
+          ])
+          setProductFeatures(productFeatureResp ?? [])
+          const rows = buildPlanFeatureRows(productFeatureResp ?? [], planFeatureResp ?? [])
+          setPlanFeatureRows(rows)
+          setInitialPlanFeatureSignature(serializePlanFeatureRows(rows))
+        } else {
+          setProductFeatures([])
+          setPlanFeatureRows([])
+          setInitialPlanFeatureSignature("")
+        }
       }
     } catch (err) {
       toast.error(t("plans_edit.toast.load_failed"), err instanceof Error ? err.message : undefined)
@@ -172,6 +229,25 @@ export default function PlansEdit() {
     if (createTierForm.flatAmount.trim() && !isNonNegativeMoneyInput(createTierForm.flatAmount)) e.push(t("plans_edit.validation.unit_amount_min"))
     return e
   }, [createTierForm, t])
+
+  const featureValidation = useMemo(() => {
+    const errors: string[] = []
+    planFeatureRows.forEach((row) => {
+      if (!row.limitNumeric.trim()) {
+        return
+      }
+      const parsed = Number.parseFloat(row.limitNumeric)
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        errors.push(t("plans_edit.validation.feature_limit_invalid", { name: row.name }))
+      }
+    })
+    return errors
+  }, [planFeatureRows, t])
+
+  const featureDirty = useMemo(
+    () => serializePlanFeatureRows(planFeatureRows) !== initialPlanFeatureSignature,
+    [initialPlanFeatureSignature, planFeatureRows]
+  )
 
   const handleUpdate = useCallback(async () => {
     if (!id) return
@@ -255,6 +331,32 @@ export default function PlansEdit() {
     } finally { setActionLoading(false) }
   }, [createTierForm, loadData, t])
 
+  const handleSavePlanFeatures = useCallback(async () => {
+    if (!id) return
+    try {
+      setActionLoading(true)
+      const resp = await api.plans.replaceFeatures(id, {
+        features: planFeatureRows
+          .filter((row) => row.active)
+          .map((row) => ({
+            feature_id: row.featureId,
+            enabled: row.enabled,
+            limit_numeric: row.limitNumeric.trim() ? Number.parseFloat(row.limitNumeric) : undefined,
+            limit_unit: row.limitUnit.trim() || undefined,
+            reset_period: row.resetPeriod || "none",
+          })),
+      })
+      const rows = buildPlanFeatureRows(productFeatures, resp ?? [])
+      setPlanFeatureRows(rows)
+      setInitialPlanFeatureSignature(serializePlanFeatureRows(rows))
+      toast.success(t("plans_edit.toast.features_updated"), String(rows.length))
+    } catch (err) {
+      toast.error(t("plans_edit.toast.features_update_failed"), err instanceof Error ? err.message : undefined)
+    } finally {
+      setActionLoading(false)
+    }
+  }, [id, planFeatureRows, productFeatures, t])
+
   const openAmountForm = useCallback((price: PlanPrice) => {
     const currency = price.amounts?.[0]?.currency || "USD"
     setActiveAmountPriceId(price.id)
@@ -282,6 +384,13 @@ export default function PlansEdit() {
       flatAmount: "",
       unit: price.billing_unit || "",
     })
+  }, [])
+
+  const updatePlanFeatureRow = useCallback((featureId: string, patch: Partial<PlanFeatureRow>) => {
+    setPlanFeatureRows((rows) => rows.map((row) => {
+      if (row.featureId !== featureId) return row
+      return { ...row, ...patch }
+    }))
   }, [])
 
   if (loading) return <div className="page-content"><div className="loader" /></div>
@@ -470,6 +579,116 @@ export default function PlansEdit() {
             </div>
           ) : (
             <div className="muted">{t("plans_edit.empty.prices")}</div>
+          )}
+        </div>
+
+        <div className="action-section">
+          <div className="action-section-title">{t("plans_edit.sections.plan_features")}</div>
+          {plan?.product_id ? (
+            productFeatures.length > 0 ? (
+              <div style={{ display: "grid", gap: 12 }}>
+                <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+                  {t("plans_edit.plan_features.description")}
+                </p>
+                {planFeatureRows.map((row) => (
+                  <div
+                    key={row.featureId}
+                    style={{
+                      border: "1px solid var(--border)",
+                      borderRadius: 10,
+                      padding: 14,
+                      background: row.active ? "var(--panel)" : "var(--muted)",
+                      opacity: row.active ? 1 : 0.72
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", marginBottom: 12 }}>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <div style={{ fontWeight: 600 }}>{row.name}</div>
+                          <Badge className="badge-muted">{row.featureType}</Badge>
+                          {row.meterId ? <Badge className="badge-info">{t("plans_edit.plan_features.metered")}</Badge> : null}
+                          {row.inherited ? <Badge className="badge-muted">{t("plans_edit.plan_features.inherited")}</Badge> : null}
+                          {!row.active ? <Badge className="badge-muted">{t("plans_edit.status.inactive")}</Badge> : null}
+                        </div>
+                        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{row.code}</div>
+                      </div>
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 110, justifyContent: "flex-end" }}>
+                        <input
+                          type="checkbox"
+                          checked={row.enabled}
+                          disabled={!row.active}
+                          onChange={(e) => {
+                            const enabled = e.target.checked
+                            updatePlanFeatureRow(row.featureId, {
+                              enabled,
+                              ...(enabled ? {} : { limitNumeric: "", limitUnit: "", resetPeriod: "none" })
+                            })
+                          }}
+                        />
+                        <span style={{ fontSize: 13 }}>{t("plans_edit.plan_features.enabled")}</span>
+                      </label>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 1fr)", gap: 12 }}>
+                      <div>
+                        <Label className="action-label">{t("plans_edit.plan_features.limit")}</Label>
+                        <Input
+                          className="action-input"
+                          inputMode="decimal"
+                          type="text"
+                          placeholder={t("plans_edit.plan_features.limit_placeholder")}
+                          value={row.limitNumeric}
+                          disabled={!row.enabled || !row.active}
+                          onChange={(e) => updatePlanFeatureRow(row.featureId, { limitNumeric: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label className="action-label">{t("plans_edit.plan_features.limit_unit")}</Label>
+                        <Input
+                          className="action-input"
+                          placeholder={t("plans_edit.plan_features.limit_unit_placeholder")}
+                          value={row.limitUnit}
+                          disabled={!row.enabled || !row.active}
+                          onChange={(e) => updatePlanFeatureRow(row.featureId, { limitUnit: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label className="action-label">{t("plans_edit.plan_features.reset_period")}</Label>
+                        <Select
+                          value={row.resetPeriod}
+                          onValueChange={(value) => updatePlanFeatureRow(row.featureId, { resetPeriod: value })}
+                          disabled={!row.enabled || !row.active}
+                        >
+                          <SelectTrigger className="action-select">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">{t("plans_edit.plan_features.reset_options.none")}</SelectItem>
+                            <SelectItem value="day">{t("plans_edit.plan_features.reset_options.day")}</SelectItem>
+                            <SelectItem value="month">{t("plans_edit.plan_features.reset_options.month")}</SelectItem>
+                            <SelectItem value="billing_period">{t("plans_edit.plan_features.reset_options.billing_period")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {featureValidation.length > 0 ? <div className="inline-error">{featureValidation.join(" ")}</div> : null}
+                <div className="action-buttons">
+                  <Button
+                    variant="default"
+                    disabled={actionLoading || featureValidation.length > 0 || !featureDirty}
+                    onClick={handleSavePlanFeatures}
+                  >
+                    {actionLoading ? t("common.saving") : t("plans_edit.actions.save_features")}
+                  </Button>
+                  {!featureDirty ? <span className="muted" style={{ fontSize: 13 }}>{t("plans_edit.plan_features.saved_state")}</span> : null}
+                </div>
+              </div>
+            ) : (
+              <div className="muted">{t("plans_edit.empty.features")}</div>
+            )
+          ) : (
+            <div className="muted">{t("plans_edit.empty.product_required")}</div>
           )}
         </div>
 

@@ -23,7 +23,7 @@ import (
 func main() {
 	app := fx.New(
 		fx.Provide(
-			config.Register,
+			config.RegisterFor("checkout"),
 			newLogger,
 			fx.Annotate(newRouter, fx.ParamTags("", "", "")),
 		),

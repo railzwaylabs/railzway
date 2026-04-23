@@ -9,6 +9,7 @@ import (
 	featureDomain "github.com/railzwaylabs/railzway/internal/feature/domain"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	planDomain "github.com/railzwaylabs/railzway/internal/plan/domain"
+	planfeaturedomain "github.com/railzwaylabs/railzway/internal/planfeature/domain"
 	pfDomain "github.com/railzwaylabs/railzway/internal/productfeature/domain"
 	subDomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
 	"go.uber.org/fx"
@@ -19,6 +20,7 @@ type service struct {
 	plan         planDomain.Service
 	feature      featureDomain.Service
 	productfeat  pfDomain.Service
+	planfeat     planfeaturedomain.Service
 }
 
 type Params struct {
@@ -28,6 +30,7 @@ type Params struct {
 	Plan         planDomain.Service
 	Feature      featureDomain.Service
 	ProductFeat  pfDomain.Service
+	PlanFeat     planfeaturedomain.Service `optional:"true"`
 }
 
 func NewService(p Params) domain.Service {
@@ -36,6 +39,7 @@ func NewService(p Params) domain.Service {
 		plan:         p.Plan,
 		feature:      p.Feature,
 		productfeat:  p.ProductFeat,
+		planfeat:     p.PlanFeat,
 	}
 }
 
@@ -80,6 +84,28 @@ func (s *service) CheckEntitlement(ctx context.Context, req domain.CheckEntitlem
 	}
 
 	productID := *planResp.ProductID
+
+	if s.planfeat != nil {
+		planFeatures, err := s.planfeat.ListForPlans(ctx, planfeaturedomain.ListForPlansRequest{
+			PlanIDs: []string{sub.PlanID},
+		})
+		if err != nil {
+			return domain.EntitlementResponse{}, err
+		}
+		for _, f := range planFeatures {
+			if f.Code != featureCode || !f.Active {
+				continue
+			}
+			resp := domain.EntitlementResponse{
+				HasAccess: f.Enabled,
+				IsMetered: f.FeatureType == "metered",
+			}
+			if f.LimitNumeric != nil {
+				resp.Limit = *f.LimitNumeric
+			}
+			return resp, nil
+		}
+	}
 
 	pfResp, err := s.productfeat.ListForProducts(ctx, pfDomain.ListForProductsRequest{
 		ProductIDs: []string{productID},

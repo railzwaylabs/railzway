@@ -1,0 +1,9 @@
+# ===================== Railzway Scheduler Defaults =====================
+#
+# Binary-specific defaults for the scheduler worker process.
+
+APP_NAME: railzway
+
+# Scheduler process does not expose the main HTTP surface, but keeping the
+# value explicit avoids ambiguity if internal health/debug endpoints are added.
+PORT: 8080

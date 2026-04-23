@@ -1,0 +1,40 @@
+name: build-go-matrix
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: build-go-matrix-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-go:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        binary:
+          - admin
+          - api
+          - scheduler
+          - checkout
+          - customer
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build ${{ matrix.binary }}
+        run: go build ./cmd/${{ matrix.binary }}

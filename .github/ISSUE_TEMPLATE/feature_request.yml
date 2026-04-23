@@ -1,0 +1,50 @@
+name: Feature Request
+description: Propose a new capability or improvement
+title: "[Feature]: "
+labels:
+  - enhancement
+  - needs-triage
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem are you trying to solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: Describe the desired behavior or API/UI change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What options did you reject and why?
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Primary Impact Area
+      options:
+        - billing-domain
+        - admin-ui
+        - api-contract
+        - customer-experience
+        - platform-ops
+        - docs
+        - developer-experience
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risks / Rollout Notes
+      description: Mention migration, compatibility, data integrity, or operational concerns.

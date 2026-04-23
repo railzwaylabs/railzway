@@ -1181,6 +1181,7 @@
     },
     "sections": {
       "product": "Product Information",
+      "plan_features": "Plan Features",
       "pricing": "Pricing Configuration"
     },
     "pricing": {
@@ -1188,6 +1189,8 @@
       "usage": "Usage Based Pricing"
     },
     "fields": {
+      "product_label": "Product",
+      "product_placeholder": "Search products by name or code",
       "plan_name": "Plan Name *",
       "plan_name_placeholder": "e.g. Pro Tier",
       "plan_code": "Plan Code *",
@@ -1208,6 +1211,13 @@
       },
       "interval_count_label": "Interval Count *"
     },
+    "plan_features": {
+      "description": "Link the plan to a product first, then override only the feature entitlements that should differ from the product default."
+    },
+    "empty": {
+      "features": "This product does not have any product features yet.",
+      "product_required_for_features": "Choose a product before configuring plan-level entitlements."
+    },
     "actions": {
       "save": "Save unified plan"
     },
@@ -1226,7 +1236,8 @@
       "currency_invalid": "Currency must be ISO 4217.",
       "interval_count": "Interval count must be >= 1.",
       "amount_min": "Amount must be >= 0.",
-      "meter_required": "Meter is required for usage-based pricing."
+      "meter_required": "Meter is required for usage-based pricing.",
+      "plan_feature_limit": "Plan feature limits must be numeric and >= 0."
     }
   },
   "plans_edit": {
@@ -1238,6 +1249,7 @@
       "current_pricing": "Current Pricing",
       "amounts": "Amounts",
       "tiers": "Tiers",
+      "plan_features": "Plan Features",
       "update_details": "Update Details",
       "attach_price": "Attach Price"
     },
@@ -1245,7 +1257,8 @@
       "add_amount": "Add Amount",
       "add_tier": "Add Tier",
       "update": "Update Plan",
-      "create_price": "Create Price"
+      "create_price": "Create Price",
+      "save_features": "Save Plan Features"
     },
     "status": {
       "active": "Active",
@@ -1254,7 +1267,27 @@
     "empty": {
       "prices": "No prices yet. Add a price below.",
       "amounts": "No amounts",
-      "tiers": "No tiers"
+      "tiers": "No tiers",
+      "features": "No product features available for this plan yet.",
+      "product_required": "This plan is not linked to a product, so feature entitlements cannot be configured."
+    },
+    "plan_features": {
+      "description": "Use product features as the base capability set, then decide what this plan enables and what limits apply.",
+      "enabled": "Enabled",
+      "inherited": "Inherited",
+      "metered": "Metered",
+      "limit": "Limit",
+      "limit_placeholder": "Optional numeric limit",
+      "limit_unit": "Limit Unit",
+      "limit_unit_placeholder": "days, users, alert_rules",
+      "reset_period": "Reset Period",
+      "saved_state": "No unsaved entitlement changes.",
+      "reset_options": {
+        "none": "No reset",
+        "day": "Daily",
+        "month": "Monthly",
+        "billing_period": "Billing period"
+      }
     },
     "amount_form": {
       "title": "Create Amount",
@@ -1326,7 +1359,8 @@
       "tier_mode_required": "Tier mode required.",
       "tier_start_min": "Start quantity >= 0.",
       "tier_end_min": "End quantity must be >= start.",
-      "tier_amount_required": "Unit amount or flat amount required."
+      "tier_amount_required": "Unit amount or flat amount required.",
+      "feature_limit_invalid": "{{name}} limit must be a number greater than or equal to 0."
     },
     "toast": {
       "load_failed": "Failed to load plan",
@@ -1337,7 +1371,9 @@
       "amount_created": "Amount created",
       "amount_create_failed": "Failed to create amount",
       "tier_created": "Tier created",
-      "tier_create_failed": "Failed to create tier"
+      "tier_create_failed": "Failed to create tier",
+      "features_updated": "Plan features updated",
+      "features_update_failed": "Failed to update plan features"
     }
   },
   "products": {
@@ -1401,6 +1437,8 @@
       "idempotency": "Root creation key for transactional safety.",
       "product_identity": "Product is the top-level offering. Use it to name what you sell.",
       "product_plan_boundary": "Plans are subscription packages under a product. A single product can have one or many plans.",
+      "plan_features": "Selected product features define the feature universe. Use this section to turn individual entitlements on or off and set any plan-specific limits.",
+      "plan_features_empty": "Select at least one product feature before configuring plan entitlements.",
       "plan_identity": "Plan names do not have to match the product name. If you only have one plan, reusing the product name is fine.",
       "mirror_primary_plan": "Use the product name and code for the first plan",
       "no_plans": "No plans added. Customers cannot subscribe to this product without at least one plan.",

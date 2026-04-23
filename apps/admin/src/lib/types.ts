@@ -878,6 +878,19 @@ export type ProductFeature = {
   active: boolean;
 };
 
+export type PlanFeature = {
+  id: string;
+  code: string;
+  name: string;
+  feature_type: string;
+  meter_id?: string;
+  active: boolean;
+  enabled: boolean;
+  limit_numeric?: number;
+  limit_unit?: string;
+  reset_period: "none" | "day" | "month" | "billing_period" | string;
+};
+
 export type AIScheduledJob = {
   id: string;
   org_id: string;
