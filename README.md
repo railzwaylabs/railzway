@@ -159,14 +159,14 @@ Long-form documentation lives in `docs/`. Start from `docs/` if you want deeper 
 - [`docs/architecture/taxes-discounts.md`](./docs/architecture/taxes-discounts.md) – Global tax compliance and price adjustments.
 - [`docs/architecture/reconciliation.md`](./docs/architecture/reconciliation.md) – Automated data integrity and cross-module verification.
 - [`docs/architecture/security.md`](./docs/architecture/security.md) – Enterprise RBAC model and security governance.
-- [`docs/api/coupons_and_segments.md`](./docs/api/coupons_and_segments.md) – Admin coupon, promotion code, segment, and auto-discount API contract.
+- [`docs/architecture/coupons-and-promotions.md`](./docs/architecture/coupons-and-promotions.md) – Coupon, promotion code, segment, and discount-application domain model.
 
 ## Notes
 
 - Org-scoped resources require the `X-Org-ID` header.
 - The admin UI sets this after you choose an organization.
 - The public API (API-key auth) is evolving; documentation will be published when stable.
-- Admin coupon and segment APIs: see [`docs/api/coupons_and_segments.md`](./docs/api/coupons_and_segments.md).
+- Coupon and promotion architecture: see [`docs/architecture/coupons-and-promotions.md`](./docs/architecture/coupons-and-promotions.md).
 - Public API rate limits: see [`docs/api/rate-limits.md`](./docs/api/rate-limits.md).
 - If you do not have the `migrate` CLI:
   - `brew install golang-migrate`, or
