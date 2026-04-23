@@ -115,7 +115,7 @@ type AdjustmentLine struct {
 	PlanPriceID     *string
 	MeterID         *string
 	Quantity        float64
-	UnitAmountCents int64
+	UnitAmountCents float64
 	AmountCents     int64
 	Currency        string
 	Description     string
@@ -161,4 +161,5 @@ var (
 	ErrInvalidCursor       = errors.New("invalid_cursor")
 	ErrNotFound            = errors.New("not_found")
 	ErrUsageNotReady       = errors.New("usage_not_ready")
+	ErrNoBillableItems     = errors.New("no_billable_items")
 )

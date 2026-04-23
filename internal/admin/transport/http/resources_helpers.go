@@ -302,7 +302,8 @@ func writeCustomerError(c *gin.Context, err error) {
 		errors.Is(err, customerdomain.ErrInvalidID),
 		errors.Is(err, customerdomain.ErrInvalidName),
 		errors.Is(err, customerdomain.ErrInvalidEmail),
-		errors.Is(err, customerdomain.ErrInvalidCurrency):
+		errors.Is(err, customerdomain.ErrInvalidCurrency),
+		errors.Is(err, customerdomain.ErrInvalidTestClock):
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	case errors.Is(err, customerdomain.ErrNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -409,6 +410,8 @@ func writeInvoiceError(c *gin.Context, err error) {
 		errors.Is(err, invoicedomain.ErrInvalidCursor):
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	case errors.Is(err, invoicedomain.ErrUsageNotReady):
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+	case errors.Is(err, invoicedomain.ErrNoBillableItems):
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 	case errors.Is(err, invoicedomain.ErrNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})

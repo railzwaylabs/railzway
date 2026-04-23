@@ -5,9 +5,11 @@ declare global {
       login(): Chainable<void>;
       ensureOrg(): Chainable<string>;
       createOrg(name?: string): Chainable<string>;
-      orgVisit(path: string): Chainable<void>;
+      orgVisit(path: string): Chainable<Window>;
       fillByLabel(label: string, value: string): Chainable<void>;
       selectByLabel(label: string, value: string): Chainable<void>;
+      selectRadix(testId: string, option: string): Chainable<void>;
+      selectAutocomplete(testId: string, query: string, optionText?: string): Chainable<void>;
       csrfRequest(
         method: string,
         url: string,
@@ -19,7 +21,7 @@ declare global {
 }
 
 const ORG_KEY = "railzway_admin_org_id";
-const CSRF_COOKIE = "rz_admin_csrf";
+const DEFAULT_CSRF_COOKIE = "rz_admin_csrf";
 
 Cypress.Commands.add("login", () => {
   const email = Cypress.env("adminEmail") as string;
@@ -50,7 +52,9 @@ Cypress.Commands.add("login", () => {
 Cypress.Commands.add("ensureOrg", () => {
   const cached = Cypress.env("orgId") as string | undefined;
   if (cached) {
-    return cy.wrap(cached);
+    return cy.csrfRequest({ method: "POST", url: `/admin/v1/auth/using/${cached}` }).then(() => {
+      return cy.wrap(cached);
+    });
   }
   return cy.request("/admin/v1/organizations").then((resp) => {
     const orgId = resp.body?.[0]?.id as string | undefined;
@@ -84,7 +88,7 @@ Cypress.Commands.add("orgVisit", (path: string) => {
   return cy.ensureOrg().then((orgId) => {
     const normalized = path.startsWith("/") ? path : `/${path}`;
     const url = `/organizations/${orgId}${normalized}`;
-    cy.visit(url, {
+    return cy.visit(url, {
       onBeforeLoad(win) {
         win.localStorage.setItem(ORG_KEY, orgId);
       }
@@ -120,6 +124,19 @@ Cypress.Commands.add("selectByLabel", (label: string, value: string) => {
     });
 });
 
+Cypress.Commands.add("selectRadix", (testId: string, option: string) => {
+  cy.get(`[data-testid="${testId}"]`).click();
+  cy.get("[role=\"option\"]").contains(option).click();
+});
+
+Cypress.Commands.add("selectAutocomplete", (testId: string, query: string, optionText?: string) => {
+  cy.get(`[data-testid="${testId}"]`).click();
+  if (query) {
+    cy.get(`[data-testid="${testId}-search"]`).clear().type(query);
+  }
+  cy.contains("[cmdk-item]", optionText ?? query).click();
+});
+
 Cypress.Commands.add("csrfRequest", (...args: any[]) => {
   let options: Partial<Cypress.RequestOptions>;
   if (typeof args[0] === "string" && typeof args[1] === "string") {
@@ -132,7 +149,8 @@ Cypress.Commands.add("csrfRequest", (...args: any[]) => {
   if (!unsafe) {
     return cy.request(options as Cypress.RequestOptions);
   }
-  return cy.getCookie(CSRF_COOKIE).then((cookie) => {
+  return cy.getCookies().then((cookies) => {
+    const cookie = cookies.find((item) => item.name.endsWith("_csrf")) ?? cookies.find((item) => item.name === DEFAULT_CSRF_COOKIE);
     const headers = { ...(options.headers ?? {}) } as Record<string, string>;
     if (cookie?.value && !headers["X-CSRF-Token"]) {
       headers["X-CSRF-Token"] = decodeURIComponent(cookie.value);

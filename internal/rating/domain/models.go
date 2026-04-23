@@ -19,7 +19,7 @@ type RatingResult struct {
 	MeterID         uuid.UUID       `gorm:"not null;index" json:"meter_id"`
 	Currency        string          `gorm:"type:text;not null" json:"currency"`
 	Quantity        float64         `gorm:"not null" json:"quantity"`
-	UnitAmountCents int64           `gorm:"not null" json:"unit_amount_cents"`
+	UnitAmountCents float64         `gorm:"type:numeric(28,12);not null" json:"unit_amount_cents"`
 	AmountCents     int64           `gorm:"not null" json:"amount_cents"`
 	Source          string          `gorm:"type:text;not null" json:"source"`
 	WindowStart     time.Time       `gorm:"not null" json:"window_start"`

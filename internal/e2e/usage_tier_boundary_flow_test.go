@@ -14,8 +14,8 @@ import (
 	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
 	invoicerepo "github.com/railzwaylabs/railzway/internal/invoice/repository"
 	invoiceservice "github.com/railzwaylabs/railzway/internal/invoice/service"
-	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	orgdomain "github.com/railzwaylabs/railzway/internal/organization/domain"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	plandomain "github.com/railzwaylabs/railzway/internal/plan/domain"
 	planrepo "github.com/railzwaylabs/railzway/internal/plan/repository"
 	ratingdomain "github.com/railzwaylabs/railzway/internal/rating/domain"
@@ -248,8 +248,8 @@ func seedTieredUsageSubscription(
 	}
 
 	tier1End := float64(10)
-	tier1Unit := int64(100)
-	tier2Unit := int64(200)
+	tier1Unit := float64(100)
+	tier2Unit := float64(200)
 	tiers := []plandomain.PlanTier{
 		{
 			ID:              uuid.New(),

@@ -148,7 +148,7 @@ func (s *service) RateUsage(ctx context.Context, req ratingdomain.RateUsageReque
 
 	quantity := usageEvent.Value
 	var (
-		unitAmount  int64
+		unitAmount  float64
 		totalAmount int64
 		planAmount  *plandomain.PlanAmount
 		tierMode    string
@@ -602,7 +602,7 @@ func (s *service) findPriceForMeter(ctx context.Context, orgID, subscriptionID, 
 	return &price, nil
 }
 
-func (s *service) calculateAmount(ctx context.Context, orgID uuid.UUID, price *plandomain.PlanPrice, currency string, at time.Time, quantity float64) (int64, int64, *plandomain.PlanAmount, string, error) {
+func (s *service) calculateAmount(ctx context.Context, orgID uuid.UUID, price *plandomain.PlanPrice, currency string, at time.Time, quantity float64) (float64, int64, *plandomain.PlanAmount, string, error) {
 	amount, err := s.pickPlanAmount(ctx, orgID, price.ID, currency, at)
 	if err != nil {
 		return 0, 0, nil, "", err
@@ -620,7 +620,7 @@ func (s *service) calculateAmount(ctx context.Context, orgID uuid.UUID, price *p
 		if len(tiers) == 0 {
 			return 0, 0, nil, "", ratingdomain.ErrPricingNotFound
 		}
-		total, unit := calculateTieredAmount(quantity, tiers)
+		unit, total := calculateTieredAmount(quantity, tiers)
 		tierMode := plandomain.TierModeGraduated
 		if tiers[0] != nil && tiers[0].TierMode != "" {
 			tierMode = tiers[0].TierMode
@@ -628,7 +628,7 @@ func (s *service) calculateAmount(ctx context.Context, orgID uuid.UUID, price *p
 		return unit, total, amount, tierMode, nil
 	default:
 		unit := amount.UnitAmountCents
-		total := int64(roundAmount(quantity * float64(unit)))
+		total := int64(roundAmount(quantity * unit))
 		return unit, total, amount, "", nil
 	}
 }
@@ -649,7 +649,7 @@ func (s *service) pickPlanAmount(ctx context.Context, orgID, planPriceID uuid.UU
 	return &amount, nil
 }
 
-func calculateTieredAmount(quantity float64, tiers []*plandomain.PlanTier) (int64, int64) {
+func calculateTieredAmount(quantity float64, tiers []*plandomain.PlanTier) (float64, int64) {
 	if quantity <= 0 {
 		return 0, 0
 	}
@@ -667,7 +667,7 @@ func calculateTieredAmount(quantity float64, tiers []*plandomain.PlanTier) (int6
 	}
 }
 
-func calculateTieredVolume(quantity float64, tiers []*plandomain.PlanTier) (int64, int64) {
+func calculateTieredVolume(quantity float64, tiers []*plandomain.PlanTier) (float64, int64) {
 	var matched *plandomain.PlanTier
 	for _, tier := range tiers {
 		if tier == nil {
@@ -686,20 +686,20 @@ func calculateTieredVolume(quantity float64, tiers []*plandomain.PlanTier) (int6
 		matched = tiers[len(tiers)-1]
 	}
 
-	unit := int64(0)
+	unit := float64(0)
 	if matched.UnitAmountCents != nil {
 		unit = *matched.UnitAmountCents
 	}
-	total := int64(roundAmount(quantity * float64(unit)))
+	total := int64(roundAmount(quantity * unit))
 	if matched.FlatAmountCents != nil {
-		total += *matched.FlatAmountCents
+		total += int64(roundAmount(*matched.FlatAmountCents))
 	}
 	return unit, total
 }
 
-func calculateTieredGraduated(quantity float64, tiers []*plandomain.PlanTier) (int64, int64) {
+func calculateTieredGraduated(quantity float64, tiers []*plandomain.PlanTier) (float64, int64) {
 	var total int64
-	var lastUnit int64
+	var lastUnit float64
 	for _, tier := range tiers {
 		if tier == nil {
 			continue
@@ -715,14 +715,14 @@ func calculateTieredGraduated(quantity float64, tiers []*plandomain.PlanTier) (i
 		if tierQty <= 0 {
 			continue
 		}
-		unit := int64(0)
+		unit := float64(0)
 		if tier.UnitAmountCents != nil {
 			unit = *tier.UnitAmountCents
 		}
 		lastUnit = unit
-		total += int64(roundAmount(tierQty * float64(unit)))
+		total += int64(roundAmount(tierQty * unit))
 		if tier.FlatAmountCents != nil {
-			total += *tier.FlatAmountCents
+			total += int64(roundAmount(*tier.FlatAmountCents))
 		}
 	}
 	return lastUnit, total

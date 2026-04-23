@@ -15,7 +15,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/railzwaylabs/railzway/internal/auditlog"
+	"github.com/railzwaylabs/railzway/internal/clock"
 	coupondomain "github.com/railzwaylabs/railzway/internal/coupon/domain"
+	customerdomain "github.com/railzwaylabs/railzway/internal/customer/domain"
 	"github.com/railzwaylabs/railzway/internal/db/pagination"
 	"github.com/railzwaylabs/railzway/internal/invoice/domain"
 	ledgerdomain "github.com/railzwaylabs/railzway/internal/ledger/domain"
@@ -24,45 +26,60 @@ import (
 	"github.com/railzwaylabs/railzway/internal/proration"
 	subscriptiondomain "github.com/railzwaylabs/railzway/internal/subscription/domain"
 	"github.com/railzwaylabs/railzway/internal/telemetry"
+	testclockdomain "github.com/railzwaylabs/railzway/internal/testclock/domain"
 	usagedomain "github.com/railzwaylabs/railzway/internal/usage/domain"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type service struct {
-	db         *gorm.DB
-	repo       domain.Repository
-	planRepo   plandomain.Repository
-	subRepo    subscriptiondomain.Repository
-	audit      *auditlog.Service
-	ledger     ledgerdomain.Service
-	ledgerRepo ledgerdomain.Repository
-	coupons    coupondomain.Service
+	db            *gorm.DB
+	repo          domain.Repository
+	planRepo      plandomain.Repository
+	subRepo       subscriptiondomain.Repository
+	customerRepo  customerdomain.Repository
+	testClockRepo testclockdomain.Repository
+	audit         *auditlog.Service
+	clock         clock.Clock
+	ledger        ledgerdomain.Service
+	ledgerRepo    ledgerdomain.Repository
+	coupons       coupondomain.Service
 }
 
 type Params struct {
 	fx.In
 
-	DB         *gorm.DB
-	Repo       domain.Repository
-	PlanRepo   plandomain.Repository
-	SubRepo    subscriptiondomain.Repository
-	Audit      *auditlog.Service       `optional:"true"`
-	Ledger     ledgerdomain.Service    `optional:"true"`
-	LedgerRepo ledgerdomain.Repository `optional:"true"`
-	Coupons    coupondomain.Service    `optional:"true"`
+	DB            *gorm.DB
+	Repo          domain.Repository
+	PlanRepo      plandomain.Repository
+	SubRepo       subscriptiondomain.Repository
+	CustomerRepo  customerdomain.Repository  `optional:"true"`
+	TestClockRepo testclockdomain.Repository `optional:"true"`
+	Audit         *auditlog.Service          `optional:"true"`
+	Clock         clock.Clock                `optional:"true"`
+	Ledger        ledgerdomain.Service       `optional:"true"`
+	LedgerRepo    ledgerdomain.Repository    `optional:"true"`
+	Coupons       coupondomain.Service       `optional:"true"`
 }
 
 func NewService(p Params) domain.Service {
+	clk := p.Clock
+	if clk == nil {
+		clk = clock.SystemClock{}
+	}
 	return &service{
-		db:         p.DB,
-		repo:       p.Repo,
-		planRepo:   p.PlanRepo,
-		subRepo:    p.SubRepo,
-		audit:      p.Audit,
-		ledger:     p.Ledger,
-		ledgerRepo: p.LedgerRepo,
-		coupons:    p.Coupons,
+		db:            p.DB,
+		repo:          p.Repo,
+		planRepo:      p.PlanRepo,
+		subRepo:       p.SubRepo,
+		customerRepo:  p.CustomerRepo,
+		testClockRepo: p.TestClockRepo,
+		audit:         p.Audit,
+		clock:         clk,
+		ledger:        p.Ledger,
+		ledgerRepo:    p.LedgerRepo,
+		coupons:       p.Coupons,
 	}
 }
 
@@ -117,6 +134,10 @@ func (s *service) GenerateInvoice(ctx context.Context, req domain.GenerateInvoic
 	if sub == nil {
 		return domain.GenerateInvoiceResponse{}, domain.ErrNotFound
 	}
+	ctx, err = s.withCustomerTestClock(ctx, orgID, sub.CustomerID)
+	if err != nil {
+		return domain.GenerateInvoiceResponse{}, err
+	}
 
 	periodStart := req.PeriodStart.UTC()
 	periodEnd := req.PeriodEnd.UTC()
@@ -129,7 +150,7 @@ func (s *service) GenerateInvoice(ctx context.Context, req domain.GenerateInvoic
 		return domain.GenerateInvoiceResponse{}, domain.ErrUsageNotReady
 	}
 
-	now := time.Now().UTC()
+	now := s.clock.Now(ctx)
 	issueAt := now
 	if req.IssueAt != nil {
 		issueAt = req.IssueAt.UTC()
@@ -177,6 +198,9 @@ func (s *service) GenerateInvoice(ctx context.Context, req domain.GenerateInvoic
 	items, subtotal, taxTotals, err := s.buildDraftInvoiceItems(ctx, orgID, sub, inv.PeriodStart, inv.PeriodEnd)
 	if err != nil {
 		return domain.GenerateInvoiceResponse{}, err
+	}
+	if len(items) == 0 {
+		return domain.GenerateInvoiceResponse{}, domain.ErrNoBillableItems
 	}
 
 	inv.SubtotalCents = subtotal
@@ -296,11 +320,15 @@ func (s *service) CreateAdjustmentInvoice(ctx context.Context, req domain.Create
 	if sub == nil {
 		return domain.CreateAdjustmentInvoiceResponse{}, domain.ErrNotFound
 	}
+	ctx, err = s.withCustomerTestClock(ctx, orgID, sub.CustomerID)
+	if err != nil {
+		return domain.CreateAdjustmentInvoiceResponse{}, err
+	}
 
 	periodStart := req.PeriodStart.UTC()
 	periodEnd := req.PeriodEnd.UTC()
 
-	now := time.Now().UTC()
+	now := s.clock.Now(ctx)
 	issueAt := now
 	if req.IssueAt != nil {
 		issueAt = req.IssueAt.UTC()
@@ -518,6 +546,10 @@ func (s *service) RecalculateDraftInvoice(ctx context.Context, req domain.Recalc
 	if inv == nil {
 		return domain.RecalculateDraftInvoiceResponse{}, domain.ErrNotFound
 	}
+	ctx, err = s.withCustomerTestClock(ctx, orgID, inv.CustomerID)
+	if err != nil {
+		return domain.RecalculateDraftInvoiceResponse{}, err
+	}
 	if inv.Status != domain.StatusDraft {
 		items, _ := s.repo.ListInvoiceItemsByInvoice(ctx, orgID, invoiceID)
 		return domain.RecalculateDraftInvoiceResponse{Invoice: *inv, Items: derefItems(items)}, nil
@@ -550,7 +582,7 @@ func (s *service) RecalculateDraftInvoice(ctx context.Context, req domain.Recalc
 		"tax_cents":        taxTotals.Total,
 		"total_cents":      subtotal + taxTotals.Exclusive,
 		"amount_due_cents": subtotal + taxTotals.Exclusive,
-		"updated_at":       time.Now().UTC(),
+		"updated_at":       s.clock.Now(ctx),
 	}
 
 	inv.SubtotalCents = subtotal
@@ -650,11 +682,15 @@ func (s *service) OpenInvoice(ctx context.Context, req domain.OpenInvoiceRequest
 	if inv == nil {
 		return domain.OpenInvoiceResponse{}, domain.ErrNotFound
 	}
+	ctx, err = s.withCustomerTestClock(ctx, orgID, inv.CustomerID)
+	if err != nil {
+		return domain.OpenInvoiceResponse{}, err
+	}
 	if inv.Status != domain.StatusDraft {
 		return domain.OpenInvoiceResponse{}, domain.ErrInvalidStatus
 	}
 
-	now := time.Now().UTC()
+	now := s.clock.Now(ctx)
 	updates := map[string]interface{}{
 		"status":     domain.StatusOpen,
 		"updated_at": now,
@@ -684,7 +720,7 @@ func (s *service) OpenInvoice(ctx context.Context, req domain.OpenInvoiceRequest
 		_ = s.repo.UpdateInvoice(ctx, orgID, invoiceID, map[string]interface{}{
 			"status":     inv.Status,
 			"issued_at":  inv.IssuedAt,
-			"updated_at": time.Now().UTC(),
+			"updated_at": s.clock.Now(ctx),
 		})
 		return domain.OpenInvoiceResponse{}, err
 	}
@@ -733,6 +769,10 @@ func (s *service) PayInvoice(ctx context.Context, req domain.PayInvoiceRequest) 
 	if inv == nil {
 		return domain.PayInvoiceResponse{}, domain.ErrNotFound
 	}
+	ctx, err = s.withCustomerTestClock(ctx, orgID, inv.CustomerID)
+	if err != nil {
+		return domain.PayInvoiceResponse{}, err
+	}
 	if inv.Status != domain.StatusOpen {
 		return domain.PayInvoiceResponse{}, domain.ErrInvalidStatus
 	}
@@ -744,7 +784,7 @@ func (s *service) PayInvoice(ctx context.Context, req domain.PayInvoiceRequest) 
 		paymentAmount = 0
 	}
 
-	now := time.Now().UTC()
+	now := s.clock.Now(ctx)
 	updates := map[string]interface{}{
 		"status":            domain.StatusPaid,
 		"updated_at":        now,
@@ -776,7 +816,7 @@ func (s *service) PayInvoice(ctx context.Context, req domain.PayInvoiceRequest) 
 			"paid_at":           inv.PaidAt,
 			"amount_paid_cents": inv.AmountPaidCents,
 			"amount_due_cents":  inv.AmountDueCents,
-			"updated_at":        time.Now().UTC(),
+			"updated_at":        s.clock.Now(ctx),
 		})
 		return domain.PayInvoiceResponse{}, err
 	}
@@ -809,11 +849,15 @@ func (s *service) VoidInvoice(ctx context.Context, req domain.VoidInvoiceRequest
 	if inv == nil {
 		return domain.VoidInvoiceResponse{}, domain.ErrNotFound
 	}
+	ctx, err = s.withCustomerTestClock(ctx, orgID, inv.CustomerID)
+	if err != nil {
+		return domain.VoidInvoiceResponse{}, err
+	}
 	if inv.Status != domain.StatusDraft && inv.Status != domain.StatusOpen {
 		return domain.VoidInvoiceResponse{}, domain.ErrInvalidStatus
 	}
 
-	now := time.Now().UTC()
+	now := s.clock.Now(ctx)
 	updates := map[string]interface{}{
 		"status":           domain.StatusVoid,
 		"updated_at":       now,
@@ -843,7 +887,7 @@ func (s *service) VoidInvoice(ctx context.Context, req domain.VoidInvoiceRequest
 			"status":           inv.Status,
 			"voided_at":        inv.VoidedAt,
 			"amount_due_cents": inv.AmountDueCents,
-			"updated_at":       time.Now().UTC(),
+			"updated_at":       s.clock.Now(ctx),
 		})
 		return domain.VoidInvoiceResponse{}, err
 	}
@@ -1014,85 +1058,198 @@ func (s *service) buildDiscountLines(ctx context.Context, orgID uuid.UUID, sub *
 	if s.coupons == nil || sub == nil || subtotal <= 0 {
 		return nil, 0, nil
 	}
+	type discountCandidate struct {
+		coupon    coupondomain.Coupon
+		appliedAt time.Time
+		source    string
+	}
+	var candidates []discountCandidate
 	details, err := s.coupons.GetAttachedCouponDetails(ctx, sub.ID)
 	if err != nil {
 		return nil, 0, err
 	}
-	if details == nil || !couponAppliesToPeriod(details.Coupon, details.AppliedAt, periodStart, periodEnd) {
-		return nil, 0, nil
+	if details != nil {
+		candidates = append(candidates, discountCandidate{
+			coupon:    details.Coupon,
+			appliedAt: details.AppliedAt,
+			source:    coupondomain.CouponApplicationSourceSubscription,
+		})
 	}
 
-	coupon := details.Coupon
+	autoCoupons, err := s.coupons.ListAutoApplyCoupons(ctx, periodStart, periodEnd)
+	if err != nil {
+		return nil, 0, err
+	}
+	customerSegment, err := s.discountSegment(ctx, orgID, sub)
+	if err != nil {
+		return nil, 0, err
+	}
+	attachedCouponID := uuid.Nil
+	if details != nil {
+		attachedCouponID = details.Coupon.ID
+	}
+	for _, coupon := range autoCoupons {
+		if coupon.ID == attachedCouponID {
+			continue
+		}
+		candidates = append(candidates, discountCandidate{
+			coupon:    coupon,
+			appliedAt: couponAppliedAt(coupon, periodStart),
+			source:    coupondomain.CouponApplicationSourceAutoApply,
+		})
+	}
+
+	now := s.clock.Now(ctx)
+	items := make([]domain.InvoiceItem, 0, len(candidates))
+	var total int64
+	remaining := subtotal
+	for _, candidate := range candidates {
+		if remaining <= 0 {
+			break
+		}
+		coupon := candidate.coupon
+		if !couponMatchesSegment(coupon, customerSegment) {
+			continue
+		}
+		if !couponAppliesToPeriod(coupon, candidate.appliedAt, periodStart, periodEnd) {
+			continue
+		}
+		amount := couponDiscountAmount(coupon, sub.Currency, remaining)
+		if amount <= 0 {
+			continue
+		}
+		if amount > remaining {
+			amount = remaining
+		}
+
+		meta, _ := json.Marshal(map[string]interface{}{
+			"coupon_id":   coupon.ID.String(),
+			"coupon_type": coupon.Type,
+			"applied_at":  candidate.appliedAt.UTC().Format(time.RFC3339),
+			"source":      candidate.source,
+		})
+		item := domain.InvoiceItem{
+			ID:              uuid.New(),
+			OrgID:           orgID,
+			CustomerID:      sub.CustomerID,
+			SubscriptionID:  &sub.ID,
+			LineType:        domain.LineTypeDiscount,
+			Description:     "Coupon discount: " + coupon.Name,
+			Quantity:        1,
+			UnitAmountCents: float64(amount),
+			AmountCents:     amount,
+			Currency:        sub.Currency,
+			PeriodStart:     &periodStart,
+			PeriodEnd:       &periodEnd,
+			Metadata:        json.RawMessage(meta),
+			CreatedAt:       now,
+		}
+		items = append(items, item)
+		total += amount
+		remaining -= amount
+	}
+	return items, total, nil
+}
+
+func (s *service) discountSegment(ctx context.Context, orgID uuid.UUID, sub *subscriptiondomain.Subscription) (string, error) {
+	if sub == nil {
+		return "", nil
+	}
+	var segment string
+	err := s.db.WithContext(ctx).
+		Raw(
+			`SELECT COALESCE(NULLIF(c.metadata->>'segment', ''), NULLIF(s.metadata->>'segment', ''), '')
+			 FROM subscriptions s
+			 JOIN customers c ON c.org_id = s.org_id AND c.id = s.customer_id
+			 WHERE s.org_id = ? AND s.id = ? AND s.customer_id = ?
+			 LIMIT 1`,
+			orgID, sub.ID, sub.CustomerID,
+		).
+		Scan(&segment).Error
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(segment), nil
+}
+
+func couponMatchesSegment(coupon coupondomain.Coupon, segment string) bool {
+	if coupon.TargetSegment == nil || strings.TrimSpace(*coupon.TargetSegment) == "" {
+		return true
+	}
+	return strings.EqualFold(strings.TrimSpace(*coupon.TargetSegment), strings.TrimSpace(segment))
+}
+
+func couponDiscountAmount(coupon coupondomain.Coupon, currency string, subtotal int64) int64 {
 	amount := int64(0)
 	switch strings.ToUpper(strings.TrimSpace(coupon.Type)) {
 	case coupondomain.CouponTypeFixed:
 		if coupon.AmountCents == nil || *coupon.AmountCents <= 0 {
-			return nil, 0, nil
+			return 0
 		}
-		if coupon.Currency != nil && strings.TrimSpace(strings.ToUpper(*coupon.Currency)) != strings.TrimSpace(strings.ToUpper(sub.Currency)) {
-			return nil, 0, nil
+		if coupon.Currency != nil && strings.TrimSpace(strings.ToUpper(*coupon.Currency)) != strings.TrimSpace(strings.ToUpper(currency)) {
+			return 0
 		}
 		amount = *coupon.AmountCents
 	case coupondomain.CouponTypePercent:
 		if coupon.Percentage == nil || *coupon.Percentage <= 0 {
-			return nil, 0, nil
+			return 0
 		}
 		amount = roundCents(float64(subtotal) * (*coupon.Percentage / 100.0))
 	default:
-		return nil, 0, nil
+		return 0
 	}
-	if amount <= 0 {
-		return nil, 0, nil
-	}
-	if amount > subtotal {
-		amount = subtotal
-	}
-
-	meta, _ := json.Marshal(map[string]interface{}{
-		"coupon_id":   coupon.ID.String(),
-		"coupon_type": coupon.Type,
-		"applied_at":  details.AppliedAt.UTC().Format(time.RFC3339),
-	})
-	now := time.Now().UTC()
-	item := domain.InvoiceItem{
-		ID:              uuid.New(),
-		OrgID:           orgID,
-		CustomerID:      sub.CustomerID,
-		SubscriptionID:  &sub.ID,
-		LineType:        domain.LineTypeDiscount,
-		Description:     "Coupon discount: " + coupon.Name,
-		Quantity:        1,
-		UnitAmountCents: amount,
-		AmountCents:     amount,
-		Currency:        sub.Currency,
-		PeriodStart:     &periodStart,
-		PeriodEnd:       &periodEnd,
-		Metadata:        json.RawMessage(meta),
-		CreatedAt:       now,
-	}
-	return []domain.InvoiceItem{item}, amount, nil
+	return amount
 }
 
 func couponAppliesToPeriod(coupon coupondomain.Coupon, appliedAt, periodStart, periodEnd time.Time) bool {
 	applied := appliedAt.UTC()
 	start := periodStart.UTC()
 	end := periodEnd.UTC()
-	if end.Before(applied) || end.Equal(applied) {
+	if !couponIntersectsValidWindow(coupon, start, end) {
 		return false
 	}
 	switch strings.ToUpper(strings.TrimSpace(coupon.Duration)) {
 	case coupondomain.CouponDurationForever:
 		return true
 	case coupondomain.CouponDurationOnce:
-		return start.Before(applied.AddDate(0, 1, 0))
+		return (start.Before(applied) || start.Equal(applied)) && end.After(applied)
 	case coupondomain.CouponDurationRepeating:
 		if coupon.DurationMonths == nil || *coupon.DurationMonths <= 0 {
+			return false
+		}
+		if end.Before(applied) || end.Equal(applied) {
 			return false
 		}
 		return start.Before(applied.AddDate(0, *coupon.DurationMonths, 0))
 	default:
 		return false
 	}
+}
+
+func couponIntersectsValidWindow(coupon coupondomain.Coupon, periodStart, periodEnd time.Time) bool {
+	if coupon.ValidFrom != nil {
+		validFrom := coupon.ValidFrom.UTC()
+		if periodEnd.Before(validFrom) || periodEnd.Equal(validFrom) {
+			return false
+		}
+	}
+	if coupon.ValidUntil != nil {
+		validUntil := coupon.ValidUntil.UTC()
+		if periodStart.After(validUntil) || periodStart.Equal(validUntil) {
+			return false
+		}
+	}
+	return true
+}
+
+func couponAppliedAt(coupon coupondomain.Coupon, fallback time.Time) time.Time {
+	if coupon.ValidFrom != nil {
+		return coupon.ValidFrom.UTC()
+	}
+	if !coupon.CreatedAt.IsZero() {
+		return coupon.CreatedAt.UTC()
+	}
+	return fallback.UTC()
 }
 
 func (s *service) buildFlatCharges(ctx context.Context, orgID uuid.UUID, sub *subscriptiondomain.Subscription, periodStart, periodEnd time.Time) ([]domain.InvoiceItem, error) {
@@ -1104,7 +1261,7 @@ func (s *service) buildFlatCharges(ctx context.Context, orgID uuid.UUID, sub *su
 		return nil, err
 	}
 
-	now := time.Now().UTC()
+	now := s.clock.Now(ctx)
 	subStart := sub.StartAt
 	if sub.TrialEnd != nil && sub.TrialEnd.After(subStart) {
 		subStart = sub.TrialEnd.UTC()
@@ -1125,12 +1282,24 @@ func (s *service) buildFlatCharges(ctx context.Context, orgID uuid.UUID, sub *su
 		if err != nil {
 			return nil, err
 		}
-		if price == nil || price.PriceType != plandomain.PriceTypeFlat {
+		if price == nil {
+			return nil, fmt.Errorf("plan price %s not found for subscription item %s", item.PlanPriceID, item.ID)
+		}
+		if price.PriceType != plandomain.PriceTypeFlat {
 			continue
 		}
 
 		activeStart, activeEnd, active := proration.EffectiveWindow(periodStart, periodEnd, subStart, subEnd, sub.CanceledAt, item.StartAt, item.EndAt)
 		if !active {
+			zap.L().With(
+				zap.String("org_id", orgID.String()),
+				zap.String("subscription_id", sub.ID.String()),
+				zap.String("item_id", item.ID.String()),
+				zap.Time("period_start", periodStart),
+				zap.Time("period_end", periodEnd),
+				zap.Time("sub_start", subStart),
+				zap.Time("item_start", item.StartAt),
+			).Info("skipping flat charge: effective window not active")
 			continue
 		}
 
@@ -1148,6 +1317,13 @@ func (s *service) buildFlatCharges(ctx context.Context, orgID uuid.UUID, sub *su
 			}
 			windowStart, windowEnd, ok := intersectWindow(activeStart, activeEnd, amount.EffectiveFrom, amount.EffectiveTo)
 			if !ok {
+				zap.L().With(
+					zap.String("item_id", item.ID.String()),
+					zap.String("amount_id", amount.ID.String()),
+					zap.Time("active_start", activeStart),
+					zap.Time("active_end", activeEnd),
+					zap.Time("effective_from", amount.EffectiveFrom),
+				).Info("skipping flat charge amount: window does not intersect")
 				continue
 			}
 			factor := proration.Factor(periodStart, periodEnd, windowStart, windowEnd)
@@ -1226,7 +1402,7 @@ func (s *service) buildTaxLines(ctx context.Context, orgID uuid.UUID, sub *subsc
 		inclusiveTarget = subtotal - inclusiveBaseCents
 	}
 
-	now := time.Now().UTC()
+	now := s.clock.Now(ctx)
 	items := make([]domain.InvoiceItem, 0, len(rates))
 	totals := taxTotals{}
 
@@ -1331,7 +1507,7 @@ func taxInvoiceItem(sub *subscriptiondomain.Subscription, rate taxRate, amount i
 		LineType:        domain.LineTypeTax,
 		Description:     rate.Name,
 		Quantity:        1,
-		UnitAmountCents: amount,
+		UnitAmountCents: float64(amount),
 		AmountCents:     amount,
 		Currency:        sub.Currency,
 		PeriodStart:     &periodStart,
@@ -1397,7 +1573,7 @@ func (s *service) aggregateUsageCharges(ctx context.Context, orgID uuid.UUID, su
 		return nil, err
 	}
 
-	now := time.Now().UTC()
+	now := s.clock.Now(ctx)
 	customerID := sub.CustomerID
 	subscriptionID := sub.ID
 	items := make([]domain.InvoiceItem, 0, len(rows))
@@ -1457,6 +1633,30 @@ func (s *service) hasPendingUsage(ctx context.Context, orgID uuid.UUID, sub *sub
 		return false, err
 	}
 	return len(events) > 0, nil
+}
+
+func (s *service) withCustomerTestClock(ctx context.Context, orgID, customerID uuid.UUID) (context.Context, error) {
+	if s.customerRepo == nil || customerID == uuid.Nil {
+		return ctx, nil
+	}
+	customer, err := s.customerRepo.FindByID(ctx, orgID, customerID)
+	if err != nil {
+		return ctx, err
+	}
+	if customer == nil || customer.TestClockID == nil {
+		return ctx, nil
+	}
+	if s.testClockRepo == nil {
+		return ctx, nil
+	}
+	testClock, err := s.testClockRepo.GetByID(ctx, orgID, *customer.TestClockID)
+	if err != nil {
+		return ctx, err
+	}
+	if testClock == nil || testClock.Status != testclockdomain.StatusActive {
+		return ctx, nil
+	}
+	return clock.WithTestClock(ctx, testClock.ID, testClock.CurrentTime), nil
 }
 
 const (
@@ -1527,7 +1727,7 @@ func (s *service) applyCreditDrawOnOpen(ctx context.Context, inv domain.Invoice,
 			return nil
 		}
 
-		now := time.Now().UTC()
+		now := s.clock.Now(ctx)
 		meta, _ := json.Marshal(map[string]interface{}{
 			"source":       "ledger_credit_draw",
 			"account_code": ledgerAccountCredits,
@@ -1541,7 +1741,7 @@ func (s *service) applyCreditDrawOnOpen(ctx context.Context, inv domain.Invoice,
 			LineType:        domain.LineTypeAdjustment,
 			Description:     "Customer credit applied",
 			Quantity:        1,
-			UnitAmountCents: amount,
+			UnitAmountCents: float64(amount),
 			AmountCents:     amount,
 			Currency:        inv.Currency,
 			IdempotencyKey:  &idempotencyKey,
@@ -1627,7 +1827,7 @@ func (s *service) createCreditUseLedgerTransactionTx(ctx context.Context, repo l
 		return nil
 	}
 
-	now := time.Now().UTC()
+	now := s.clock.Now(ctx)
 	sourceType := string(ledgerdomain.SourceTypeCreditUse)
 	tx := ledgerdomain.LedgerTransaction{
 		ID:             uuid.New(),
@@ -1718,7 +1918,7 @@ func (s *service) postLedgerForInvoiceOpen(ctx context.Context, inv domain.Invoi
 		value := inv.SubscriptionID.String()
 		subscriptionID = &value
 	}
-	occurredAt := time.Now().UTC()
+	occurredAt := s.clock.Now(ctx)
 	if inv.IssuedAt != nil {
 		occurredAt = inv.IssuedAt.UTC()
 	}
@@ -1778,7 +1978,7 @@ func (s *service) postLedgerForInvoicePayment(ctx context.Context, inv domain.In
 		value := inv.SubscriptionID.String()
 		subscriptionID = &value
 	}
-	occurredAt := time.Now().UTC()
+	occurredAt := s.clock.Now(ctx)
 	if inv.PaidAt != nil {
 		occurredAt = inv.PaidAt.UTC()
 	}
@@ -1836,7 +2036,7 @@ func (s *service) postLedgerForInvoiceVoid(ctx context.Context, inv domain.Invoi
 		value := inv.SubscriptionID.String()
 		subscriptionID = &value
 	}
-	occurredAt := time.Now().UTC()
+	occurredAt := s.clock.Now(ctx)
 	if inv.VoidedAt != nil {
 		occurredAt = inv.VoidedAt.UTC()
 	}
@@ -2096,7 +2296,7 @@ func buildInvoiceChecksum(inv domain.Invoice, items []domain.InvoiceItem) string
 		PlanPriceID string
 		MeterID     string
 		Quantity    float64
-		UnitAmount  int64
+		UnitAmount  float64
 		Amount      int64
 		Currency    string
 		PeriodStart string

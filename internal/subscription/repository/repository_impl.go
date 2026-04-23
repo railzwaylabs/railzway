@@ -126,8 +126,30 @@ func (r *repository) FindSubscriptionPeriodForUpdate(ctx context.Context, orgID,
 func (r *repository) ListOpenSubscriptionPeriods(ctx context.Context, asOf time.Time, limit int) ([]domain.SubscriptionPeriod, error) {
 	var periods []domain.SubscriptionPeriod
 	stmt := r.db.WithContext(ctx).Model(&domain.SubscriptionPeriod{}).
-		Where("status = ? AND period_end <= ?", domain.PeriodStatusOpen, asOf).
-		Order("period_end ASC")
+		Select("subscription_periods.*").
+		Joins("JOIN subscriptions ON subscriptions.id = subscription_periods.subscription_id AND subscriptions.org_id = subscription_periods.org_id").
+		Joins("JOIN customers ON customers.id = subscriptions.customer_id AND customers.org_id = subscriptions.org_id").
+		Where("subscription_periods.status = ? AND subscription_periods.period_end <= ?", domain.PeriodStatusOpen, asOf).
+		Where("customers.test_clock_id IS NULL").
+		Order("subscription_periods.period_end ASC")
+	if limit > 0 {
+		stmt = stmt.Limit(limit)
+	}
+	if err := stmt.Find(&periods).Error; err != nil {
+		return nil, err
+	}
+	return periods, nil
+}
+
+func (r *repository) ListOpenSubscriptionPeriodsByTestClock(ctx context.Context, orgID, testClockID uuid.UUID, asOf time.Time, limit int) ([]domain.SubscriptionPeriod, error) {
+	var periods []domain.SubscriptionPeriod
+	stmt := r.db.WithContext(ctx).Model(&domain.SubscriptionPeriod{}).
+		Select("subscription_periods.*").
+		Joins("JOIN subscriptions ON subscriptions.id = subscription_periods.subscription_id AND subscriptions.org_id = subscription_periods.org_id").
+		Joins("JOIN customers ON customers.id = subscriptions.customer_id AND customers.org_id = subscriptions.org_id").
+		Where("subscription_periods.org_id = ? AND subscription_periods.status = ? AND subscription_periods.period_end <= ?", orgID, domain.PeriodStatusOpen, asOf).
+		Where("customers.test_clock_id = ?", testClockID).
+		Order("subscription_periods.period_end ASC")
 	if limit > 0 {
 		stmt = stmt.Limit(limit)
 	}

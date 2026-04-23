@@ -195,13 +195,13 @@ func (h *Handler) CreatePlanPrice(c *gin.Context) {
 }
 
 type createPlanAmountRequest struct {
-	Currency           string `json:"currency"`
-	UnitAmountCents    int64  `json:"unit_amount_cents"`
-	MinimumAmountCents *int64 `json:"minimum_amount_cents"`
-	MaximumAmountCents *int64 `json:"maximum_amount_cents"`
-	EffectiveFrom      string `json:"effective_from"`
-	EffectiveTo        string `json:"effective_to"`
-	IdempotencyKey     string `json:"idempotency_key"`
+	Currency           string   `json:"currency"`
+	UnitAmountCents    float64  `json:"unit_amount_cents"`
+	MinimumAmountCents *float64 `json:"minimum_amount_cents"`
+	MaximumAmountCents *float64 `json:"maximum_amount_cents"`
+	EffectiveFrom      string   `json:"effective_from"`
+	EffectiveTo        string   `json:"effective_to"`
+	IdempotencyKey     string   `json:"idempotency_key"`
 }
 
 func (h *Handler) CreatePlanAmount(c *gin.Context) {
@@ -249,8 +249,8 @@ type createPlanTierRequest struct {
 	TierMode        string   `json:"tier_mode"`
 	StartQuantity   float64  `json:"start_quantity"`
 	EndQuantity     *float64 `json:"end_quantity"`
-	UnitAmountCents *int64   `json:"unit_amount_cents"`
-	FlatAmountCents *int64   `json:"flat_amount_cents"`
+	UnitAmountCents *float64 `json:"unit_amount_cents"`
+	FlatAmountCents *float64 `json:"flat_amount_cents"`
 	Unit            string   `json:"unit"`
 	IdempotencyKey  string   `json:"idempotency_key"`
 }

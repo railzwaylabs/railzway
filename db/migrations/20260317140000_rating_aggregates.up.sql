@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS rating_results (
     meter_id UUID NOT NULL REFERENCES meters(id) ON DELETE RESTRICT,
     currency TEXT NOT NULL,
     quantity NUMERIC NOT NULL CHECK (quantity >= 0),
-    unit_amount_cents BIGINT NOT NULL CHECK (unit_amount_cents >= 0),
+    unit_amount_cents NUMERIC(28,12) NOT NULL CHECK (unit_amount_cents >= 0),
     amount_cents BIGINT NOT NULL CHECK (amount_cents >= 0),
     source TEXT NOT NULL DEFAULT 'usage',
     window_start TIMESTAMPTZ NOT NULL,

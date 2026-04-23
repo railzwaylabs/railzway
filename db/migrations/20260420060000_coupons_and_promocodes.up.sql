@@ -8,12 +8,18 @@ CREATE TABLE IF NOT EXISTS coupons (
     duration TEXT NOT NULL, -- ONCE, REPEATING, FOREVER
     duration_months INT,
     currency TEXT,
+    valid_from TIMESTAMPTZ,
+    valid_until TIMESTAMPTZ,
+    auto_apply BOOLEAN NOT NULL DEFAULT FALSE,
+    target_segment TEXT,
     metadata JSONB NOT NULL DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_coupons_org_id ON coupons(org_id);
+CREATE INDEX IF NOT EXISTS idx_coupons_org_auto_apply ON coupons(org_id, auto_apply);
+CREATE INDEX IF NOT EXISTS idx_coupons_org_target_segment ON coupons(org_id, target_segment);
 
 CREATE TABLE IF NOT EXISTS promotion_codes (
     id UUID PRIMARY KEY,
@@ -52,8 +58,3 @@ ALTER TABLE invoice_items
         CHECK (line_type IN ('subscription', 'usage', 'discount', 'adjustment', 'credit', 'tax'));
 
 COMMENT ON COLUMN invoice_items.line_type IS 'subscription|usage|discount|adjustment|credit|tax';
-
-INSERT INTO ledger_accounts (id, org_id, code, type, name, created_at)
-SELECT gen_random_uuid(), o.id, 'credits', 'liability', 'Customer Credits', CURRENT_TIMESTAMP
-FROM organizations o
-ON CONFLICT (org_id, code) DO NOTHING;

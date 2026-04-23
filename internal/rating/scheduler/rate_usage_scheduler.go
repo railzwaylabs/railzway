@@ -42,10 +42,13 @@ func StartRatingScheduler(
 	}
 	useAdvisoryLock := cfg != nil && cfg.DBType == "postgres"
 	lockKey := advisoryLockKey("rating.process_usage")
+	var cancel context.CancelFunc
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			ticker := time.NewTicker(interval)
+			runCtx, stop := context.WithCancel(context.Background())
+			cancel = stop
 			logger.Info("rating scheduler started", zap.Duration("interval", interval), zap.Int("batch_size", batchSize))
 
 			go func() {
@@ -54,13 +57,13 @@ func StartRatingScheduler(
 					locked := true
 					if useAdvisoryLock {
 						var err error
-						locked, err = tryAdvisoryLock(ctx, db, lockKey)
+						locked, err = tryAdvisoryLock(runCtx, db, lockKey)
 						if err != nil {
 							logger.Warn("rating lock failed", zap.Error(err))
 							select {
 							case <-ticker.C:
 								continue
-							case <-ctx.Done():
+							case <-runCtx.Done():
 								return
 							}
 						}
@@ -68,13 +71,13 @@ func StartRatingScheduler(
 							select {
 							case <-ticker.C:
 								continue
-							case <-ctx.Done():
+							case <-runCtx.Done():
 								return
 							}
 						}
 					}
 
-					rows, err := listPendingUsage(ctx, db, batchSize)
+					rows, err := listPendingUsage(runCtx, db, batchSize)
 					if err != nil {
 						logger.Warn("rating fetch failed", zap.Error(err))
 					} else {
@@ -107,12 +110,18 @@ func StartRatingScheduler(
 					select {
 					case <-ticker.C:
 						continue
-					case <-ctx.Done():
+					case <-runCtx.Done():
 						return
 					}
 				}
 			}()
 
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			if cancel != nil {
+				cancel()
+			}
 			return nil
 		},
 	})

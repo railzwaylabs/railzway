@@ -14,9 +14,98 @@ import { useOrgPath } from "../lib/org"
 import { useCurrencies } from "../lib/reference"
 import AutoCompleteInput from "../components/AutoCompleteInput"
 import type { CreateProductRequest, Feature, Meter, CreateProductPlanInput, CreateProductPlanPriceInput } from "../lib/types"
+import { DEFAULT_MONEY_INPUT, defaultMoneyInputForPriceType, isNonNegativeMoneyInput, moneyInputDecimalsForPriceType, moneyInputStepForPriceType, moneyInputToCents, optionalMoneyInputToCents } from "../lib/money"
 
-type FormValues = CreateProductRequest & {
+type ProductAmountFormInput = {
+  currency: string
+  unit_amount_cents: string
+  minimum_amount_cents?: string
+  maximum_amount_cents?: string
+  effective_from?: string
+  effective_to?: string
+}
+
+type ProductTierFormInput = {
+  tier_mode: string
+  start_quantity: number
+  end_quantity?: number | string
+  unit_amount_cents?: string
+  flat_amount_cents?: string
+  unit: string
+}
+
+type ProductPriceFormInput = Omit<CreateProductPlanPriceInput, "amounts" | "tiers"> & {
+  amounts?: ProductAmountFormInput[]
+  tiers?: ProductTierFormInput[]
+}
+
+type ProductPlanFormInput = Omit<CreateProductPlanInput, "prices"> & {
+  prices?: ProductPriceFormInput[]
+}
+
+type FormValues = Omit<CreateProductRequest, "plans"> & {
   selected_features: string[];
+  plans?: ProductPlanFormInput[];
+}
+
+function toInt(value: unknown, fallback = 0) {
+  if (value === "" || value == null) return fallback
+  const parsed = Number.parseInt(String(value), 10)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function toFloat(value: unknown, fallback = 0) {
+  if (value === "" || value == null) return fallback
+  const parsed = Number.parseFloat(String(value))
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function toOptionalFloat(value: unknown) {
+  if (value === "" || value == null) return undefined
+  return toFloat(value)
+}
+
+function normalizeCreateProductPayload(data: FormValues): CreateProductRequest {
+  return {
+    code: data.code.trim(),
+    name: data.name.trim(),
+    description: data.description?.trim() || undefined,
+    active: data.active,
+    idempotency_key: data.idempotency_key,
+    feature_ids: data.selected_features,
+    plans: (data.plans ?? []).map((plan) => ({
+      code: plan.code.trim(),
+      name: plan.name.trim(),
+      description: plan.description?.trim() || undefined,
+      active: plan.active,
+      prices: (plan.prices ?? []).map((price) => ({
+        code: price.code.trim(),
+        name: price.name?.trim() || undefined,
+        description: price.description?.trim() || undefined,
+        active: price.active,
+        price_type: price.price_type,
+        billing_interval: price.billing_interval,
+        billing_interval_count: toInt(price.billing_interval_count, 1),
+        meter_id: price.meter_id?.trim() || undefined,
+        amounts: (price.amounts ?? []).map((amount) => ({
+          currency: amount.currency.trim(),
+          unit_amount_cents: moneyInputToCents(amount.unit_amount_cents, moneyInputDecimalsForPriceType(price.price_type)),
+          minimum_amount_cents: optionalMoneyInputToCents(amount.minimum_amount_cents),
+          maximum_amount_cents: optionalMoneyInputToCents(amount.maximum_amount_cents),
+          effective_from: amount.effective_from || undefined,
+          effective_to: amount.effective_to || undefined,
+        })),
+        tiers: (price.tiers ?? []).map((tier) => ({
+          tier_mode: tier.tier_mode,
+          start_quantity: toFloat(tier.start_quantity),
+          end_quantity: toOptionalFloat(tier.end_quantity),
+          unit_amount_cents: optionalMoneyInputToCents(tier.unit_amount_cents, moneyInputDecimalsForPriceType("usage")),
+          flat_amount_cents: optionalMoneyInputToCents(tier.flat_amount_cents),
+          unit: tier.unit?.trim() || "unit",
+        })),
+      })),
+    })),
+  }
 }
 
 export default function ProductsCreate() {
@@ -55,7 +144,7 @@ export default function ProductsCreate() {
               billing_interval: "month",
               billing_interval_count: 1,
               active: true,
-              amounts: [{ currency: "USD", unit_amount_cents: 0 }]
+              amounts: [{ currency: "USD", unit_amount_cents: DEFAULT_MONEY_INPUT }]
             }
           ]
         }
@@ -114,10 +203,7 @@ export default function ProductsCreate() {
       setSaving(true)
       setError(null)
 
-      const payload: CreateProductRequest = {
-        ...data,
-        feature_ids: data.selected_features,
-      }
+      const payload = normalizeCreateProductPayload(data)
       
       await api.products.create(payload)
       navigate(orgPath("/products"))
@@ -200,7 +286,7 @@ export default function ProductsCreate() {
                 </div>
                 <div className="px-2 text-sm muted">{t("products_create.hints.product_plan_boundary")}</div>
 
-                {planFields.map((plan: CreateProductPlanInput & { id: string }, index: number) => (
+                {planFields.map((plan: ProductPlanFormInput & { id: string }, index: number) => (
                   <PlanFormItem 
                     key={plan.id}
                     index={index}
@@ -372,7 +458,7 @@ function PlanFormItem({
               billing_interval: "month", 
               billing_interval_count: 1,
               active: true,
-              amounts: [{ currency: "USD", unit_amount_cents: 0 }]
+              amounts: [{ currency: "USD", unit_amount_cents: DEFAULT_MONEY_INPUT }]
             })}
             className="h-8 py-0 px-2 text-primary"
           >
@@ -382,7 +468,7 @@ function PlanFormItem({
         </div>
 
         <div className="space-y-4 pl-4 border-l-2 border-border/50">
-          {priceFields.map((price: CreateProductPlanPriceInput & { id: string }, pIndex: number) => (
+          {priceFields.map((price: ProductPriceFormInput & { id: string }, pIndex: number) => (
             <PriceFormItem 
               key={price.id}
               planIndex={index}
@@ -425,7 +511,7 @@ function PriceFormItem({ planIndex, priceIndex, remove, currencyOptions, meterOp
 
   useEffect(() => {
     if (priceType !== 'tiered' && amountFields.length === 0) {
-      appendAmount({ currency: "USD", unit_amount_cents: 0 })
+      appendAmount({ currency: "USD", unit_amount_cents: defaultMoneyInputForPriceType(priceType) })
     }
   }, [priceType, amountFields.length, appendAmount])
 
@@ -454,7 +540,12 @@ function PriceFormItem({ planIndex, priceIndex, remove, currencyOptions, meterOp
                 if (tierFields.length === 0) appendTier({ tier_mode: "volume", start_quantity: 0, unit: "unit" })
               } else {
                 setValue(`${pricePath}.tiers`, [])
-                if (amountFields.length === 0) appendAmount({ currency: "USD", unit_amount_cents: 0 })
+                if (amountFields.length === 0) appendAmount({ currency: "USD", unit_amount_cents: defaultMoneyInputForPriceType(v) })
+                else {
+                  amountFields.forEach((_, aIndex) => {
+                    setValue(`${pricePath}.amounts.${aIndex}.unit_amount_cents`, defaultMoneyInputForPriceType(v))
+                  })
+                }
               }
             }}
           >
@@ -489,7 +580,12 @@ function PriceFormItem({ planIndex, priceIndex, remove, currencyOptions, meterOp
 
         <div className="col-span-6 space-y-2">
            <Label className="text-xs">{t("products_create.fields.price_code")}</Label>
-           <Input {...register(`${pricePath}.code`, { required: true })} className="h-9 text-xs" placeholder={t("products_create.placeholders.price_code")} />
+           <Input
+             {...register(`${pricePath}.code`, { required: true })}
+             className="h-9 text-xs"
+             placeholder={t("products_create.placeholders.price_code")}
+             data-testid={`products-plan-${planIndex}-price-${priceIndex}-code`}
+           />
         </div>
 
         {(priceType === 'usage' || priceType === 'tiered') && (
@@ -527,15 +623,15 @@ function PriceFormItem({ planIndex, priceIndex, remove, currencyOptions, meterOp
                   <div key={tier.id} className="flex gap-2 items-end">
                     <div className="flex-1 space-y-1">
                       <Label className="text-[10px] muted">{t("products_create.fields.tier_start")}</Label>
-                      <Input {...register(`${pricePath}.tiers.${tIndex}.start_quantity`)} type="number" className="h-8 text-xs" />
+                      <Input {...register(`${pricePath}.tiers.${tIndex}.start_quantity`)} type="number" className="h-8 text-xs" data-testid={`products-plan-${planIndex}-price-${priceIndex}-tier-${tIndex}-start`} />
                     </div>
                     <div className="flex-1 space-y-1">
                       <Label className="text-[10px] muted">{t("products_create.fields.tier_end")}</Label>
-                      <Input {...register(`${pricePath}.tiers.${tIndex}.end_quantity`)} type="number" className="h-8 text-xs" />
+                      <Input {...register(`${pricePath}.tiers.${tIndex}.end_quantity`)} type="number" className="h-8 text-xs" data-testid={`products-plan-${planIndex}-price-${priceIndex}-tier-${tIndex}-end`} />
                     </div>
                     <div className="flex-1 space-y-1">
                       <Label className="text-[10px] muted">{t("products_create.fields.tier_base_rate")}</Label>
-                      <Input {...register(`${pricePath}.tiers.${tIndex}.unit_amount_cents`)} type="number" className="h-8 text-xs" />
+                      <Input {...register(`${pricePath}.tiers.${tIndex}.unit_amount_cents`, { validate: (value) => value == null || value === "" || isNonNegativeMoneyInput(value, moneyInputDecimalsForPriceType("usage")) })} type="text" min={0} step={moneyInputStepForPriceType("usage")} inputMode="decimal" className="h-8 text-xs" data-testid={`products-plan-${planIndex}-price-${priceIndex}-tier-${tIndex}-unit-amount`} />
                     </div>
                      <Button 
                       type="button" 
@@ -555,7 +651,7 @@ function PriceFormItem({ planIndex, priceIndex, remove, currencyOptions, meterOp
         {priceType !== 'tiered' && (
           <div className="col-span-12 space-y-2 pt-2">
               <Label className="text-xs">{t("products_create.fields.amount")}</Label>
-             {amountFields.map((amount: { id: string; currency: string; unit_amount_cents: number }, aIndex: number) => (
+             {amountFields.map((amount: { id: string; currency: string; unit_amount_cents: string }, aIndex: number) => (
                <div key={amount.id} className="flex gap-2">
                   <div className="w-24">
                      <AutoCompleteInput
@@ -568,10 +664,14 @@ function PriceFormItem({ planIndex, priceIndex, remove, currencyOptions, meterOp
                   </div>
                   <div className="flex-1">
                     <Input 
-                      {...register(`${pricePath}.amounts.${aIndex}.unit_amount_cents`)} 
-                      type="number" 
+                      {...register(`${pricePath}.amounts.${aIndex}.unit_amount_cents`, { validate: (value) => isNonNegativeMoneyInput(value, moneyInputDecimalsForPriceType(priceType)) })}
+                      type="text"
+                      min={0}
+                      step={moneyInputStepForPriceType(priceType)}
+                      inputMode="decimal"
                       className="h-9 text-xs" 
                       placeholder={t("products_create.placeholders.amount_cents")}
+                      data-testid={`products-plan-${planIndex}-price-${priceIndex}-amount-${aIndex}`}
                     />
                   </div>
                    {amountFields.length > 1 && (
@@ -585,7 +685,7 @@ function PriceFormItem({ planIndex, priceIndex, remove, currencyOptions, meterOp
                 type="button" 
                 variant="link" 
                 size="sm" 
-                onClick={() => appendAmount({ currency: "USD", unit_amount_cents: 0 })}
+                onClick={() => appendAmount({ currency: "USD", unit_amount_cents: defaultMoneyInputForPriceType(priceType) })}
                 className="h-6 text-[10px] p-0"
               >
                {t("products_create.actions.add_multi_currency")}

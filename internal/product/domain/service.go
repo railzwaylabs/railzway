@@ -48,9 +48,9 @@ type CreateProductPlanPriceInput struct {
 
 type CreateProductPlanAmountInput struct {
 	Currency           string
-	UnitAmountCents    int64
-	MinimumAmountCents *int64
-	MaximumAmountCents *int64
+	UnitAmountCents    float64
+	MinimumAmountCents *float64
+	MaximumAmountCents *float64
 	EffectiveFrom      *time.Time
 	EffectiveTo        *time.Time
 }
@@ -59,8 +59,8 @@ type CreateProductPlanTierInput struct {
 	TierMode        string
 	StartQuantity   float64
 	EndQuantity     *float64
-	UnitAmountCents *int64
-	FlatAmountCents *int64
+	UnitAmountCents *float64
+	FlatAmountCents *float64
 	Unit            string
 }
 
@@ -72,7 +72,7 @@ type UpdateProductRequest struct {
 }
 
 type GetProductRequest struct {
-	ID           string
+	ID             string
 	ExpandPlans    bool
 	ExpandFeatures bool
 }
@@ -112,14 +112,14 @@ type ProductFeatureResponse struct {
 }
 
 type ProductPlanResponse struct {
-	ID          string              `json:"id"`
-	Code        string              `json:"code"`
-	Name        string              `json:"name"`
-	Description string              `json:"description,omitempty"`
-	Active      bool                `json:"active"`
-	CreatedAt   time.Time           `json:"created_at"`
-	UpdatedAt   time.Time           `json:"updated_at"`
-	Prices      []ProductPlanPrice  `json:"prices,omitempty"`
+	ID          string             `json:"id"`
+	Code        string             `json:"code"`
+	Name        string             `json:"name"`
+	Description string             `json:"description,omitempty"`
+	Active      bool               `json:"active"`
+	CreatedAt   time.Time          `json:"created_at"`
+	UpdatedAt   time.Time          `json:"updated_at"`
+	Prices      []ProductPlanPrice `json:"prices,omitempty"`
 }
 
 type ProductPlanPrice struct {
@@ -142,9 +142,9 @@ type ProductPlanPrice struct {
 type ProductPlanAmount struct {
 	ID                 string     `json:"id"`
 	Currency           string     `json:"currency"`
-	UnitAmountCents    int64      `json:"unit_amount_cents"`
-	MinimumAmountCents *int64     `json:"minimum_amount_cents,omitempty"`
-	MaximumAmountCents *int64     `json:"maximum_amount_cents,omitempty"`
+	UnitAmountCents    float64    `json:"unit_amount_cents"`
+	MinimumAmountCents *float64   `json:"minimum_amount_cents,omitempty"`
+	MaximumAmountCents *float64   `json:"maximum_amount_cents,omitempty"`
 	EffectiveFrom      time.Time  `json:"effective_from"`
 	EffectiveTo        *time.Time `json:"effective_to,omitempty"`
 }
@@ -154,8 +154,8 @@ type ProductPlanTier struct {
 	TierMode        string   `json:"tier_mode"`
 	StartQuantity   float64  `json:"start_quantity"`
 	EndQuantity     *float64 `json:"end_quantity,omitempty"`
-	UnitAmountCents *int64   `json:"unit_amount_cents,omitempty"`
-	FlatAmountCents *int64   `json:"flat_amount_cents,omitempty"`
+	UnitAmountCents *float64 `json:"unit_amount_cents,omitempty"`
+	FlatAmountCents *float64 `json:"flat_amount_cents,omitempty"`
 	Unit            string   `json:"unit"`
 }
 

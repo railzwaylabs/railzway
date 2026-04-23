@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { api } from "../lib/api"
 import { useOrgPath } from "../lib/org"
 import { currencyHint } from "../lib/hints"
+import { DEFAULT_MONEY_INPUT, defaultMoneyInputForPriceType, isNonNegativeMoneyInput, moneyInputDecimalsForPriceType, moneyInputStepForPriceType, moneyInputToCents } from "../lib/money"
 import { useCurrencies } from "../lib/reference"
 import { isCurrencyCode } from "../lib/validation"
 import PageHeader from "../components/PageHeader"
@@ -73,7 +74,7 @@ export default function PlansCreate() {
     currency: "USD",
     billingInterval: "month",
     billingIntervalCount: 1,
-    unitAmountCents: 0,
+    unitAmount: DEFAULT_MONEY_INPUT,
     
     // Usage Info
     meterId: "",
@@ -90,7 +91,8 @@ export default function PlansCreate() {
     if (!form.currency.trim()) errors.push(t("plans_create.validation.currency_required"))
     else if (!isCurrencyCode(form.currency)) errors.push(t("plans_create.validation.currency_invalid"))
     if (form.billingIntervalCount < 1) errors.push(t("plans_create.validation.interval_count"))
-    if (form.unitAmountCents < 0) errors.push(t("plans_create.validation.amount_min"))
+    const amountDecimals = moneyInputDecimalsForPriceType(form.priceType)
+    if (!isNonNegativeMoneyInput(form.unitAmount, amountDecimals)) errors.push(t("plans_create.validation.amount_min"))
 
     // Usage Validation
     if (form.priceType === "usage" && !form.meterId) errors.push(t("plans_create.validation.meter_required"))
@@ -119,7 +121,7 @@ export default function PlansCreate() {
             amounts: [
               {
                 currency: form.currency.trim(),
-                unit_amount_cents: form.unitAmountCents
+                unit_amount_cents: moneyInputToCents(form.unitAmount, moneyInputDecimalsForPriceType(form.priceType))
               }
             ]
           }
@@ -177,14 +179,14 @@ export default function PlansCreate() {
           <div style={{ display: "flex", gap: "16px", marginBottom: "24px" }}>
              <Button type="button" 
                      variant={form.priceType === "flat" ? "default" : "secondary"}
-                     onClick={() => setForm(p => ({...p, priceType: "flat"}))}
+                     onClick={() => setForm(p => ({...p, priceType: "flat", unitAmount: defaultMoneyInputForPriceType("flat")}))}
                      style={{ flex: 1 }}
                      data-testid="plans-create-type-flat">
                {t("plans_create.pricing.flat")}
              </Button>
              <Button type="button" 
                      variant={form.priceType === "usage" ? "default" : "secondary"}
-                     onClick={() => setForm(p => ({...p, priceType: "usage"}))}
+                     onClick={() => setForm(p => ({...p, priceType: "usage", unitAmount: defaultMoneyInputForPriceType("usage")}))}
                      style={{ flex: 1 }}
                      data-testid="plans-create-type-usage">
                {t("plans_create.pricing.usage")}
@@ -208,8 +210,8 @@ export default function PlansCreate() {
             
             <div className="action-field">
               <Label className="action-label">{t("plans_create.fields.amount_label")}</Label>
-              <Input className="action-input" type="number" value={form.unitAmountCents} min={0}
-                onChange={(e) => setForm((p) => ({ ...p, unitAmountCents: Number(e.target.value || 0) }))} data-testid="plans-create-amount" />
+              <Input className="action-input" type="text" value={form.unitAmount} min={0} step={moneyInputStepForPriceType(form.priceType)} inputMode="decimal"
+                onChange={(e) => setForm((p) => ({ ...p, unitAmount: e.target.value }))} data-testid="plans-create-amount" />
             </div>
             <div className="action-field">
             <AutoCompleteInput

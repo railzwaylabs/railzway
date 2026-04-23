@@ -45,20 +45,20 @@ type createProductPlanPriceInput struct {
 }
 
 type createProductPlanAmountInput struct {
-	Currency           string `json:"currency" binding:"required"`
-	UnitAmountCents    int64  `json:"unit_amount_cents"`
-	MinimumAmountCents *int64 `json:"minimum_amount_cents,omitempty"`
-	MaximumAmountCents *int64 `json:"maximum_amount_cents,omitempty"`
-	EffectiveFrom      string `json:"effective_from,omitempty"`
-	EffectiveTo        string `json:"effective_to,omitempty"`
+	Currency           string   `json:"currency" binding:"required"`
+	UnitAmountCents    float64  `json:"unit_amount_cents"`
+	MinimumAmountCents *float64 `json:"minimum_amount_cents,omitempty"`
+	MaximumAmountCents *float64 `json:"maximum_amount_cents,omitempty"`
+	EffectiveFrom      string   `json:"effective_from,omitempty"`
+	EffectiveTo        string   `json:"effective_to,omitempty"`
 }
 
 type createProductPlanTierInput struct {
 	TierMode        string   `json:"tier_mode" binding:"required"`
 	StartQuantity   float64  `json:"start_quantity"`
 	EndQuantity     *float64 `json:"end_quantity,omitempty"`
-	UnitAmountCents *int64   `json:"unit_amount_cents,omitempty"`
-	FlatAmountCents *int64   `json:"flat_amount_cents,omitempty"`
+	UnitAmountCents *float64 `json:"unit_amount_cents,omitempty"`
+	FlatAmountCents *float64 `json:"flat_amount_cents,omitempty"`
 	Unit            string   `json:"unit" binding:"required"`
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/customer/domain"
 	"github.com/railzwaylabs/railzway/internal/db/pagination"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
+	testclockdomain "github.com/railzwaylabs/railzway/internal/testclock/domain"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
@@ -22,27 +23,30 @@ import (
 const customerCacheTTL = 15 * time.Second
 
 type service struct {
-	db    *gorm.DB
-	repo  domain.Repository
-	audit *auditlog.Service
-	cache *redis.Client
+	db     *gorm.DB
+	repo   domain.Repository
+	clocks testclockdomain.Repository
+	audit  *auditlog.Service
+	cache  *redis.Client
 }
 
 type Params struct {
 	fx.In
 
-	DB    *gorm.DB
-	Repo  domain.Repository
-	Audit *auditlog.Service `optional:"true"`
-	Cache *redis.Client     `name:"redis_cache" optional:"true"`
+	DB     *gorm.DB
+	Repo   domain.Repository
+	Clocks testclockdomain.Repository `optional:"true"`
+	Audit  *auditlog.Service          `optional:"true"`
+	Cache  *redis.Client              `name:"redis_cache" optional:"true"`
 }
 
 func NewService(p Params) domain.Service {
 	return &service{
-		db:    p.DB,
-		repo:  p.Repo,
-		audit: p.Audit,
-		cache: p.Cache,
+		db:     p.DB,
+		repo:   p.Repo,
+		clocks: p.Clocks,
+		audit:  p.Audit,
+		cache:  p.Cache,
 	}
 }
 
@@ -80,17 +84,23 @@ func (s *service) Create(ctx context.Context, req domain.CreateCustomerRequest) 
 		}
 	}
 
+	testClockID, err := s.parseAndValidateTestClockID(ctx, orgID, req.TestClockID)
+	if err != nil {
+		return domain.CustomerResponse{}, err
+	}
+
 	now := time.Now().UTC()
 	customer := domain.Customer{
-		ID:         uuid.New(),
-		OrgID:      orgID,
-		ExternalID: strings.TrimSpace(req.ExternalID),
-		Name:       name,
-		Email:      email,
-		Currency:   currency,
-		Metadata:   json.RawMessage(`{}`),
-		CreatedAt:  now,
-		UpdatedAt:  now,
+		ID:          uuid.New(),
+		OrgID:       orgID,
+		TestClockID: testClockID,
+		ExternalID:  strings.TrimSpace(req.ExternalID),
+		Name:        name,
+		Email:       email,
+		Currency:    currency,
+		Metadata:    json.RawMessage(`{}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 	if idempotencyKey != "" {
 		customer.IdempotencyKey = &idempotencyKey
@@ -158,6 +168,14 @@ func (s *service) Update(ctx context.Context, id string, req domain.UpdateCustom
 			return domain.CustomerResponse{}, domain.ErrInvalidCurrency
 		}
 		updates["currency"] = currency
+	}
+
+	if req.TestClockID != nil {
+		testClockID, err := s.parseAndValidateTestClockID(ctx, orgID, req.TestClockID)
+		if err != nil {
+			return domain.CustomerResponse{}, err
+		}
+		updates["test_clock_id"] = testClockID
 	}
 
 	beforeCustomer, err := s.repo.FindByID(ctx, orgID, customerID)
@@ -332,6 +350,30 @@ func normalizeCurrency(value string) string {
 	return strings.ToUpper(strings.TrimSpace(value))
 }
 
+func (s *service) parseAndValidateTestClockID(ctx context.Context, orgID uuid.UUID, raw *string) (*uuid.UUID, error) {
+	if raw == nil {
+		return nil, nil
+	}
+	value := strings.TrimSpace(*raw)
+	if value == "" {
+		return nil, nil
+	}
+	id, err := uuid.Parse(value)
+	if err != nil || id == uuid.Nil {
+		return nil, domain.ErrInvalidTestClock
+	}
+	if s.clocks != nil {
+		clockInfo, err := s.clocks.GetByID(ctx, orgID, id)
+		if err != nil {
+			return nil, err
+		}
+		if clockInfo == nil {
+			return nil, domain.ErrInvalidTestClock
+		}
+	}
+	return &id, nil
+}
+
 func isValidCurrency(value string) bool {
 	if len(value) != 3 {
 		return false
@@ -345,16 +387,22 @@ func isValidCurrency(value string) bool {
 }
 
 func toResponse(item domain.Customer) domain.CustomerResponse {
+	var testClockID *string
+	if item.TestClockID != nil {
+		value := item.TestClockID.String()
+		testClockID = &value
+	}
 	return domain.CustomerResponse{
-		ID:         item.ID.String(),
-		OrgID:      item.OrgID.String(),
-		ExternalID: item.ExternalID,
-		Name:       item.Name,
-		Email:      item.Email,
-		Currency:   item.Currency,
-		Metadata:   item.Metadata,
-		CreatedAt:  item.CreatedAt,
-		UpdatedAt:  item.UpdatedAt,
+		ID:          item.ID.String(),
+		OrgID:       item.OrgID.String(),
+		TestClockID: testClockID,
+		ExternalID:  item.ExternalID,
+		Name:        item.Name,
+		Email:       item.Email,
+		Currency:    item.Currency,
+		Metadata:    item.Metadata,
+		CreatedAt:   item.CreatedAt,
+		UpdatedAt:   item.UpdatedAt,
 	}
 }
 

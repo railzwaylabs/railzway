@@ -1015,48 +1015,78 @@ func (s *Service) loadSummarySnapshot(ctx context.Context, orgID uuid.UUID) (*Su
 }
 
 func (s *Service) RefreshSummary(ctx context.Context, orgID uuid.UUID) (*SummarySnapshot, error) {
-	dashboard, err := s.computeDashboardSummary(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-	customers, err := s.computeCustomersSummary(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-	plans, err := s.computePlansSummary(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-	subscriptions, err := s.computeSubscriptionsSummary(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-	usage, err := s.computeUsageSummary(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-	rating, err := s.computeRatingSummary(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-	invoices, err := s.computeInvoicesSummary(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-	payments, err := s.computePaymentsSummary(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-	taxes, err := s.computeTaxesSummary(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-	auditLogs, err := s.computeAuditLogsSummary(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-	settings, err := s.computeSettingsSummary(ctx, orgID)
-	if err != nil {
+	var (
+		dashboard     DashboardSummary
+		customers     CustomersSummary
+		plans         PlansSummary
+		subscriptions SubscriptionsSummary
+		usage         UsageSummary
+		rating        RatingSummary
+		invoices      InvoicesSummary
+		payments      PaymentsSummary
+		taxes         TaxesSummary
+		auditLogs     AuditLogsSummary
+		settings      SettingsSummary
+	)
+
+	group, gctx := errgroup.WithContext(ctx)
+	group.SetLimit(s.limit)
+	group.Go(func() error {
+		var err error
+		dashboard, err = s.computeDashboardSummary(gctx, orgID)
+		return err
+	})
+	group.Go(func() error {
+		var err error
+		customers, err = s.computeCustomersSummary(gctx, orgID)
+		return err
+	})
+	group.Go(func() error {
+		var err error
+		plans, err = s.computePlansSummary(gctx, orgID)
+		return err
+	})
+	group.Go(func() error {
+		var err error
+		subscriptions, err = s.computeSubscriptionsSummary(gctx, orgID)
+		return err
+	})
+	group.Go(func() error {
+		var err error
+		usage, err = s.computeUsageSummary(gctx, orgID)
+		return err
+	})
+	group.Go(func() error {
+		var err error
+		rating, err = s.computeRatingSummary(gctx, orgID)
+		return err
+	})
+	group.Go(func() error {
+		var err error
+		invoices, err = s.computeInvoicesSummary(gctx, orgID)
+		return err
+	})
+	group.Go(func() error {
+		var err error
+		payments, err = s.computePaymentsSummary(gctx, orgID)
+		return err
+	})
+	group.Go(func() error {
+		var err error
+		taxes, err = s.computeTaxesSummary(gctx, orgID)
+		return err
+	})
+	group.Go(func() error {
+		var err error
+		auditLogs, err = s.computeAuditLogsSummary(gctx, orgID)
+		return err
+	})
+	group.Go(func() error {
+		var err error
+		settings, err = s.computeSettingsSummary(gctx, orgID)
+		return err
+	})
+	if err := group.Wait(); err != nil {
 		return nil, err
 	}
 
@@ -1096,7 +1126,6 @@ func (s *Service) RefreshAllSummaries(ctx context.Context) error {
 	group, gctx := errgroup.WithContext(ctx)
 	group.SetLimit(s.limit)
 	for _, orgID := range orgIDs {
-		orgID := orgID
 		s.runSummary(group, gctx, func(ctx context.Context) error {
 			_, err := s.RefreshSummary(ctx, orgID)
 			return err

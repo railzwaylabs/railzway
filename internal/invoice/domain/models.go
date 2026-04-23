@@ -48,7 +48,7 @@ type InvoiceItem struct {
 	LineType        string          `gorm:"type:text;not null" json:"line_type"`
 	Description     string          `gorm:"type:text" json:"description,omitempty"`
 	Quantity        float64         `gorm:"not null" json:"quantity"`
-	UnitAmountCents int64           `gorm:"not null" json:"unit_amount_cents"`
+	UnitAmountCents float64         `gorm:"type:numeric(28,12);not null" json:"unit_amount_cents"`
 	AmountCents     int64           `gorm:"not null" json:"amount_cents"`
 	Currency        string          `gorm:"type:text;not null" json:"currency"`
 	PeriodStart     *time.Time      `gorm:"" json:"period_start,omitempty"`

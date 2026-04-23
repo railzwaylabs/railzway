@@ -177,19 +177,22 @@ func ensureAdminPolicies(enforcer *casbin.Enforcer) error {
 	}
 
 	// FINANCE: Write access to money-related modules.
-	policies = append(policies, []string{organizationdomain.RoleFinance, `^/admin(/v1)?/(invoices|ledger|taxes|payments|reconciliation)/.*$`, ".*"})
+	policies = append(policies, []string{organizationdomain.RoleFinance, `^/admin(/v1)?/(invoices|ledger|taxes|payments)(/.*)?$`, ".*"})
+	policies = append(policies, []string{organizationdomain.RoleFinance, `^/admin(/v1)?/(reconciliation|coupons|promotion-codes|segments)(/.*)?$`, ".*"})
 	policies = append(policies, []string{organizationdomain.RoleFinance, `^/admin(/v1)?/.*$`, "GET|HEAD|OPTIONS"})
 
 	// OPERATIONS: Write access to catalog and customer lifecycle.
-	policies = append(policies, []string{organizationdomain.RoleOperations, `^/admin(/v1)?/(products|plans|prices|features|customers|subscriptions)/.*$`, ".*"})
+	policies = append(policies, []string{organizationdomain.RoleOperations, `^/admin(/v1)?/(products|plans|prices|features)(/.*)?$`, ".*"})
+	policies = append(policies, []string{organizationdomain.RoleOperations, `^/admin(/v1)?/(customers|subscriptions)(/.*)?$`, ".*"})
+	policies = append(policies, []string{organizationdomain.RoleOperations, `^/admin(/v1)?/(coupons|promotion-codes|segments)(/.*)?$`, ".*"})
 	policies = append(policies, []string{organizationdomain.RoleOperations, `^/admin(/v1)?/.*$`, "GET|HEAD|OPTIONS"})
 
 	// DEVELOPER: Write access to technical integration and tools.
-	policies = append(policies, []string{organizationdomain.RoleDeveloper, `^/admin(/v1)?/(meters|apikeys|webhooks|ai|test-clock|feature-flags|warnings)/.*$`, ".*"})
+	policies = append(policies, []string{organizationdomain.RoleDeveloper, `^/admin(/v1)?/(meters|apikeys|webhooks|ai|test-clock|feature-flags|warnings)(/.*)?$`, ".*"})
 	policies = append(policies, []string{organizationdomain.RoleDeveloper, `^/admin(/v1)?/.*$`, "GET|HEAD|OPTIONS"})
 
 	// CUSTOMER_SUPPORT: Targeted Read-only access to customer-facing data.
-	policies = append(policies, []string{organizationdomain.RoleCustomerSupport, `^/admin(/v1)?/(customers|subscriptions|invoices|products|plans|features|usage|rating)/.*$`, "GET|HEAD|OPTIONS"})
+	policies = append(policies, []string{organizationdomain.RoleCustomerSupport, `^/admin(/v1)?/(customers|subscriptions|invoices|products|plans|features|usage|rating)(/.*)?$`, "GET|HEAD|OPTIONS"})
 
 	// AUDITOR: Universal Read-only access for compliance.
 	policies = append(policies, []string{organizationdomain.RoleAuditor, `^/admin(/v1)?/.*$`, "GET|HEAD|OPTIONS"})

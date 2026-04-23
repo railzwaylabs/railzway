@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import HelpHint from "../components/HelpHint";
@@ -7,11 +7,13 @@ import AutoCompleteInput from "../components/AutoCompleteInput";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { api } from "../lib/api";
 import { useOrgPath } from "../lib/org";
 import { currencyHint } from "../lib/hints";
 import { useCurrencies } from "../lib/reference";
 import { isCurrencyCode, isEmail } from "../lib/validation";
+import type { TestClock } from "../lib/types";
 
 export default function CustomersCreate() {
   const { t } = useTranslation();
@@ -22,8 +24,10 @@ export default function CustomersCreate() {
     name: "",
     email: "",
     externalId: "",
-    currency: ""
+    currency: "",
+    testClockID: "none"
   });
+  const [testClocks, setTestClocks] = useState<TestClock[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -55,7 +59,8 @@ export default function CustomersCreate() {
         name: form.name.trim(),
         email: form.email.trim(),
         external_id: form.externalId.trim() || undefined,
-        currency: form.currency.trim() || undefined
+        currency: form.currency.trim() || undefined,
+        test_clock: form.testClockID === "none" ? undefined : form.testClockID
       });
       setMessage(t("customers_create.toast.created", { id: resp.id }));
       setTimeout(() => navigate(orgPath("/customers")), 800);
@@ -65,6 +70,24 @@ export default function CustomersCreate() {
       setSaving(false);
     }
   }, [form, navigate, orgPath, t]);
+
+  useEffect(() => {
+    let active = true;
+    void api.testClock.list()
+      .then((resp) => {
+        if (active) {
+          setTestClocks(resp.test_clocks);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setTestClocks([]);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div className="page-content">
@@ -113,6 +136,20 @@ export default function CustomersCreate() {
                 placeholder={currenciesLoading ? t("common.loading") : t("customers_create.fields.currency_placeholder")}
                 onChange={(value) => setForm((prev) => ({ ...prev, currency: value }))}
               />
+            </div>
+            <div className="action-field">
+              <Label className="action-label">Test clock</Label>
+              <Select value={form.testClockID} onValueChange={(value) => setForm((prev) => ({ ...prev, testClockID: value }))}>
+                <SelectTrigger className="action-select" data-testid="customers-create-test-clock">
+                  <SelectValue placeholder="No test clock" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No test clock</SelectItem>
+                  {testClocks.map((clock) => (
+                    <SelectItem key={clock.id} value={clock.id}>{clock.name || clock.id}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           {validation.length > 0 ? <div className="inline-error">{validation.join(" ")}</div> : null}

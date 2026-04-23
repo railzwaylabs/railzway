@@ -14,14 +14,16 @@ type CreateCustomerRequest struct {
 	Email          string
 	ExternalID     string
 	Currency       string
+	TestClockID    *string
 	IdempotencyKey string
 }
 
 type UpdateCustomerRequest struct {
-	Name       *string
-	Email      *string
-	ExternalID *string
-	Currency   *string
+	Name        *string
+	Email       *string
+	ExternalID  *string
+	Currency    *string
+	TestClockID *string
 }
 
 type GetCustomerRequest struct {
@@ -44,15 +46,16 @@ type ListCustomerResponse struct {
 }
 
 type CustomerResponse struct {
-	ID         string          `json:"id"`
-	OrgID      string          `json:"org_id"`
-	ExternalID string          `json:"external_id,omitempty"`
-	Name       string          `json:"name"`
-	Email      string          `json:"email"`
-	Currency   string          `json:"currency,omitempty"`
-	Metadata   json.RawMessage `json:"metadata,omitempty"`
-	CreatedAt  time.Time       `json:"created_at"`
-	UpdatedAt  time.Time       `json:"updated_at"`
+	ID          string          `json:"id"`
+	OrgID       string          `json:"org_id"`
+	TestClockID *string         `json:"test_clock_id,omitempty"`
+	ExternalID  string          `json:"external_id,omitempty"`
+	Name        string          `json:"name"`
+	Email       string          `json:"email"`
+	Currency    string          `json:"currency,omitempty"`
+	Metadata    json.RawMessage `json:"metadata,omitempty"`
+	CreatedAt   time.Time       `json:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at"`
 }
 
 type Service interface {
@@ -68,5 +71,6 @@ var (
 	ErrInvalidEmail        = errors.New("invalid_email")
 	ErrInvalidCurrency     = errors.New("invalid_currency")
 	ErrInvalidID           = errors.New("invalid_id")
+	ErrInvalidTestClock    = errors.New("invalid_test_clock")
 	ErrNotFound            = errors.New("not_found")
 )

@@ -17,7 +17,6 @@ func registerAdminRoutes(r *gin.Engine, h *Handler, basePath string) {
 	protected := admin.Group("/")
 	protected.Use(h.AuthRequired())
 	protected.Use(h.RequireCSRF())
-	protected.Use(h.InjectTestClock())
 	protected.GET("/auth/me", h.Me)
 	protected.POST("/auth/using/:org_id", h.SwitchOrganization)
 	protected.PUT("/auth/change-password", h.ChangePassword)
@@ -37,7 +36,6 @@ func registerAdminRoutes(r *gin.Engine, h *Handler, basePath string) {
 	orgRequired := admin.Group("/")
 	orgRequired.Use(h.AuthRequired())
 	orgRequired.Use(h.RequireCSRF())
-	orgRequired.Use(h.InjectTestClock())
 	orgRequired.Use(h.RequireOrgHeader())
 	orgRequired.Use(h.AuthorizeAdmin())
 
@@ -100,6 +98,16 @@ func registerAdminRoutes(r *gin.Engine, h *Handler, basePath string) {
 	orgRequired.POST("/subscriptions/:subscription_id/items", h.CreateSubscriptionItem)
 	orgRequired.GET("/subscriptions/:subscription_id/items", h.ListSubscriptionItems)
 	orgRequired.GET("/subscription-items/:item_id", h.GetSubscriptionItem)
+	orgRequired.POST("/subscriptions/:subscription_id/promotion-code", h.RedeemPromotionCode)
+
+	// Coupons
+	orgRequired.POST("/coupons", h.CreateCoupon)
+	orgRequired.GET("/coupons", h.ListCoupons)
+	orgRequired.POST("/promotion-codes", h.CreatePromotionCode)
+	orgRequired.GET("/promotion-codes", h.ListPromotionCodes)
+	orgRequired.POST("/segments", h.CreateSegment)
+	orgRequired.GET("/segments", h.ListSegments)
+	orgRequired.PATCH("/segments/:segment_key", h.UpdateSegment)
 
 	// Meters
 	orgRequired.POST("/meters", h.CreateMeter)
@@ -164,6 +172,12 @@ func registerAdminRoutes(r *gin.Engine, h *Handler, basePath string) {
 	orgRequired.POST("/test-clock/advance", h.AdvanceTestClock)
 	orgRequired.POST("/test-clock/pause", h.PauseTestClock)
 	orgRequired.POST("/test-clock/resume", h.ResumeTestClock)
+	orgRequired.GET("/test-clocks", h.ListTestClocks)
+	orgRequired.POST("/test-clocks", h.UpsertTestClock)
+	orgRequired.GET("/test-clocks/:test_clock_id", h.GetTestClockByID)
+	orgRequired.POST("/test-clocks/:test_clock_id/advance", h.AdvanceTestClock)
+	orgRequired.POST("/test-clocks/:test_clock_id/pause", h.PauseTestClockByID)
+	orgRequired.POST("/test-clocks/:test_clock_id/resume", h.ResumeTestClockByID)
 
 	// Feature Flags
 	orgRequired.GET("/feature-flags", h.ListFeatureFlags)

@@ -21,10 +21,13 @@ func StartSummaryRefresher(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB, svc
 	}
 	useAdvisoryLock := cfg != nil && cfg.DBType == "postgres"
 	lockKey := advisoryLockKey("admin.refresh_summaries")
+	var cancel context.CancelFunc
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			ticker := time.NewTicker(interval)
+			runCtx, stop := context.WithCancel(context.Background())
+			cancel = stop
 			logger.Info("admin summary refresher started", zap.Duration("interval", interval))
 
 			go func() {
@@ -33,13 +36,13 @@ func StartSummaryRefresher(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB, svc
 					locked := true
 					if useAdvisoryLock {
 						var err error
-						locked, err = tryAdvisoryLock(ctx, db, lockKey)
+						locked, err = tryAdvisoryLock(runCtx, db, lockKey)
 						if err != nil {
 							logger.Warn("admin summary lock failed", zap.Error(err))
 							select {
 							case <-ticker.C:
 								continue
-							case <-ctx.Done():
+							case <-runCtx.Done():
 								return
 							}
 						}
@@ -47,7 +50,7 @@ func StartSummaryRefresher(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB, svc
 							select {
 							case <-ticker.C:
 								continue
-							case <-ctx.Done():
+							case <-runCtx.Done():
 								return
 							}
 						}
@@ -66,12 +69,18 @@ func StartSummaryRefresher(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB, svc
 					select {
 					case <-ticker.C:
 						continue
-					case <-ctx.Done():
+					case <-runCtx.Done():
 						return
 					}
 				}
 			}()
 
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			if cancel != nil {
+				cancel()
+			}
 			return nil
 		},
 	})

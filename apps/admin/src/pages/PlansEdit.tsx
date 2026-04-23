@@ -14,6 +14,7 @@ import { api } from "../lib/api"
 import { useOrgPath } from "../lib/org"
 import { formatCurrency } from "../lib/format"
 import { currencyHint } from "../lib/hints"
+import { DEFAULT_MONEY_INPUT, defaultMoneyInputForPriceType, isNonNegativeMoneyInput, moneyInputDecimalsForPriceType, moneyInputStepForPriceType, moneyInputToCents, optionalMoneyInputToCents } from "../lib/money"
 import { useCurrencies } from "../lib/reference"
 import { isCurrencyCode } from "../lib/validation"
 import { formatDate, normalizeDate, rfc3339Hint } from "../lib/display"
@@ -53,13 +54,13 @@ export default function PlansEdit() {
     aggregateUsage: "", billingUnit: "", meterId: "", meterCode: "", active: true
   })
   const [createAmountForm, setCreateAmountForm] = useState({
-    priceId: "", currency: "USD", unitAmountCents: 0,
-    minimumAmountCents: "", maximumAmountCents: "",
+    priceId: "", currency: "USD", unitAmount: DEFAULT_MONEY_INPUT,
+    minimumAmount: "", maximumAmount: "",
     effectiveFrom: "", effectiveTo: ""
   })
   const [createTierForm, setCreateTierForm] = useState({
     priceId: "", tierMode: "volume", startQuantity: 0,
-    endQuantity: "", unitAmountCents: "", flatAmountCents: "", unit: ""
+    endQuantity: "", unitAmount: "", flatAmount: "", unit: ""
   })
   const [activeAmountPriceId, setActiveAmountPriceId] = useState("")
   const [activeTierPriceId, setActiveTierPriceId] = useState("")
@@ -112,6 +113,12 @@ export default function PlansEdit() {
 
   useEffect(() => { void loadData() }, [loadData])
 
+  const amountPriceType = useMemo(
+    () => plan?.prices?.find((price) => price.id === createAmountForm.priceId)?.price_type ?? "flat",
+    [createAmountForm.priceId, plan?.prices]
+  )
+  const amountDecimals = moneyInputDecimalsForPriceType(amountPriceType)
+
   const updateValidation = useMemo(() => {
     const e: string[] = []
     if (!updatePlanForm.name.trim() && !updatePlanForm.description.trim() && updatePlanForm.active === "") {
@@ -137,7 +144,7 @@ export default function PlansEdit() {
     if (!createAmountForm.priceId.trim()) e.push(t("plans_edit.validation.amount_price_required"))
     if (!createAmountForm.currency.trim()) e.push(t("plans_edit.validation.currency_required"))
     else if (!isCurrencyCode(createAmountForm.currency)) e.push(t("plans_edit.validation.currency_invalid"))
-    if (!Number.isFinite(createAmountForm.unitAmountCents) || createAmountForm.unitAmountCents < 0) e.push(t("plans_edit.validation.unit_amount_min"))
+    if (!isNonNegativeMoneyInput(createAmountForm.unitAmount, amountDecimals)) e.push(t("plans_edit.validation.unit_amount_min"))
     if (createAmountForm.effectiveFrom && createAmountForm.effectiveTo) {
       const start = new Date(createAmountForm.effectiveFrom)
       const end = new Date(createAmountForm.effectiveTo)
@@ -145,11 +152,11 @@ export default function PlansEdit() {
         e.push(t("plans_edit.validation.effective_range"))
       }
     }
-    const min = createAmountForm.minimumAmountCents ? Number.parseInt(createAmountForm.minimumAmountCents) : null
-    const max = createAmountForm.maximumAmountCents ? Number.parseInt(createAmountForm.maximumAmountCents) : null
+    const min = createAmountForm.minimumAmount ? moneyInputToCents(createAmountForm.minimumAmount) : null
+    const max = createAmountForm.maximumAmount ? moneyInputToCents(createAmountForm.maximumAmount) : null
     if (min !== null && max !== null && max < min) e.push(t("plans_edit.validation.min_max"))
     return e
-  }, [createAmountForm, t])
+  }, [amountDecimals, createAmountForm, t])
 
   const createTierValidation = useMemo(() => {
     const e: string[] = []
@@ -160,7 +167,9 @@ export default function PlansEdit() {
       const end = Number.parseFloat(createTierForm.endQuantity)
       if (!isNaN(end) && end < createTierForm.startQuantity) e.push(t("plans_edit.validation.tier_end_min"))
     }
-    if (!createTierForm.unitAmountCents.trim() && !createTierForm.flatAmountCents.trim()) e.push(t("plans_edit.validation.tier_amount_required"))
+    if (!createTierForm.unitAmount.trim() && !createTierForm.flatAmount.trim()) e.push(t("plans_edit.validation.tier_amount_required"))
+    if (createTierForm.unitAmount.trim() && !isNonNegativeMoneyInput(createTierForm.unitAmount, moneyInputDecimalsForPriceType("usage"))) e.push(t("plans_edit.validation.unit_amount_min"))
+    if (createTierForm.flatAmount.trim() && !isNonNegativeMoneyInput(createTierForm.flatAmount)) e.push(t("plans_edit.validation.unit_amount_min"))
     return e
   }, [createTierForm, t])
 
@@ -211,20 +220,20 @@ export default function PlansEdit() {
       setActionLoading(true)
       const resp = await api.plans.createAmount(createAmountForm.priceId, {
         currency: createAmountForm.currency.trim(),
-        unit_amount_cents: createAmountForm.unitAmountCents,
-        minimum_amount_cents: createAmountForm.minimumAmountCents ? Number.parseInt(createAmountForm.minimumAmountCents, 10) : undefined,
-        maximum_amount_cents: createAmountForm.maximumAmountCents ? Number.parseInt(createAmountForm.maximumAmountCents, 10) : undefined,
+        unit_amount_cents: moneyInputToCents(createAmountForm.unitAmount, amountDecimals),
+        minimum_amount_cents: optionalMoneyInputToCents(createAmountForm.minimumAmount),
+        maximum_amount_cents: optionalMoneyInputToCents(createAmountForm.maximumAmount),
         effective_from: createAmountForm.effectiveFrom ? normalizeDate(createAmountForm.effectiveFrom) : undefined,
         effective_to: createAmountForm.effectiveTo ? normalizeDate(createAmountForm.effectiveTo) : undefined
       })
       toast.success(t("plans_edit.toast.amount_created"), resp.id)
-      setCreateAmountForm(p => ({ ...p, priceId: "", currency: "USD", unitAmountCents: 0, minimumAmountCents: "", maximumAmountCents: "", effectiveFrom: "", effectiveTo: "" }))
+      setCreateAmountForm(p => ({ ...p, priceId: "", currency: "USD", unitAmount: DEFAULT_MONEY_INPUT, minimumAmount: "", maximumAmount: "", effectiveFrom: "", effectiveTo: "" }))
       setActiveAmountPriceId("")
       void loadData()
     } catch(err) {
       toast.error(t("plans_edit.toast.amount_create_failed"), err instanceof Error ? err.message : undefined)
     } finally { setActionLoading(false) }
-  }, [createAmountForm, loadData, t])
+  }, [amountDecimals, createAmountForm, loadData, t])
 
   const handleCreateTier = useCallback(async () => {
     try {
@@ -233,12 +242,12 @@ export default function PlansEdit() {
         tier_mode: createTierForm.tierMode.trim(),
         start_quantity: createTierForm.startQuantity,
         end_quantity: createTierForm.endQuantity ? Number.parseFloat(createTierForm.endQuantity) : undefined,
-        unit_amount_cents: createTierForm.unitAmountCents ? Number.parseInt(createTierForm.unitAmountCents, 10) : undefined,
-        flat_amount_cents: createTierForm.flatAmountCents ? Number.parseInt(createTierForm.flatAmountCents, 10) : undefined,
+        unit_amount_cents: optionalMoneyInputToCents(createTierForm.unitAmount, moneyInputDecimalsForPriceType("usage")),
+        flat_amount_cents: optionalMoneyInputToCents(createTierForm.flatAmount),
         unit: createTierForm.unit.trim()
       })
       toast.success(t("plans_edit.toast.tier_created"), resp.id)
-      setCreateTierForm(p => ({ ...p, priceId: "", startQuantity: 0, endQuantity: "", unitAmountCents: "", flatAmountCents: "", unit: "" }))
+      setCreateTierForm(p => ({ ...p, priceId: "", startQuantity: 0, endQuantity: "", unitAmount: "", flatAmount: "", unit: "" }))
       setActiveTierPriceId("")
       void loadData()
     } catch(err) {
@@ -253,9 +262,9 @@ export default function PlansEdit() {
     setCreateAmountForm({
       priceId: price.id,
       currency,
-      unitAmountCents: 0,
-      minimumAmountCents: "",
-      maximumAmountCents: "",
+      unitAmount: defaultMoneyInputForPriceType(price.price_type),
+      minimumAmount: "",
+      maximumAmount: "",
       effectiveFrom: "",
       effectiveTo: "",
     })
@@ -269,8 +278,8 @@ export default function PlansEdit() {
       tierMode: "volume",
       startQuantity: 0,
       endQuantity: "",
-      unitAmountCents: "",
-      flatAmountCents: "",
+      unitAmount: "",
+      flatAmount: "",
       unit: price.billing_unit || "",
     })
   }, [])
@@ -372,15 +381,15 @@ export default function PlansEdit() {
                           </div>
                           <div className="action-field">
                             <Label className="action-label">{t("plans_edit.amount_form.unit_amount")}</Label>
-                            <Input className="action-input" type="number" value={createAmountForm.unitAmountCents} onChange={e => setCreateAmountForm(p => ({ ...p, unitAmountCents: Number(e.target.value || 0) }))} />
+                            <Input className="action-input" type="text" min={0} step={moneyInputStepForPriceType(amountPriceType)} inputMode="decimal" value={createAmountForm.unitAmount} onChange={e => setCreateAmountForm(p => ({ ...p, unitAmount: e.target.value }))} />
                           </div>
                           <div className="action-field">
                             <Label className="action-label">{t("plans_edit.amount_form.minimum")}</Label>
-                            <Input className="action-input" type="number" value={createAmountForm.minimumAmountCents} onChange={e => setCreateAmountForm(p => ({ ...p, minimumAmountCents: e.target.value }))} />
+                            <Input className="action-input" type="text" min={0} step={moneyInputStepForPriceType("flat")} inputMode="decimal" value={createAmountForm.minimumAmount} onChange={e => setCreateAmountForm(p => ({ ...p, minimumAmount: e.target.value }))} />
                           </div>
                           <div className="action-field">
                             <Label className="action-label">{t("plans_edit.amount_form.maximum")}</Label>
-                            <Input className="action-input" type="number" value={createAmountForm.maximumAmountCents} onChange={e => setCreateAmountForm(p => ({ ...p, maximumAmountCents: e.target.value }))} />
+                            <Input className="action-input" type="text" min={0} step={moneyInputStepForPriceType("flat")} inputMode="decimal" value={createAmountForm.maximumAmount} onChange={e => setCreateAmountForm(p => ({ ...p, maximumAmount: e.target.value }))} />
                           </div>
                           <div className="action-field">
                             <Label className="action-label">{t("plans_edit.amount_form.effective_from")} <HelpHint text={rfc3339Hint} /></Label>
@@ -437,8 +446,8 @@ export default function PlansEdit() {
                           <div className="action-field">
                             <Label className="action-label">{t("plans_edit.tier_form.amount")}</Label>
                             <div style={{ display: "flex", gap: 10 }}>
-                              <Input type="number" value={createTierForm.unitAmountCents} placeholder={t("plans_edit.tier_form.unit_placeholder")} onChange={e => setCreateTierForm(p => ({ ...p, unitAmountCents: e.target.value }))} />
-                              <Input type="number" value={createTierForm.flatAmountCents} placeholder={t("plans_edit.tier_form.flat_placeholder")} onChange={e => setCreateTierForm(p => ({ ...p, flatAmountCents: e.target.value }))} />
+                              <Input type="text" min={0} step={moneyInputStepForPriceType("usage")} inputMode="decimal" value={createTierForm.unitAmount} placeholder={t("plans_edit.tier_form.unit_placeholder")} onChange={e => setCreateTierForm(p => ({ ...p, unitAmount: e.target.value }))} />
+                              <Input type="text" min={0} step={moneyInputStepForPriceType("flat")} inputMode="decimal" value={createTierForm.flatAmount} placeholder={t("plans_edit.tier_form.flat_placeholder")} onChange={e => setCreateTierForm(p => ({ ...p, flatAmount: e.target.value }))} />
                             </div>
                           </div>
                           <div className="action-field">

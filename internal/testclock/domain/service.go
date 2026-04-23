@@ -7,20 +7,26 @@ import (
 )
 
 type UpsertTestClockRequest struct {
-	CurrentTime time.Time
-	Status      string
+	FrozenTime time.Time
+	Name       string
+	Status     string
 }
 
 type AdvanceTestClockRequest struct {
-	AdvanceBy time.Duration
+	ID         string
+	FrozenTime time.Time
 }
 
 type Service interface {
 	Get(ctx context.Context) (*TestClock, error)
+	GetByID(ctx context.Context, id string) (*TestClock, error)
+	List(ctx context.Context) ([]TestClock, error)
 	Upsert(ctx context.Context, req UpsertTestClockRequest) (TestClock, error)
 	Advance(ctx context.Context, req AdvanceTestClockRequest) (TestClock, error)
 	Pause(ctx context.Context) (TestClock, error)
 	Resume(ctx context.Context) (TestClock, error)
+	PauseByID(ctx context.Context, id string) (TestClock, error)
+	ResumeByID(ctx context.Context, id string) (TestClock, error)
 	ListActive(ctx context.Context) ([]TestClock, error)
 }
 

@@ -35,6 +35,7 @@ type Repository interface {
 	FindSubscriptionPeriodByTime(ctx context.Context, orgID, subscriptionID uuid.UUID, at time.Time) (*SubscriptionPeriod, error)
 	FindSubscriptionPeriodForUpdate(ctx context.Context, orgID, periodID uuid.UUID) (*SubscriptionPeriod, error)
 	ListOpenSubscriptionPeriods(ctx context.Context, asOf time.Time, limit int) ([]SubscriptionPeriod, error)
+	ListOpenSubscriptionPeriodsByTestClock(ctx context.Context, orgID, testClockID uuid.UUID, asOf time.Time, limit int) ([]SubscriptionPeriod, error)
 	UpdateSubscriptionPeriod(ctx context.Context, orgID, periodID uuid.UUID, updates map[string]interface{}) error
 
 	CreateSubscriptionItem(ctx context.Context, item SubscriptionItem) error

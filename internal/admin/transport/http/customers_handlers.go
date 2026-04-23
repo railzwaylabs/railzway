@@ -14,6 +14,8 @@ type createCustomerRequest struct {
 	Email          string `json:"email"`
 	ExternalID     string `json:"external_id"`
 	Currency       string `json:"currency"`
+	TestClock      string `json:"test_clock"`
+	TestClockID    string `json:"test_clock_id"`
 	IdempotencyKey string `json:"idempotency_key"`
 }
 
@@ -35,6 +37,7 @@ func (h *Handler) CreateCustomer(c *gin.Context) {
 		Email:          strings.TrimSpace(payload.Email),
 		ExternalID:     strings.TrimSpace(payload.ExternalID),
 		Currency:       strings.TrimSpace(payload.Currency),
+		TestClockID:    testClockIDFromPayload(payload.TestClock, payload.TestClockID),
 		IdempotencyKey: strings.TrimSpace(payload.IdempotencyKey),
 	})
 	if err != nil {
@@ -45,10 +48,12 @@ func (h *Handler) CreateCustomer(c *gin.Context) {
 }
 
 type updateCustomerRequest struct {
-	Name       *string `json:"name"`
-	Email      *string `json:"email"`
-	ExternalID *string `json:"external_id"`
-	Currency   *string `json:"currency"`
+	Name        *string `json:"name"`
+	Email       *string `json:"email"`
+	ExternalID  *string `json:"external_id"`
+	Currency    *string `json:"currency"`
+	TestClock   *string `json:"test_clock"`
+	TestClockID *string `json:"test_clock_id"`
 }
 
 func (h *Handler) UpdateCustomer(c *gin.Context) {
@@ -66,16 +71,40 @@ func (h *Handler) UpdateCustomer(c *gin.Context) {
 	}
 
 	resp, err := h.customers.Update(ctx, customerID, customerdomain.UpdateCustomerRequest{
-		Name:       payload.Name,
-		Email:      payload.Email,
-		ExternalID: payload.ExternalID,
-		Currency:   payload.Currency,
+		Name:        payload.Name,
+		Email:       payload.Email,
+		ExternalID:  payload.ExternalID,
+		Currency:    payload.Currency,
+		TestClockID: testClockIDPtrFromPayload(payload.TestClock, payload.TestClockID),
 	})
 	if err != nil {
 		writeCustomerError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, resp)
+}
+
+func testClockIDFromPayload(testClock string, testClockID string) *string {
+	value := strings.TrimSpace(testClock)
+	if value == "" {
+		value = strings.TrimSpace(testClockID)
+	}
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+func testClockIDPtrFromPayload(testClock *string, testClockID *string) *string {
+	if testClock != nil {
+		value := strings.TrimSpace(*testClock)
+		return &value
+	}
+	if testClockID != nil {
+		value := strings.TrimSpace(*testClockID)
+		return &value
+	}
+	return nil
 }
 
 func (h *Handler) GetCustomer(c *gin.Context) {

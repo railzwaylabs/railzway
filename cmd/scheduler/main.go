@@ -8,12 +8,17 @@ import (
 	"github.com/railzwaylabs/railzway/internal/clock"
 	"github.com/railzwaylabs/railzway/internal/config"
 	"github.com/railzwaylabs/railzway/internal/coupon"
+	"github.com/railzwaylabs/railzway/internal/customer"
+	customerrepo "github.com/railzwaylabs/railzway/internal/customer/repository"
 	"github.com/railzwaylabs/railzway/internal/db"
 	"github.com/railzwaylabs/railzway/internal/invoice"
 	"github.com/railzwaylabs/railzway/internal/ledger"
 	"github.com/railzwaylabs/railzway/internal/plan"
 	planrepo "github.com/railzwaylabs/railzway/internal/plan/repository"
 	"github.com/railzwaylabs/railzway/internal/rating"
+	ratingrepo "github.com/railzwaylabs/railzway/internal/rating/repository"
+	ratingscheduler "github.com/railzwaylabs/railzway/internal/rating/scheduler"
+	ratingservice "github.com/railzwaylabs/railzway/internal/rating/service"
 	"github.com/railzwaylabs/railzway/internal/reconciliation"
 	"github.com/railzwaylabs/railzway/internal/subscription"
 	subscriptionrepo "github.com/railzwaylabs/railzway/internal/subscription/repository"
@@ -93,6 +98,7 @@ func buildAllApp() *fx.App {
 		db.Module,
 		clock.Module,
 		testclock.Module,
+		customer.Module,
 		plan.Module,
 		subscription.Module,
 		usage.Module,
@@ -114,12 +120,15 @@ func buildRatingApp() *fx.App {
 			planrepo.NewRepository,
 			subscriptionrepo.NewRepository,
 			usagerepo.NewRepository,
+			customerrepo.NewRepository,
+			ratingrepo.NewRepository,
+			ratingservice.NewService,
 		),
 		db.Module,
 		coupon.Module,
 		invoice.Module,
 		ledger.Module,
-		rating.Module,
+		fx.Invoke(ratingscheduler.StartRatingScheduler),
 		fx.Invoke(registerLoggerLifecycle),
 		fx.Invoke(telemetry.StartProfiler(6060)),
 	)

@@ -31,6 +31,7 @@
     "creating": "Membuat…",
     "updating": "Memperbarui…",
     "saving": "Menyimpan…",
+    "created": "Dibuat",
     "save": "Simpan",
     "save_changes": "Simpan Perubahan",
     "no_change": "Tanpa perubahan",
@@ -80,6 +81,7 @@
       "invoices": "Invoice",
       "payments": "Pembayaran",
       "taxes": "Pajak",
+      "coupons": "Kupon",
       "audit_logs": "Audit Log",
       "apps": "Aplikasi",
       "products": "Produk",
@@ -602,6 +604,14 @@
       "label": "Produk",
       "desc": ""
     },
+    "products_new": {
+      "label": "Buat Produk",
+      "desc": "Buat produk baru"
+    },
+    "products_edit": {
+      "label": "Edit Produk",
+      "desc": "Update produk"
+    },
     "features": {
       "label": "Fitur",
       "desc": ""
@@ -653,6 +663,10 @@
     "rating": {
       "label": "Rating",
       "desc": "Hasil kalkulasi usage ke biaya"
+    },
+    "coupons": {
+      "label": "Kupon",
+      "desc": "Aturan diskon dan kode promo"
     },
     "ledger": {
       "label": "Buku Besar",
@@ -1174,7 +1188,7 @@
       "description_placeholder": "Deskripsi marketing (opsional)",
       "meter_label": "Pilih Meter *",
       "meter_placeholder": "Cari meter berdasarkan nama",
-      "amount_label": "Jumlah (sen) *",
+      "amount_label": "Nominal *",
       "currency_label": "Mata uang *",
       "interval_label": "Interval Penagihan *",
       "interval_placeholder": "Pilih interval",
@@ -1237,9 +1251,9 @@
     "amount_form": {
       "title": "Buat Amount",
       "currency": "Mata uang",
-      "unit_amount": "Jumlah per unit (sen)",
-      "minimum": "Minimum (sen)",
-      "maximum": "Maksimum (sen)",
+      "unit_amount": "Nominal per unit",
+      "minimum": "Minimum",
+      "maximum": "Maksimum",
       "effective_from": "Berlaku Dari",
       "effective_to": "Berlaku Sampai",
       "create": "Buat Amount"
@@ -1254,7 +1268,7 @@
       },
       "quantities": "Jumlah Awal/Akhir",
       "end_placeholder": "Akhir (opsional)",
-      "amount": "Jumlah (sen)",
+      "amount": "Nominal",
       "unit_placeholder": "Per Unit",
       "flat_placeholder": "Tetap",
       "unit": "Unit",
@@ -1363,7 +1377,7 @@
       "pricing_tiers": "Tingkatan Harga",
       "tier_start": "Mulai",
       "tier_end": "Akhir (kosongkan untuk ∞)",
-      "tier_base_rate": "Tarif Dasar (Sen)",
+      "tier_base_rate": "Tarif Dasar",
       "amount": "Nominal",
       "idempotency": "Idempotensi"
     },
@@ -1373,7 +1387,7 @@
       "plan_name": "mis. Professional",
       "plan_code": "mis. pro-monthly",
       "price_code": "mis. monthly-recurring",
-      "amount_cents": "Nominal dalam sen"
+      "amount_cents": "0.00"
     },
     "hints": {
       "idempotency": "Key pembuatan root untuk keamanan transaksional.",
@@ -1469,6 +1483,153 @@
       "load_failed": "Gagal memuat fitur",
       "update_failed": "Gagal memperbarui fitur",
       "updated": "Fitur berhasil diperbarui"
+    }
+  },
+  "coupons": {
+    "header": {
+      "title": "Kupon",
+      "description": "Kelola aturan diskon dan kode promo untuk langganan."
+    },
+    "actions": {
+      "new_coupon": "Kupon Baru",
+      "new_promo": "Kode Promo Baru",
+      "new_segment": "Segmen Baru",
+      "redeem": "Redeem Kode",
+      "create_coupon": "Buat Kupon",
+      "create_promo": "Buat Kode Promo",
+      "create_segment": "Buat Segmen"
+    },
+    "kpis": {
+      "coupons": "Kupon",
+      "promotion_codes": "Kode Promo",
+      "redemptions": "Redemption",
+      "segments": "Segmen"
+    },
+    "sections": {
+      "coupons": "Kupon",
+      "promotion_codes": "Kode Promo",
+      "segments": "Segmen"
+    },
+    "create_coupon": {
+      "title": "Buat Kupon",
+      "description": "Buat aturan diskon yang dapat digunakan ulang."
+    },
+    "create_promo": {
+      "title": "Buat Kode Promo",
+      "description": "Hubungkan kode redeem ke kupon yang sudah ada."
+    },
+    "redeem": {
+      "title": "Redeem Kode Promo",
+      "description": "Terapkan kode promo ke subscription."
+    },
+    "create_segment": {
+      "title": "Buat Segmen",
+      "description": "Buat segmen customer atau subscription yang dapat dipakai untuk target kupon."
+    },
+    "fields": {
+      "name": "Nama",
+      "type": "Tipe",
+      "percentage": "Persentase",
+      "amount": "Nominal",
+      "currency": "Mata uang",
+      "duration": "Durasi",
+      "duration_months": "Durasi Bulan",
+      "auto_apply": "Penerapan",
+      "target_segment": "Target Segmen",
+      "valid_from": "Berlaku Dari",
+      "valid_until": "Berlaku Sampai",
+      "coupon": "Kupon",
+      "code": "Kode",
+      "status": "Status",
+      "max_redemptions": "Maksimum Redemption",
+      "subscription_id": "Subscription ID",
+      "segment_key": "Key Segmen",
+      "scope": "Scope",
+      "description": "Deskripsi"
+    },
+    "types": {
+      "percent": "Persen",
+      "fixed": "Nominal Tetap"
+    },
+    "durations": {
+      "once": "Sekali",
+      "repeating": "Berulang",
+      "forever": "Selamanya"
+    },
+    "status": {
+      "active": "Aktif",
+      "inactive": "Nonaktif"
+    },
+    "automation": {
+      "auto": "Otomatis",
+      "manual": "Manual"
+    },
+    "segments": {
+      "all": "Semua segmen"
+    },
+    "segment_scopes": {
+      "any": "Customer atau Subscription",
+      "customer": "Customer",
+      "subscription": "Subscription"
+    },
+    "coupons_table": {
+      "columns": {
+        "name": "Nama",
+        "type": "Tipe",
+        "value": "Nilai",
+        "duration": "Durasi",
+        "automation": "Penerapan",
+        "segment": "Segmen",
+        "validity": "Berlaku Dari / Sampai"
+      },
+      "empty_title": "Belum ada kupon",
+      "empty_desc": "Buat kupon untuk mulai menerapkan diskon."
+    },
+    "promos_table": {
+      "columns": {
+        "code": "Kode",
+        "coupon": "Kupon",
+        "status": "Status",
+        "redemptions": "Redemption"
+      },
+      "empty_title": "Belum ada kode promo",
+      "empty_desc": "Buat kode promo untuk kupon yang sudah ada."
+    },
+    "segments_table": {
+      "columns": {
+        "name": "Nama",
+        "scope": "Scope",
+        "status": "Status",
+        "description": "Deskripsi"
+      },
+      "empty_title": "Belum ada segmen",
+      "empty_desc": "Buat segmen agar bisa dipakai sebagai target kupon."
+    },
+    "validation": {
+      "name_required": "Nama wajib diisi.",
+      "percentage_range": "Persentase harus lebih dari 0 dan maksimal 100.",
+      "amount_positive": "Nominal harus lebih dari 0.",
+      "currency": "Mata uang harus kode ISO 3 huruf.",
+      "duration_months": "Durasi bulan harus lebih dari 0.",
+      "valid_until_after": "Berlaku sampai harus setelah berlaku dari.",
+      "coupon_required": "Kupon wajib dipilih.",
+      "code_required": "Kode wajib diisi.",
+      "max_redemptions": "Maksimum redemption harus lebih dari 0.",
+      "subscription_required": "Subscription ID wajib diisi.",
+      "segment_key_required": "Key segmen wajib diisi.",
+      "segment_name_required": "Nama segmen wajib diisi.",
+      "segment_scope": "Scope segmen tidak valid."
+    },
+    "toast": {
+      "load_failed": "Gagal memuat kupon",
+      "coupon_created": "Kupon dibuat",
+      "coupon_create_failed": "Gagal membuat kupon",
+      "promo_created": "Kode promo dibuat",
+      "promo_create_failed": "Gagal membuat kode promo",
+      "segment_created": "Segmen dibuat",
+      "segment_create_failed": "Gagal membuat segmen",
+      "redeemed": "Kode promo berhasil diredeem",
+      "redeem_failed": "Gagal redeem kode promo"
     }
   },
   "taxes_create": {

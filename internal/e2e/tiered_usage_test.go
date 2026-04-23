@@ -14,8 +14,8 @@ import (
 	invoicedomain "github.com/railzwaylabs/railzway/internal/invoice/domain"
 	invoicerepo "github.com/railzwaylabs/railzway/internal/invoice/repository"
 	invoiceservice "github.com/railzwaylabs/railzway/internal/invoice/service"
-	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	orgdomain "github.com/railzwaylabs/railzway/internal/organization/domain"
+	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	plandomain "github.com/railzwaylabs/railzway/internal/plan/domain"
 	planrepo "github.com/railzwaylabs/railzway/internal/plan/repository"
 	ratingdomain "github.com/railzwaylabs/railzway/internal/rating/domain"
@@ -87,16 +87,16 @@ func TestTieredUsageBoundary_Graduated(t *testing.T) {
 	}
 
 	meter := usagedomain.Meter{
-		ID:         meterID,
-		OrgID:      orgID,
-		Code:       "tokens",
-		Name:       "Tokens",
+		ID:          meterID,
+		OrgID:       orgID,
+		Code:        "tokens",
+		Name:        "Tokens",
 		Aggregation: "sum",
-		Unit:       "tokens",
-		Active:     true,
-		Metadata:   json.RawMessage(`{}`),
-		CreatedAt:  now,
-		UpdatedAt:  now,
+		Unit:        "tokens",
+		Active:      true,
+		Metadata:    json.RawMessage(`{}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 	if err := tx.Create(&meter).Error; err != nil {
 		t.Fatalf("create meter: %v", err)
@@ -148,21 +148,21 @@ func TestTieredUsageBoundary_Graduated(t *testing.T) {
 		t.Fatalf("create plan amount: %v", err)
 	}
 
-	tier1Unit := int64(100)
-	tier2Unit := int64(80)
+	tier1Unit := float64(100)
+	tier2Unit := float64(80)
 	tier1End := float64(10)
 	tier1 := plandomain.PlanTier{
-		ID:             uuid.New(),
-		OrgID:          orgID,
-		PlanPriceID:    priceID,
-		TierMode:       plandomain.TierModeGraduated,
-		StartQuantity:  0,
-		EndQuantity:    &tier1End,
+		ID:              uuid.New(),
+		OrgID:           orgID,
+		PlanPriceID:     priceID,
+		TierMode:        plandomain.TierModeGraduated,
+		StartQuantity:   0,
+		EndQuantity:     &tier1End,
 		UnitAmountCents: &tier1Unit,
-		Unit:           "tokens",
-		Metadata:       json.RawMessage(`{}`),
-		CreatedAt:      now,
-		UpdatedAt:      now,
+		Unit:            "tokens",
+		Metadata:        json.RawMessage(`{}`),
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
 	tier2 := plandomain.PlanTier{
 		ID:              uuid.New(),
@@ -315,4 +315,70 @@ func TestTieredUsageBoundary_Graduated(t *testing.T) {
 	if resp.Items[0].AmountCents != 1400 {
 		t.Fatalf("expected invoice usage amount 1400, got %d", resp.Items[0].AmountCents)
 	}
+
+	type usageAggregateLog struct {
+		Quantity    float64
+		AmountCents int64
+	}
+	var aggregate usageAggregateLog
+	if err := tx.Table("usage_aggregates").
+		Select("quantity, amount_cents").
+		Where("org_id = ? AND subscription_id = ? AND plan_price_id = ? AND meter_id = ?", orgID, subID, priceID, meterID).
+		Scan(&aggregate).Error; err != nil {
+		t.Fatalf("query usage aggregate: %v", err)
+	}
+
+	t.Logf(
+		"fixture org_id=%s customer_id=%s subscription_id=%s plan_id=%s price_id=%s meter_id=%s period_start=%s period_end=%s",
+		orgID,
+		customerID,
+		subID,
+		planID,
+		priceID,
+		meterID,
+		periodStart.Format(time.RFC3339),
+		periodEnd.Format(time.RFC3339),
+	)
+	t.Logf(
+		"tiers mode=%s tier1[start=%.2f,end=%.2f,unit_amount_cents=%.8f] tier2[start=%.2f,end=open,unit_amount_cents=%.8f]",
+		plandomain.TierModeGraduated,
+		tier1.StartQuantity,
+		*tier1.EndQuantity,
+		*tier1.UnitAmountCents,
+		tier2.StartQuantity,
+		*tier2.UnitAmountCents,
+	)
+	t.Logf(
+		"rating event1_id=%s rating_id=%s quantity=%.2f unit_amount_cents=%.8f amount_cents=%d",
+		event1.ID,
+		r1.ID,
+		r1.Quantity,
+		r1.UnitAmountCents,
+		r1.AmountCents,
+	)
+	t.Logf(
+		"rating event2_id=%s rating_id=%s quantity=%.2f unit_amount_cents=%.8f amount_cents=%d",
+		event2.ID,
+		r2.ID,
+		r2.Quantity,
+		r2.UnitAmountCents,
+		r2.AmountCents,
+	)
+	t.Logf(
+		"usage aggregate quantity=%.2f amount_cents=%d",
+		aggregate.Quantity,
+		aggregate.AmountCents,
+	)
+	t.Logf(
+		"invoice id=%s subtotal_cents=%d total_cents=%d item_count=%d line_id=%s line_type=%s quantity=%.2f unit_amount_cents=%.8f amount_cents=%d",
+		resp.Invoice.ID,
+		resp.Invoice.SubtotalCents,
+		resp.Invoice.TotalCents,
+		len(resp.Items),
+		resp.Items[0].ID,
+		resp.Items[0].LineType,
+		resp.Items[0].Quantity,
+		resp.Items[0].UnitAmountCents,
+		resp.Items[0].AmountCents,
+	)
 }

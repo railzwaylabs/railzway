@@ -2,11 +2,14 @@ package telemetry
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"strings"
+	"syscall"
 
 	"github.com/grafana/pyroscope-go"
 	"github.com/railzwaylabs/railzway/internal/config"
@@ -75,7 +78,11 @@ func startPyroscope(lc fx.Lifecycle, cfg *config.Config, logger *zap.Logger) {
 
 func startLocalPprof(lc fx.Lifecycle, logger *zap.Logger, port int) {
 	// For security, bind specifically to localhost so it is not publicly accessible.
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
+	addr, enabled := localPprofAddr(port)
+	if !enabled {
+		logger.Info("local profiler (pprof) disabled")
+		return
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/debug/pprof/", pprof.Index)
@@ -88,20 +95,50 @@ func startLocalPprof(lc fx.Lifecycle, logger *zap.Logger, port int) {
 		Addr:    addr,
 		Handler: mux,
 	}
+	started := false
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
+			listener, err := net.Listen("tcp", addr)
+			if err != nil {
+				if errors.Is(err, syscall.EADDRINUSE) {
+					logger.Warn("local profiler (pprof) address already in use; continuing without pprof", zap.String("addr", addr), zap.Error(err))
+					return nil
+				}
+				logger.Warn("local profiler (pprof) unavailable; continuing without pprof", zap.String("addr", addr), zap.Error(err))
+				return nil
+			}
+			started = true
+			logger.Info("local profiler (pprof) server started", zap.String("addr", addr))
+
 			go func() {
-				logger.Info("local profiler (pprof) server started", zap.String("addr", addr))
-				if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
 					logger.Error("profiler server stopped", zap.Error(err))
 				}
 			}()
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
+			if !started {
+				return nil
+			}
 			logger.Info("local profiler server stopping", zap.String("addr", addr))
 			return server.Shutdown(ctx)
 		},
 	})
+}
+
+func localPprofAddr(port int) (string, bool) {
+	addr := strings.TrimSpace(os.Getenv("RAILZWAY_PPROF_ADDR"))
+	if addr == "" {
+		addr = strings.TrimSpace(os.Getenv("PPROF_ADDR"))
+	}
+	switch strings.ToLower(addr) {
+	case "off", "false", "disabled", "disable", "none":
+		return "", false
+	case "":
+		return fmt.Sprintf("127.0.0.1:%d", port), true
+	default:
+		return addr, true
+	}
 }

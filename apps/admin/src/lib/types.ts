@@ -16,6 +16,7 @@ export type CustomersSummary = {
 export type Customer = {
   id: string;
   org_id: string;
+  test_clock_id?: string;
   external_id?: string;
   name: string;
   email: string;
@@ -237,6 +238,72 @@ export type SubscriptionsListResponse = {
   previous_page_token?: string;
   has_more?: boolean;
   subscriptions: Subscription[];
+};
+
+export type Coupon = {
+  id: string;
+  org_id: string;
+  name: string;
+  type: "PERCENT" | "FIXED" | string;
+  amount_cents?: number;
+  percentage?: number;
+  duration: "ONCE" | "REPEATING" | "FOREVER" | string;
+  duration_months?: number;
+  currency?: string;
+  valid_from?: string;
+  valid_until?: string;
+  auto_apply: boolean;
+  target_segment?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type BillingSegment = {
+  id: string;
+  org_id: string;
+  key: string;
+  name: string;
+  scope: "any" | "customer" | "subscription" | string;
+  description?: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PromotionCode = {
+  id: string;
+  org_id: string;
+  coupon_id: string;
+  code: string;
+  active: boolean;
+  max_redemptions?: number;
+  redemption_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CouponsListResponse = {
+  coupons: Coupon[];
+};
+
+export type PromotionCodesListResponse = {
+  promotion_codes: PromotionCode[];
+};
+
+export type BillingSegmentsListResponse = {
+  segments: BillingSegment[];
+};
+
+export type BillingSegmentResponse = {
+  segment: BillingSegment;
+};
+
+export type CouponResponse = {
+  coupon: Coupon;
+};
+
+export type PromotionCodeResponse = {
+  promotion_code: PromotionCode;
 };
 
 export type UsageSummary = {
@@ -603,6 +670,7 @@ export type FeatureFlagsResponse = {
 export type TestClock = {
   id: string;
   org_id: string;
+  name: string;
   status: string;
   current_time: string;
   created_at: string;
@@ -611,6 +679,10 @@ export type TestClock = {
 
 export type TestClockResponse = {
   clock: TestClock | null;
+};
+
+export type TestClocksResponse = {
+  test_clocks: TestClock[];
 };
 
 export type FeatureFlagUpsertRequest = {

@@ -27,6 +27,7 @@ const Meters = lazy(() => import("./pages/Meters"))
 const MetersCreate = lazy(() => import("./pages/MetersCreate"))
 const MetersEdit = lazy(() => import("./pages/MetersEdit"))
 const Rating = lazy(() => import("./pages/Rating"))
+const Coupons = lazy(() => import("./pages/Coupons"))
 const Ledger = lazy(() => import("./pages/Ledger"))
 const LedgerCreate = lazy(() => import("./pages/LedgerCreate"))
 const Invoices = lazy(() => import("./pages/Invoices"))
@@ -104,6 +105,13 @@ const icons: Record<string, JSX.Element> = {
   rating: (
     <svg className="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1L2 5.3l4.2-.7z" strokeLinejoin="round"/>
+    </svg>
+  ),
+  coupons: (
+    <svg className="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M2.5 6.5l4-4h6.2a.8.8 0 01.8.8v6.2l-4 4a1.2 1.2 0 01-1.7 0L2.5 8.2a1.2 1.2 0 010-1.7z" strokeLinejoin="round"/>
+      <circle cx="10.8" cy="5.2" r="1" />
+      <path d="M6 10l4-4" strokeLinecap="round"/>
     </svg>
   ),
   ledger: (
@@ -209,6 +217,7 @@ function usePageTitle() {
     "/meters": "meters",
     "/meters/new": "meters_new",
     "/rating": "rating",
+    "/coupons": "coupons",
     "/ledger": "ledger",
     "/ledger/new": "ledger_new",
     "/invoices": "invoices",
@@ -624,6 +633,7 @@ function AppLayout() {
           { label: t("nav.items.usage"), path: withOrg("/usage"), icon: icons.usage },
           { label: t("nav.items.meters"), path: withOrg("/meters"), icon: icons.meters },
           { label: t("nav.items.rating"), path: withOrg("/rating"), icon: icons.rating },
+          { label: t("nav.items.coupons"), path: withOrg("/coupons"), icon: icons.coupons },
         ],
       },
       {
@@ -687,6 +697,7 @@ function AppLayout() {
       <Route path="meters/new" element={<MetersCreate />} />
       <Route path="meters/:id/edit" element={<MetersEdit />} />
       <Route path="rating" element={<Rating />} />
+      <Route path="coupons" element={<Coupons />} />
       <Route path="ledger" element={<Ledger />} />
       <Route path="ledger/new" element={<LedgerCreate />} />
       <Route path="invoices" element={<Invoices />} />

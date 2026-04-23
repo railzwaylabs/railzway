@@ -18,7 +18,11 @@ import {
   AuditLogsListResponse,
   OrganizationMemberInfo,
   AuditLogsSummary,
+  BillingSegmentResponse,
+  BillingSegmentsListResponse,
   Customer,
+  CouponResponse,
+  CouponsListResponse,
   CustomersListResponse,
   CustomersSummary,
   DashboardSummary,
@@ -64,10 +68,13 @@ import {
   Feature,
   FeaturesListResponse,
   ProductFeature,
+  PromotionCodeResponse,
+  PromotionCodesListResponse,
   TaxRate,
   TaxRatesListResponse,
   TaxesSummary,
   TestClock,
+  TestClocksResponse,
   TestClockResponse,
   UsageAggregatesResponse,
   UsageEvent,
@@ -156,8 +163,15 @@ const friendlyErrorMessages: Record<string, string> = {
   skip_not_allowed: "Skipping password change is not allowed in this environment.",
   invalid_invite: "Invite is invalid or expired.",
   invalid_organization: "Organization ID is invalid.",
+  invalid_test_clock: "Invalid test clock selection.",
   not_organization_member: "You do not have access to that organization.",
   invalid_meter: "Meter code is invalid.",
+  invalid_coupon: "Coupon payload is invalid.",
+  invalid_segment: "Segment is invalid or inactive.",
+  segment_exists: "Segment already exists.",
+  invalid_promotion_code: "Promotion code payload is invalid.",
+  promotion_code_inactive: "Promotion code is inactive.",
+  promotion_code_max_redemptions_reached: "Promotion code has reached its redemption limit.",
   invalid_json: "Payload must be valid JSON.",
   unbalanced_entry: "Ledger entries must be balanced.",
   slug_already_exists: "Organization slug already exists.",
@@ -210,7 +224,7 @@ function getCSRFToken(): string {
   return "";
 }
 
-function buildQuery(params: Record<string, string | number | undefined>) {
+function buildQuery(params: Record<string, string | number | boolean | undefined>) {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value === undefined || value === "") {
@@ -645,6 +659,8 @@ export const api = {
         email: string;
         external_id?: string;
         currency?: string;
+        test_clock?: string;
+        test_clock_id?: string;
         idempotency_key?: string;
       },
       config?: ApiConfig
@@ -656,7 +672,7 @@ export const api = {
       ),
     update: (
       customerId: string,
-      payload: { name?: string; email?: string; external_id?: string; currency?: string },
+      payload: { name?: string; email?: string; external_id?: string; currency?: string; test_clock?: string; test_clock_id?: string },
       config?: ApiConfig
     ) =>
       request<Customer>(
@@ -971,22 +987,26 @@ export const api = {
   testClock: {
     get: (config?: ApiConfig) =>
       request<TestClockResponse>(`${adminBasePath}/test-clock`, undefined, { ...defaultConfig, ...config }),
-    upsert: (payload: { current_time: string; status?: string }, config?: ApiConfig) =>
+    list: (config?: ApiConfig) =>
+      request<TestClocksResponse>(`${adminBasePath}/test-clocks`, undefined, { ...defaultConfig, ...config }),
+    getById: (testClockId: string, config?: ApiConfig) =>
+      request<TestClock>(`${adminBasePath}/test-clocks/${testClockId}`, undefined, { ...defaultConfig, ...config }),
+    upsert: (payload: { frozen_time: number; name?: string; status?: string }, config?: ApiConfig) =>
       request<TestClock>(
-        `${adminBasePath}/test-clock`,
+        `${adminBasePath}/test-clocks`,
         { method: "POST", body: JSON.stringify(payload) },
         { ...defaultConfig, ...config }
       ),
-    advance: (payload: { advance_by_seconds: number }, config?: ApiConfig) =>
+    advance: (testClockId: string, payload: { frozen_time: number }, config?: ApiConfig) =>
       request<TestClock>(
-        `${adminBasePath}/test-clock/advance`,
+        `${adminBasePath}/test-clocks/${testClockId}/advance`,
         { method: "POST", body: JSON.stringify(payload) },
         { ...defaultConfig, ...config }
       ),
-    pause: (config?: ApiConfig) =>
-      request<TestClock>(`${adminBasePath}/test-clock/pause`, { method: "POST" }, { ...defaultConfig, ...config }),
-    resume: (config?: ApiConfig) =>
-      request<TestClock>(`${adminBasePath}/test-clock/resume`, { method: "POST" }, { ...defaultConfig, ...config }),
+    pause: (testClockId: string, config?: ApiConfig) =>
+      request<TestClock>(`${adminBasePath}/test-clocks/${testClockId}/pause`, { method: "POST" }, { ...defaultConfig, ...config }),
+    resume: (testClockId: string, config?: ApiConfig) =>
+      request<TestClock>(`${adminBasePath}/test-clocks/${testClockId}/resume`, { method: "POST" }, { ...defaultConfig, ...config }),
   },
   usage: {
     summary: (config?: ApiConfig) =>
@@ -1144,6 +1164,74 @@ export const api = {
         { method: "POST", body: JSON.stringify(payload) },
         { ...defaultConfig, ...config }
       ),
+    redeemPromotionCode: (subscriptionId: string, payload: { code: string }, config?: ApiConfig) =>
+      request<CouponResponse>(
+        `${adminBasePath}/subscriptions/${subscriptionId}/promotion-code`,
+        { method: "POST", body: JSON.stringify(payload) },
+        { ...defaultConfig, ...config }
+      ),
+  },
+  coupons: {
+    list: (config?: ApiConfig) =>
+      request<CouponsListResponse>(`${adminBasePath}/coupons`, undefined, { ...defaultConfig, ...config }),
+    create: (
+      payload: {
+        name: string;
+        type: string;
+        amount_cents?: number;
+        percentage?: number;
+        duration: string;
+        duration_months?: number;
+        currency?: string;
+        valid_from?: string;
+        valid_until?: string;
+        auto_apply?: boolean;
+        target_segment?: string;
+      },
+      config?: ApiConfig
+    ) =>
+      request<CouponResponse>(
+        `${adminBasePath}/coupons`,
+        { method: "POST", body: JSON.stringify(payload) },
+        { ...defaultConfig, ...config }
+      ),
+    listPromotionCodes: (config?: ApiConfig) =>
+      request<PromotionCodesListResponse>(`${adminBasePath}/promotion-codes`, undefined, { ...defaultConfig, ...config }),
+    createPromotionCode: (
+      payload: {
+        coupon_id: string;
+        code: string;
+        active?: boolean;
+        max_redemptions?: number;
+      },
+      config?: ApiConfig
+    ) =>
+      request<PromotionCodeResponse>(
+        `${adminBasePath}/promotion-codes`,
+        { method: "POST", body: JSON.stringify(payload) },
+        { ...defaultConfig, ...config }
+      ),
+    listSegments: (params?: { scope?: string; include_inactive?: boolean }, config?: ApiConfig) =>
+      request<BillingSegmentsListResponse>(
+        `${adminBasePath}/segments${buildQuery(params ?? {})}`,
+        undefined,
+        { ...defaultConfig, ...config }
+      ),
+    createSegment: (
+      payload: {
+        key: string;
+        name: string;
+        scope?: string;
+        description?: string;
+        active?: boolean;
+      },
+      config?: ApiConfig
+    ) =>
+      request<BillingSegmentResponse>(
+        `${adminBasePath}/segments`,
+        { method: "POST", body: JSON.stringify(payload) },
+        { ...defaultConfig, ...config }
+      )
   },
   taxes: {
     summary: (config?: ApiConfig) =>

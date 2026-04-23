@@ -11,6 +11,7 @@ import (
 type Customer struct {
 	ID             uuid.UUID       `gorm:"primaryKey" json:"id"`
 	OrgID          uuid.UUID       `gorm:"not null;index" json:"organization_id"`
+	TestClockID    *uuid.UUID      `gorm:"index" json:"test_clock_id,omitempty"`
 	ExternalID     string          `gorm:"column:external_id" json:"external_id,omitempty"`
 	Name           string          `gorm:"not null" json:"name"`
 	Email          string          `gorm:"not null" json:"email"`

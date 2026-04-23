@@ -52,9 +52,9 @@ type PlanAmount struct {
 	OrgID              uuid.UUID       `gorm:"not null;index" json:"org_id"`
 	PlanPriceID        uuid.UUID       `gorm:"not null;index" json:"plan_price_id"`
 	Currency           string          `gorm:"type:text;not null" json:"currency"`
-	UnitAmountCents    int64           `gorm:"not null" json:"unit_amount_cents"`
-	MinimumAmountCents *int64          `gorm:"column:minimum_amount_cents" json:"minimum_amount_cents,omitempty"`
-	MaximumAmountCents *int64          `gorm:"column:maximum_amount_cents" json:"maximum_amount_cents,omitempty"`
+	UnitAmountCents    float64         `gorm:"type:numeric(28,12);not null" json:"unit_amount_cents"`
+	MinimumAmountCents *float64        `gorm:"type:numeric(28,12);column:minimum_amount_cents" json:"minimum_amount_cents,omitempty"`
+	MaximumAmountCents *float64        `gorm:"type:numeric(28,12);column:maximum_amount_cents" json:"maximum_amount_cents,omitempty"`
 	EffectiveFrom      time.Time       `gorm:"not null" json:"effective_from"`
 	EffectiveTo        *time.Time      `gorm:"" json:"effective_to,omitempty"`
 	IdempotencyKey     *string         `gorm:"column:idempotency_key" json:"-"`
@@ -72,8 +72,8 @@ type PlanTier struct {
 	TierMode        string          `gorm:"type:text;not null" json:"tier_mode"`
 	StartQuantity   float64         `gorm:"type:numeric;not null" json:"start_quantity"`
 	EndQuantity     *float64        `gorm:"type:numeric" json:"end_quantity,omitempty"`
-	UnitAmountCents *int64          `gorm:"column:unit_amount_cents" json:"unit_amount_cents,omitempty"`
-	FlatAmountCents *int64          `gorm:"column:flat_amount_cents" json:"flat_amount_cents,omitempty"`
+	UnitAmountCents *float64        `gorm:"type:numeric(28,12);column:unit_amount_cents" json:"unit_amount_cents,omitempty"`
+	FlatAmountCents *float64        `gorm:"type:numeric(28,12);column:flat_amount_cents" json:"flat_amount_cents,omitempty"`
 	Unit            string          `gorm:"type:text;not null" json:"unit"`
 	IdempotencyKey  *string         `gorm:"column:idempotency_key" json:"-"`
 	Metadata        json.RawMessage `gorm:"type:jsonb;not null;default:'{}'" json:"metadata,omitempty"`

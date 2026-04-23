@@ -32,6 +32,9 @@ func EnsureSeed(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB, logger *zap.Lo
 			if err := ensureAppAuthMethods(ctx, db, logger); err != nil {
 				logger.Warn("bootstrap apps auth methods skipped", zap.Error(err))
 			}
+			if err := ensureAdminAuthorizationPolicies(ctx, db, logger); err != nil {
+				logger.Warn("bootstrap admin authorization policies skipped", zap.Error(err))
+			}
 
 			if !cfg.BootstrapConfig.EnsureDefaultOrgAndUser {
 				return nil

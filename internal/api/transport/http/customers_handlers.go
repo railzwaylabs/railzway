@@ -15,6 +15,8 @@ type createCustomerRequest struct {
 	Email          string `json:"email"`
 	ExternalID     string `json:"external_id"`
 	Currency       string `json:"currency"`
+	TestClock      string `json:"test_clock"`
+	TestClockID    string `json:"test_clock_id"`
 	IdempotencyKey string `json:"idempotency_key"`
 }
 
@@ -36,6 +38,7 @@ func (h *Handler) CreateCustomer(c *gin.Context) {
 		Email:          strings.TrimSpace(payload.Email),
 		ExternalID:     strings.TrimSpace(payload.ExternalID),
 		Currency:       strings.TrimSpace(payload.Currency),
+		TestClockID:    testClockIDFromPayload(payload.TestClock, payload.TestClockID),
 		IdempotencyKey: strings.TrimSpace(payload.IdempotencyKey),
 	})
 	if err != nil {
@@ -103,11 +106,23 @@ func writeCustomerError(c *gin.Context, err error) {
 		errors.Is(err, customerdomain.ErrInvalidID),
 		errors.Is(err, customerdomain.ErrInvalidName),
 		errors.Is(err, customerdomain.ErrInvalidEmail),
-		errors.Is(err, customerdomain.ErrInvalidCurrency):
+		errors.Is(err, customerdomain.ErrInvalidCurrency),
+		errors.Is(err, customerdomain.ErrInvalidTestClock):
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	case errors.Is(err, customerdomain.ErrNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal_error"})
 	}
+}
+
+func testClockIDFromPayload(testClock string, testClockID string) *string {
+	value := strings.TrimSpace(testClock)
+	if value == "" {
+		value = strings.TrimSpace(testClockID)
+	}
+	if value == "" {
+		return nil
+	}
+	return &value
 }

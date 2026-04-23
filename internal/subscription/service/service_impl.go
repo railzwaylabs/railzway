@@ -11,10 +11,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/railzwaylabs/railzway/internal/auditlog"
 	"github.com/railzwaylabs/railzway/internal/clock"
+	customerdomain "github.com/railzwaylabs/railzway/internal/customer/domain"
 	"github.com/railzwaylabs/railzway/internal/db/pagination"
 	"github.com/railzwaylabs/railzway/internal/orgcontext"
 	"github.com/railzwaylabs/railzway/internal/subscription/domain"
 	"github.com/railzwaylabs/railzway/internal/telemetry"
+	testclockdomain "github.com/railzwaylabs/railzway/internal/testclock/domain"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
@@ -23,21 +25,25 @@ import (
 const subscriptionCacheTTL = 15 * time.Second
 
 type service struct {
-	db    *gorm.DB
-	repo  domain.Repository
-	audit *auditlog.Service
-	clock clock.Clock
-	cache *redis.Client
+	db        *gorm.DB
+	repo      domain.Repository
+	customers customerdomain.Repository
+	clocks    testclockdomain.Repository
+	audit     *auditlog.Service
+	clock     clock.Clock
+	cache     *redis.Client
 }
 
 type Params struct {
 	fx.In
 
-	DB    *gorm.DB
-	Repo  domain.Repository
-	Audit *auditlog.Service `optional:"true"`
-	Clock clock.Clock       `optional:"true"`
-	Cache *redis.Client     `name:"redis_cache" optional:"true"`
+	DB        *gorm.DB
+	Repo      domain.Repository
+	Customers customerdomain.Repository  `optional:"true"`
+	Clocks    testclockdomain.Repository `optional:"true"`
+	Audit     *auditlog.Service          `optional:"true"`
+	Clock     clock.Clock                `optional:"true"`
+	Cache     *redis.Client              `name:"redis_cache" optional:"true"`
 }
 
 func NewService(p Params) domain.Service {
@@ -46,11 +52,13 @@ func NewService(p Params) domain.Service {
 		clk = clock.SystemClock{}
 	}
 	return &service{
-		db:    p.DB,
-		repo:  p.Repo,
-		audit: p.Audit,
-		clock: clk,
-		cache: p.Cache,
+		db:        p.DB,
+		repo:      p.Repo,
+		customers: p.Customers,
+		clocks:    p.Clocks,
+		audit:     p.Audit,
+		clock:     clk,
+		cache:     p.Cache,
 	}
 }
 
@@ -81,6 +89,10 @@ func (s *service) CreateSubscription(ctx context.Context, req domain.CreateSubsc
 	customerID, err := parseID(req.CustomerID)
 	if err != nil {
 		return domain.SubscriptionResponse{}, domain.ErrInvalidCustomer
+	}
+	ctx, err = s.withCustomerTestClock(ctx, orgID, customerID)
+	if err != nil {
+		return domain.SubscriptionResponse{}, err
 	}
 
 	planID, err := parseID(req.PlanID)
@@ -325,17 +337,21 @@ func (s *service) UpdateSubscription(ctx context.Context, id string, req domain.
 		return domain.SubscriptionResponse{}, domain.ErrInvalidID
 	}
 
-	now := s.clock.Now(ctx)
-	updates := map[string]interface{}{
-		"updated_at": now,
-	}
-
 	beforeSub, err := s.repo.FindSubscriptionByID(ctx, orgID, subID)
 	if err != nil {
 		return domain.SubscriptionResponse{}, err
 	}
 	if beforeSub == nil {
 		return domain.SubscriptionResponse{}, domain.ErrNotFound
+	}
+	ctx, err = s.withCustomerTestClock(ctx, orgID, beforeSub.CustomerID)
+	if err != nil {
+		return domain.SubscriptionResponse{}, err
+	}
+
+	now := s.clock.Now(ctx)
+	updates := map[string]interface{}{
+		"updated_at": now,
 	}
 
 	desiredStatus := beforeSub.Status
@@ -572,6 +588,18 @@ func (s *service) CreateSubscriptionItem(ctx context.Context, req domain.CreateS
 	if err != nil {
 		return domain.SubscriptionItemResponse{}, domain.ErrInvalidID
 	}
+	sub, err := s.repo.FindSubscriptionByID(ctx, orgID, subID)
+	if err != nil {
+		return domain.SubscriptionItemResponse{}, err
+	}
+	if sub == nil {
+		return domain.SubscriptionItemResponse{}, domain.ErrNotFound
+	}
+	ctx, err = s.withCustomerTestClock(ctx, orgID, sub.CustomerID)
+	if err != nil {
+		return domain.SubscriptionItemResponse{}, err
+	}
+
 	priceID, err := parseID(req.PlanPriceID)
 	if err != nil {
 		return domain.SubscriptionItemResponse{}, domain.ErrInvalidPlanPrice
@@ -729,6 +757,33 @@ func parseID(value string) (uuid.UUID, error) {
 		return uuid.Nil, domain.ErrInvalidID
 	}
 	return id, nil
+}
+
+func (s *service) withCustomerTestClock(ctx context.Context, orgID, customerID uuid.UUID) (context.Context, error) {
+	if s.customers == nil {
+		return ctx, nil
+	}
+	customer, err := s.customers.FindByID(ctx, orgID, customerID)
+	if err != nil {
+		return ctx, err
+	}
+	if customer == nil {
+		return ctx, domain.ErrInvalidCustomer
+	}
+	if customer.TestClockID == nil {
+		return ctx, nil
+	}
+	if s.clocks == nil {
+		return ctx, nil
+	}
+	testClock, err := s.clocks.GetByID(ctx, orgID, *customer.TestClockID)
+	if err != nil {
+		return ctx, err
+	}
+	if testClock == nil || testClock.Status != testclockdomain.StatusActive {
+		return ctx, nil
+	}
+	return clock.WithTestClock(ctx, testClock.ID, testClock.CurrentTime), nil
 }
 
 func decodeCursor(token string) (*domain.ListCursor, error) {

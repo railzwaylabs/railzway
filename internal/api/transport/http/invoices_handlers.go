@@ -99,6 +99,8 @@ func writeInvoiceError(c *gin.Context, err error) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	case errors.Is(err, invoicedomain.ErrUsageNotReady):
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+	case errors.Is(err, invoicedomain.ErrNoBillableItems):
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 	case errors.Is(err, invoicedomain.ErrNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 	default:

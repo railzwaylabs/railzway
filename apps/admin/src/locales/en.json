@@ -31,6 +31,7 @@
     "creating": "Creating…",
     "updating": "Updating…",
     "saving": "Saving…",
+    "created": "Created",
     "save": "Save",
     "save_changes": "Save Changes",
     "no_change": "No change",
@@ -80,6 +81,7 @@
       "invoices": "Invoices",
       "payments": "Payments",
       "taxes": "Taxes",
+      "coupons": "Coupons",
       "audit_logs": "Audit Logs",
       "apps": "Apps",
       "products": "Products",
@@ -670,6 +672,10 @@
       "label": "Rating",
       "desc": "Usage-to-cost calculation results"
     },
+    "coupons": {
+      "label": "Coupons",
+      "desc": "Discount rules and promotion codes"
+    },
     "ledger": {
       "label": "Ledger",
       "desc": "Immutable financial transaction log"
@@ -1190,7 +1196,7 @@
       "description_placeholder": "Optional marketing description",
       "meter_label": "Select Meter *",
       "meter_placeholder": "Search meters by name",
-      "amount_label": "Amount (cents) *",
+      "amount_label": "Amount *",
       "currency_label": "Currency *",
       "interval_label": "Billing Interval *",
       "interval_placeholder": "Select interval",
@@ -1253,9 +1259,9 @@
     "amount_form": {
       "title": "Create Amount",
       "currency": "Currency",
-      "unit_amount": "Unit Amount (cents)",
-      "minimum": "Minimum (cents)",
-      "maximum": "Maximum (cents)",
+      "unit_amount": "Unit Amount",
+      "minimum": "Minimum",
+      "maximum": "Maximum",
       "effective_from": "Effective From",
       "effective_to": "Effective To",
       "create": "Create Amount"
@@ -1270,7 +1276,7 @@
       },
       "quantities": "Start / End Quantities",
       "end_placeholder": "End (optional)",
-      "amount": "Amount (cents)",
+      "amount": "Amount",
       "unit_placeholder": "Per Unit",
       "flat_placeholder": "Flat",
       "unit": "Unit",
@@ -1379,7 +1385,7 @@
       "pricing_tiers": "Pricing Tiers",
       "tier_start": "Start",
       "tier_end": "End (empty for ∞)",
-      "tier_base_rate": "Base Rate (Cents)",
+      "tier_base_rate": "Base Rate",
       "amount": "Amount",
       "idempotency": "Idempotency"
     },
@@ -1389,7 +1395,7 @@
       "plan_name": "e.g. Professional",
       "plan_code": "e.g. pro-monthly",
       "price_code": "e.g. monthly-recurring",
-      "amount_cents": "Amount in cents"
+      "amount_cents": "0.00"
     },
     "hints": {
       "idempotency": "Root creation key for transactional safety.",
@@ -1485,6 +1491,153 @@
       "load_failed": "Failed to load feature",
       "update_failed": "Failed to update feature",
       "updated": "Feature updated successfully"
+    }
+  },
+  "coupons": {
+    "header": {
+      "title": "Coupons",
+      "description": "Manage discount rules and promotion codes for subscriptions."
+    },
+    "actions": {
+      "new_coupon": "New Coupon",
+      "new_promo": "New Promotion Code",
+      "new_segment": "New Segment",
+      "redeem": "Redeem Code",
+      "create_coupon": "Create Coupon",
+      "create_promo": "Create Promotion Code",
+      "create_segment": "Create Segment"
+    },
+    "kpis": {
+      "coupons": "Coupons",
+      "promotion_codes": "Promotion Codes",
+      "redemptions": "Redemptions",
+      "segments": "Segments"
+    },
+    "sections": {
+      "coupons": "Coupons",
+      "promotion_codes": "Promotion Codes",
+      "segments": "Segments"
+    },
+    "create_coupon": {
+      "title": "Create Coupon",
+      "description": "Create a reusable discount rule."
+    },
+    "create_promo": {
+      "title": "Create Promotion Code",
+      "description": "Attach a redeemable code to an existing coupon."
+    },
+    "redeem": {
+      "title": "Redeem Promotion Code",
+      "description": "Apply a promotion code to a subscription."
+    },
+    "create_segment": {
+      "title": "Create Segment",
+      "description": "Create a reusable customer or subscription segment for coupon targeting."
+    },
+    "fields": {
+      "name": "Name",
+      "type": "Type",
+      "percentage": "Percentage",
+      "amount": "Amount",
+      "currency": "Currency",
+      "duration": "Duration",
+      "duration_months": "Duration Months",
+      "auto_apply": "Application",
+      "target_segment": "Target Segment",
+      "valid_from": "Valid From",
+      "valid_until": "Valid Until",
+      "coupon": "Coupon",
+      "code": "Code",
+      "status": "Status",
+      "max_redemptions": "Max Redemptions",
+      "subscription_id": "Subscription ID",
+      "segment_key": "Segment Key",
+      "scope": "Scope",
+      "description": "Description"
+    },
+    "types": {
+      "percent": "Percent",
+      "fixed": "Fixed Amount"
+    },
+    "durations": {
+      "once": "Once",
+      "repeating": "Repeating",
+      "forever": "Forever"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "automation": {
+      "auto": "Auto apply",
+      "manual": "Manual"
+    },
+    "segments": {
+      "all": "All segments"
+    },
+    "segment_scopes": {
+      "any": "Customer or Subscription",
+      "customer": "Customer",
+      "subscription": "Subscription"
+    },
+    "coupons_table": {
+      "columns": {
+        "name": "Name",
+        "type": "Type",
+        "value": "Value",
+        "duration": "Duration",
+        "automation": "Application",
+        "segment": "Segment",
+        "validity": "Valid From / Until"
+      },
+      "empty_title": "No coupons",
+      "empty_desc": "Create a coupon to start applying discounts."
+    },
+    "promos_table": {
+      "columns": {
+        "code": "Code",
+        "coupon": "Coupon",
+        "status": "Status",
+        "redemptions": "Redemptions"
+      },
+      "empty_title": "No promotion codes",
+      "empty_desc": "Create a promotion code for an existing coupon."
+    },
+    "segments_table": {
+      "columns": {
+        "name": "Name",
+        "scope": "Scope",
+        "status": "Status",
+        "description": "Description"
+      },
+      "empty_title": "No segments",
+      "empty_desc": "Create a segment to use it in coupon targeting."
+    },
+    "validation": {
+      "name_required": "Name is required.",
+      "percentage_range": "Percentage must be greater than 0 and at most 100.",
+      "amount_positive": "Amount must be greater than 0.",
+      "currency": "Currency must be a 3-letter ISO code.",
+      "duration_months": "Duration months must be greater than 0.",
+      "valid_until_after": "Valid until must be after valid from.",
+      "coupon_required": "Coupon is required.",
+      "code_required": "Code is required.",
+      "max_redemptions": "Max redemptions must be greater than 0.",
+      "subscription_required": "Subscription ID is required.",
+      "segment_key_required": "Segment key is required.",
+      "segment_name_required": "Segment name is required.",
+      "segment_scope": "Segment scope is invalid."
+    },
+    "toast": {
+      "load_failed": "Failed to load coupons",
+      "coupon_created": "Coupon created",
+      "coupon_create_failed": "Failed to create coupon",
+      "promo_created": "Promotion code created",
+      "promo_create_failed": "Failed to create promotion code",
+      "segment_created": "Segment created",
+      "segment_create_failed": "Failed to create segment",
+      "redeemed": "Promotion code redeemed",
+      "redeem_failed": "Failed to redeem promotion code"
     }
   },
   "taxes_create": {

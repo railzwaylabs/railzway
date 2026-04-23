@@ -69,12 +69,7 @@ export function visitOrgPath(orgId: string, path: string): Cypress.Chainable<Win
 }
 
 export function selectAutocomplete(id: string, query: string, optionText?: string): Cypress.Chainable<void> {
-  cy.get(`[data-testid="${id}"]`).click();
-  if (query) {
-    cy.get(`[data-testid="${id}-search"]`).clear().type(query);
-  }
-  cy.contains("[cmdk-item]", optionText ?? query).click();
-  return cy.wrap(undefined);
+  return cy.selectAutocomplete(id, query, optionText);
 }
 
 export function seedBillingFixture(options: SeedBillingFixtureOptions = {}): Cypress.Chainable<BillingFixture> {

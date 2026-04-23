@@ -48,9 +48,12 @@ func StartReconciliationScheduler(
 		}
 	}
 
+	var cancel context.CancelFunc
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			ticker := time.NewTicker(interval)
+			runCtx, stop := context.WithCancel(context.Background())
+			cancel = stop
 			logger.Info("reconciliation scheduler started", zap.Duration("interval", interval), zap.Int("window_days", windowDays))
 
 			go func() {
@@ -61,11 +64,17 @@ func StartReconciliationScheduler(
 					select {
 					case <-ticker.C:
 						continue
-					case <-ctx.Done():
+					case <-runCtx.Done():
 						return
 					}
 				}
 			}()
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			if cancel != nil {
+				cancel()
+			}
 			return nil
 		},
 	})

@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS invoice_items (
     line_type TEXT NOT NULL CHECK (line_type IN ('subscription', 'usage', 'adjustment', 'credit', 'tax')),
     description TEXT,
     quantity NUMERIC NOT NULL DEFAULT 0 CHECK (quantity >= 0),
-    unit_amount_cents BIGINT NOT NULL DEFAULT 0 CHECK (unit_amount_cents >= 0),
+    unit_amount_cents NUMERIC(28,12) NOT NULL DEFAULT 0 CHECK (unit_amount_cents >= 0),
     amount_cents BIGINT NOT NULL DEFAULT 0 CHECK (amount_cents >= 0),
     currency TEXT NOT NULL,
     period_start TIMESTAMPTZ,

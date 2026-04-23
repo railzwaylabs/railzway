@@ -7,11 +7,13 @@ import AutoCompleteInput from "../components/AutoCompleteInput";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { api } from "../lib/api";
 import { useOrgPath } from "../lib/org";
 import { currencyHint } from "../lib/hints";
 import { useCurrencies } from "../lib/reference";
 import { isCurrencyCode, isEmail } from "../lib/validation";
+import type { TestClock } from "../lib/types";
 
 export default function CustomersEdit() {
   const { t } = useTranslation();
@@ -29,14 +31,17 @@ export default function CustomersEdit() {
     name: "",
     email: "",
     externalId: "",
-    currency: ""
+    currency: "",
+    testClockID: "none"
   });
   const [original, setOriginal] = useState({
     name: "",
     email: "",
     externalId: "",
-    currency: ""
+    currency: "",
+    testClockID: "none"
   });
+  const [testClocks, setTestClocks] = useState<TestClock[]>([]);
 
   useEffect(() => {
     if (!customerId) {
@@ -48,22 +53,29 @@ export default function CustomersEdit() {
     const load = async () => {
       try {
         setLoading(true);
-        const resp = await api.customers.get(customerId);
+        const [resp, clocksResp] = await Promise.all([
+          api.customers.get(customerId),
+          api.testClock.list().catch(() => ({ test_clocks: [] as TestClock[] }))
+        ]);
         if (!active) {
           return;
         }
+        setTestClocks(clocksResp.test_clocks);
+        const testClockID = resp.test_clock_id ?? "none";
         setForm({
           id: resp.id,
           name: resp.name ?? "",
           email: resp.email ?? "",
           externalId: resp.external_id ?? "",
-          currency: resp.currency ?? ""
+          currency: resp.currency ?? "",
+          testClockID
         });
         setOriginal({
           name: resp.name ?? "",
           email: resp.email ?? "",
           externalId: resp.external_id ?? "",
-          currency: resp.currency ?? ""
+          currency: resp.currency ?? "",
+          testClockID
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : t("customers_edit.toast.load_failed"));
@@ -88,7 +100,8 @@ export default function CustomersEdit() {
       form.name.trim() !== original.name ||
         form.email.trim() !== original.email ||
         form.externalId.trim() !== original.externalId ||
-        form.currency.trim() !== original.currency
+        form.currency.trim() !== original.currency ||
+        form.testClockID !== original.testClockID
     );
     if (!hasUpdates) {
       errors.push(t("customers_edit.validation.no_changes"));
@@ -109,7 +122,7 @@ export default function CustomersEdit() {
       setSaving(true);
       setError(null);
       setMessage(null);
-      const payload: { name?: string; email?: string; external_id?: string; currency?: string } = {};
+      const payload: { name?: string; email?: string; external_id?: string; currency?: string; test_clock?: string } = {};
       if (form.name.trim() !== original.name) {
         payload.name = form.name.trim();
       }
@@ -121,6 +134,9 @@ export default function CustomersEdit() {
       }
       if (form.currency.trim() !== original.currency) {
         payload.currency = form.currency.trim() || undefined;
+      }
+      if (form.testClockID !== original.testClockID) {
+        payload.test_clock = form.testClockID === "none" ? "" : form.testClockID;
       }
       const resp = await api.customers.update(form.id.trim(), payload);
       setMessage(t("customers_edit.toast.updated", { id: resp.id }));
@@ -182,6 +198,20 @@ export default function CustomersEdit() {
                 placeholder={currenciesLoading ? t("common.loading") : t("customers_edit.fields.currency_placeholder")}
                 onChange={(value) => setForm((prev) => ({ ...prev, currency: value }))}
               />
+            </div>
+            <div className="action-field">
+              <Label className="action-label">Test clock</Label>
+              <Select value={form.testClockID} onValueChange={(value) => setForm((prev) => ({ ...prev, testClockID: value }))}>
+                <SelectTrigger className="action-select" data-testid="customers-edit-test-clock">
+                  <SelectValue placeholder="No test clock" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No test clock</SelectItem>
+                  {testClocks.map((clock) => (
+                    <SelectItem key={clock.id} value={clock.id}>{clock.name || clock.id}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           {validation.length > 0 ? <div className="inline-error">{validation.join(" ")}</div> : null}

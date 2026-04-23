@@ -14,6 +14,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/auditlog"
 	"github.com/railzwaylabs/railzway/internal/authz"
 	"github.com/railzwaylabs/railzway/internal/config"
+	coupondomain "github.com/railzwaylabs/railzway/internal/coupon/domain"
 	customerdomain "github.com/railzwaylabs/railzway/internal/customer/domain"
 	featuredomain "github.com/railzwaylabs/railzway/internal/feature/domain"
 	featureflagsvc "github.com/railzwaylabs/railzway/internal/featureflag/service"
@@ -59,6 +60,7 @@ var Module = fx.Module("admin",
 			features featuredomain.Service,
 			productFeatures productfeaturedomain.Service,
 			customers customerdomain.Service,
+			coupons coupondomain.Service,
 			organizations organizationdomain.Service,
 			subscriptions subscriptiondomain.Service,
 			usage usagedomain.Service,
@@ -73,7 +75,7 @@ var Module = fx.Module("admin",
 			aiThreadStore *aiassistant.ThreadStore,
 			aiScheduler *aischeduler.Service,
 		) *adminhandler.Handler {
-			return adminhandler.NewHandler(summary, flags, authSvc, adminAuthz, auditSvc, cfg, apps, apiKeys, plans, products, features, productFeatures, customers, organizations, subscriptions, usage, invoices, ledger, rating, payments, taxes, testclocks, references, aiAssistant, aiThreadStore, aiScheduler)
+			return adminhandler.NewHandler(summary, flags, authSvc, adminAuthz, auditSvc, cfg, apps, apiKeys, plans, products, features, productFeatures, customers, coupons, organizations, subscriptions, usage, invoices, ledger, rating, payments, taxes, testclocks, references, aiAssistant, aiThreadStore, aiScheduler)
 		},
 	),
 )

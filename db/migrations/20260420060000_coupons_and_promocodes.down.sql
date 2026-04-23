@@ -1,12 +1,3 @@
-DELETE FROM ledger_accounts a
-WHERE a.code = 'credits'
-  AND NOT EXISTS (
-      SELECT 1
-      FROM ledger_entries e
-      WHERE e.org_id = a.org_id
-        AND e.account_code = a.code
-  );
-
 ALTER TABLE invoice_items
     DROP CONSTRAINT IF EXISTS invoice_items_line_type_check;
 

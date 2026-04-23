@@ -19,6 +19,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/auditlog"
 	"github.com/railzwaylabs/railzway/internal/authz"
 	"github.com/railzwaylabs/railzway/internal/config"
+	coupondomain "github.com/railzwaylabs/railzway/internal/coupon/domain"
 	customerdomain "github.com/railzwaylabs/railzway/internal/customer/domain"
 	featuredomain "github.com/railzwaylabs/railzway/internal/feature/domain"
 	featureflagsvc "github.com/railzwaylabs/railzway/internal/featureflag/service"
@@ -51,6 +52,7 @@ type Handler struct {
 	features        featuredomain.Service
 	productFeatures productfeaturedomain.Service
 	customers       customerdomain.Service
+	coupons         coupondomain.Service
 	organizations   organizationdomain.Service
 	subscriptions   subscriptiondomain.Service
 	usage           usagedomain.Service
@@ -80,6 +82,7 @@ func NewHandler(
 	features featuredomain.Service,
 	productFeatures productfeaturedomain.Service,
 	customers customerdomain.Service,
+	coupons coupondomain.Service,
 	organizations organizationdomain.Service,
 	subscriptions subscriptiondomain.Service,
 	usage usagedomain.Service,
@@ -108,6 +111,7 @@ func NewHandler(
 		features:        features,
 		productFeatures: productFeatures,
 		customers:       customers,
+		coupons:         coupons,
 		organizations:   organizations,
 		subscriptions:   subscriptions,
 		usage:           usage,

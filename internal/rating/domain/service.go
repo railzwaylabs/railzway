@@ -41,7 +41,7 @@ type RatingResultResponse struct {
 	MeterID         string    `json:"meter_id"`
 	Currency        string    `json:"currency"`
 	Quantity        float64   `json:"quantity"`
-	UnitAmountCents int64     `json:"unit_amount_cents"`
+	UnitAmountCents float64   `json:"unit_amount_cents"`
 	AmountCents     int64     `json:"amount_cents"`
 	Source          string    `json:"source"`
 	WindowStart     time.Time `json:"window_start"`
