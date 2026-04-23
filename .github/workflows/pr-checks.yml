@@ -1,0 +1,58 @@
+name: pr-checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  go-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Verify patch hygiene
+        run: git diff --check
+
+      - name: Run Go tests
+        run: go test ./...
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build admin app
+        run: pnpm --dir apps/admin build
+
+      - name: Build checkout app
+        run: pnpm --dir apps/checkout build
+
+      - name: Build customer portal app
+        run: pnpm --dir apps/customer build
+
+      - name: Build invoice app
+        run: pnpm --dir apps/invoice build

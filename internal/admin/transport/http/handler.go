@@ -28,6 +28,7 @@ import (
 	organizationdomain "github.com/railzwaylabs/railzway/internal/organization/domain"
 	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
 	plandomain "github.com/railzwaylabs/railzway/internal/plan/domain"
+	planfeaturedomain "github.com/railzwaylabs/railzway/internal/planfeature/domain"
 	productdomain "github.com/railzwaylabs/railzway/internal/product/domain"
 	productfeaturedomain "github.com/railzwaylabs/railzway/internal/productfeature/domain"
 	ratingdomain "github.com/railzwaylabs/railzway/internal/rating/domain"
@@ -48,6 +49,7 @@ type Handler struct {
 	apps            appsdomain.Service
 	apiKeys         *apikeyservice.Service
 	plans           plandomain.Service
+	planFeatures    planfeaturedomain.Service
 	products        productdomain.Service
 	features        featuredomain.Service
 	productFeatures productfeaturedomain.Service
@@ -78,6 +80,7 @@ func NewHandler(
 	apps appsdomain.Service,
 	apiKeys *apikeyservice.Service,
 	plans plandomain.Service,
+	planFeatures planfeaturedomain.Service,
 	products productdomain.Service,
 	features featuredomain.Service,
 	productFeatures productfeaturedomain.Service,
@@ -107,6 +110,7 @@ func NewHandler(
 		apps:            apps,
 		apiKeys:         apiKeys,
 		plans:           plans,
+		planFeatures:    planFeatures,
 		products:        products,
 		features:        features,
 		productFeatures: productFeatures,

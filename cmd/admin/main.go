@@ -29,6 +29,7 @@ import (
 	"github.com/railzwaylabs/railzway/internal/organization"
 	"github.com/railzwaylabs/railzway/internal/payment"
 	"github.com/railzwaylabs/railzway/internal/plan"
+	"github.com/railzwaylabs/railzway/internal/planfeature"
 	"github.com/railzwaylabs/railzway/internal/product"
 	"github.com/railzwaylabs/railzway/internal/productfeature"
 	"github.com/railzwaylabs/railzway/internal/rating"
@@ -49,7 +50,7 @@ import (
 func main() {
 	app := fx.New(
 		fx.Provide(
-			config.Register,
+			config.RegisterFor("admin"),
 			newLogger,
 			fx.Annotate(
 				newRouter,
@@ -71,6 +72,7 @@ func main() {
 		bootstrap.Module,
 		customer.Module,
 		plan.Module,
+		planfeature.Module,
 		product.Module,
 		feature.Module,
 		productfeature.Module,

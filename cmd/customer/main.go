@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	apikeyrepo "github.com/railzwaylabs/railzway/internal/apikey/repository"
-	apikeyservice "github.com/railzwaylabs/railzway/internal/apikey/service"
 	publicapi "github.com/railzwaylabs/railzway/internal/api"
 	apihandler "github.com/railzwaylabs/railzway/internal/api/transport/http"
+	apikeyrepo "github.com/railzwaylabs/railzway/internal/apikey/repository"
+	apikeyservice "github.com/railzwaylabs/railzway/internal/apikey/service"
 	"github.com/railzwaylabs/railzway/internal/apps"
 	"github.com/railzwaylabs/railzway/internal/auditlog"
 	"github.com/railzwaylabs/railzway/internal/clock"
@@ -23,13 +23,14 @@ import (
 	"github.com/railzwaylabs/railzway/internal/customerportal"
 	customerportalhandler "github.com/railzwaylabs/railzway/internal/customerportal/transport/http"
 	"github.com/railzwaylabs/railzway/internal/db"
+	"github.com/railzwaylabs/railzway/internal/entitlement"
+	"github.com/railzwaylabs/railzway/internal/feature"
 	"github.com/railzwaylabs/railzway/internal/httpmiddleware"
 	invoicerepo "github.com/railzwaylabs/railzway/internal/invoice/repository"
 	invoiceservice "github.com/railzwaylabs/railzway/internal/invoice/service"
 	"github.com/railzwaylabs/railzway/internal/organization"
-	"github.com/railzwaylabs/railzway/internal/entitlement"
-	"github.com/railzwaylabs/railzway/internal/feature"
 	"github.com/railzwaylabs/railzway/internal/plan"
+	"github.com/railzwaylabs/railzway/internal/planfeature"
 	"github.com/railzwaylabs/railzway/internal/product"
 	"github.com/railzwaylabs/railzway/internal/productfeature"
 	invoiceviewerapi "github.com/railzwaylabs/railzway/internal/public"
@@ -46,7 +47,7 @@ import (
 func main() {
 	app := fx.New(
 		fx.Provide(
-			config.Register,
+			config.RegisterFor("customer-portal"),
 			newLogger,
 			fx.Annotate(
 				newRouter,
@@ -59,6 +60,7 @@ func main() {
 		customer.Module,
 		organization.Module,
 		plan.Module,
+		planfeature.Module,
 		product.Module,
 		feature.Module,
 		productfeature.Module,

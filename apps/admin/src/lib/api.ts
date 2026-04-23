@@ -48,6 +48,7 @@ import {
   PlanAmount,
   Plan,
   PlanPrice,
+  PlanFeature,
   PlanTier,
   PlansListResponse,
   PlansSummary,
@@ -829,6 +830,26 @@ export const api = {
       request<PlansListResponse>(
         `${adminBasePath}/plans${buildQuery(withDefaultPageSize(params))}`,
         undefined,
+        { ...defaultConfig, ...config }
+      ),
+    listFeatures: (planId: string, config?: ApiConfig) =>
+      request<PlanFeature[]>(`${adminBasePath}/plans/${planId}/features`, undefined, { ...defaultConfig, ...config }),
+    replaceFeatures: (
+      planId: string,
+      payload: {
+        features: Array<{
+          feature_id: string;
+          enabled: boolean;
+          limit_numeric?: number;
+          limit_unit?: string;
+          reset_period?: string;
+        }>;
+      },
+      config?: ApiConfig
+    ) =>
+      request<PlanFeature[]>(
+        `${adminBasePath}/plans/${planId}/features`,
+        { method: "PUT", body: JSON.stringify(payload) },
         { ...defaultConfig, ...config }
       )
   },

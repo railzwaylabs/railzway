@@ -1,0 +1,8 @@
+# ===================== Railzway Invoice Defaults =====================
+#
+# Reserved defaults for a future dedicated invoice surface.
+# Current codebase does not have a `cmd/invoice` binary yet, so this file is
+# not loaded by runtime configuration today.
+
+APP_NAME: railzway
+PORT: 8080

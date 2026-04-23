@@ -55,6 +55,7 @@ FROM gcr.io/distroless/static:nonroot AS admin
 WORKDIR /app
 COPY --from=build-admin /out/admin /app/admin
 COPY --from=admin-ui /app/apps/admin/dist /app/apps/admin/dist
+COPY --from=go-base /app/config /app/config
 COPY features.yml /app/features.yml
 EXPOSE 8080
 ENTRYPOINT ["/app/admin"]
@@ -62,12 +63,14 @@ ENTRYPOINT ["/app/admin"]
 FROM gcr.io/distroless/static:nonroot AS scheduler
 WORKDIR /app
 COPY --from=build-scheduler /out/scheduler /app/scheduler
+COPY --from=go-base /app/config /app/config
 COPY features.yml /app/features.yml
 ENTRYPOINT ["/app/scheduler"]
 
 FROM gcr.io/distroless/static:nonroot AS api
 WORKDIR /app
 COPY --from=build-api /out/api /app/api
+COPY --from=go-base /app/config /app/config
 COPY features.yml /app/features.yml
 EXPOSE 8080
 ENTRYPOINT ["/app/api"]

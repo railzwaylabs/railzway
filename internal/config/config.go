@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -174,7 +175,17 @@ type AIWorkflowConfig struct {
 
 func Register() (*Config, error) {
 	_ = godotenv.Load()
+	return register("")
+}
 
+func RegisterFor(target string) func() (*Config, error) {
+	return func() (*Config, error) {
+		_ = godotenv.Load()
+		return register(target)
+	}
+}
+
+func register(target string) (*Config, error) {
 	v := viper.New()
 	v.SetDefault("SESSION_TTL_HOURS", 24)
 	v.SetDefault("SESSION_COOKIE_NAME", "rz_admin_session")
@@ -200,15 +211,33 @@ func Register() (*Config, error) {
 	v.AutomaticEnv()
 	bindEnvKeys(v)
 
-	v.AddConfigPath("/var/lib/railzway/config")
-	v.AddConfigPath(".")
+	if err := mergeDefaultFiles(v, []string{
+		"/var/lib/railzway/config/base.defaults.yml",
+		"/var/lib/railzway/config/base.defaults.yaml",
+		"config/base.defaults.yml",
+		"config/base.defaults.yaml",
+		"base.defaults.yml",
+		"base.defaults.yaml",
+		// Legacy fallback during config layout transition.
+		"config/docker/base.defaults.yml",
+		"config/docker/base.defaults.yaml",
+	}); err != nil {
+		zap.L().Fatal("failed to read base defaults config", zap.Error(err))
+	}
 
-	v.SetConfigName("config")
-	v.SetConfigType("yml")
-
-	if err := v.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			zap.L().Fatal("failed to read config", zap.Error(err))
+	if name := strings.TrimSpace(target); name != "" {
+		if err := mergeDefaultFiles(v, []string{
+			filepath.Join("/var/lib/railzway/config", name, "defaults.yml"),
+			filepath.Join("/var/lib/railzway/config", name, "defaults.yaml"),
+			filepath.Join("config", name, "defaults.yml"),
+			filepath.Join("config", name, "defaults.yaml"),
+			filepath.Join(name, "defaults.yml"),
+			filepath.Join(name, "defaults.yaml"),
+			// Legacy fallback during config layout transition.
+			filepath.Join("config", "docker", name+".defaults.yml"),
+			filepath.Join("config", "docker", name+".defaults.yaml"),
+		}); err != nil {
+			zap.L().Fatal("failed to read binary defaults config", zap.Error(err), zap.String("target", name))
 		}
 	}
 
@@ -224,6 +253,27 @@ func Register() (*Config, error) {
 	})
 
 	return &cfg, nil
+}
+
+func mergeDefaultFiles(v *viper.Viper, candidates []string) error {
+	for _, candidate := range candidates {
+		if _, err := os.Stat(candidate); err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return err
+		}
+		f, err := os.Open(candidate)
+		if err != nil {
+			return err
+		}
+		if err := v.MergeConfig(f); err != nil {
+			_ = f.Close()
+			return err
+		}
+		_ = f.Close()
+	}
+	return nil
 }
 
 func applyEnvOverrides(cfg *Config) {

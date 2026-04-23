@@ -1,0 +1,39 @@
+name: issue-opened
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  needs-triage:
+    if: ${{ github.event.issue.pull_request == null }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.issue.number;
+            const label = {
+              name: 'needs-triage',
+              color: 'D4C5F9',
+              description: 'New issue awaiting initial triage',
+            };
+
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: label.name });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              await github.rest.issues.createLabel({ owner, repo, ...label });
+            }
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: [label.name],
+            });

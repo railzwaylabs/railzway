@@ -1,0 +1,64 @@
+# ===================== Railzway Base Defaults =====================
+#
+# Shared defaults loaded for every binary before any binary-specific
+# defaults file and environment overrides.
+
+# --------------------- App Runtime ---------------------
+APP_ENV: development
+APP_TLS_MODE: disabled
+APP_TLS_CERT_FILE: ""
+APP_TLS_KEY_FILE: ""
+CSP_EXTRA_DIRECTIVES: ""
+
+# --------------------- Database ---------------------
+DB_TYPE: postgres
+DB_HOST: postgres
+DB_PORT: "5432"
+DB_USER: postgres
+DB_PASSWORD: postgres
+DB_NAME: postgres
+DB_SSL_MODE: disable
+DB_TIMEZONE: UTC
+DB_MAX_IDLE_CONN: 2
+DB_MAX_OPEN_CONN: 20
+DB_CONN_MAX_LIFETIME: 14400
+DB_CONN_MAX_IDLE_TIME: 300
+
+# --------------------- Redis / Cache ---------------------
+REDIS_URL: redis:6379
+REDIS_USERNAME: ""
+REDIS_PASSWORD: ""
+REDIS_DB: 1
+
+CACHE_URL: redis:6379
+CACHE_USERNAME: ""
+CACHE_PASSWORD: ""
+CACHE_DB: 3
+
+# --------------------- Billing / Background ---------------------
+SUMMARY_CONCURRENCY: 4
+SUMMARY_TIMEOUT_MS: 5000
+SUMMARY_REFRESH_INTERVAL_SEC: 300
+
+SUBSCRIPTION_CLOSE_PERIOD_INTERVAL_SEC: 60
+SUBSCRIPTION_CLOSE_PERIOD_BATCH_SIZE: 100
+
+RATING_JOB_INTERVAL_SEC: 60
+RATING_JOB_BATCH_SIZE: 200
+LATE_USAGE_GRACE_HOURS: 0
+
+RECONCILIATION_JOB_INTERVAL_SEC: 21600
+RECONCILIATION_WINDOW_DAYS: 7
+RECONCILIATION_INVOICE_LIMIT: 200
+
+# --------------------- Integrations ---------------------
+APPS_CREDENTIALS_KEY: ""
+STRIPE_CONNECT_CLIENT_ID: ""
+STRIPE_CONNECT_SECRET: ""
+STRIPE_CONNECT_REDIRECT_URL: ""
+
+# --------------------- AI Workflow ---------------------
+AI_WORKFLOW_GENKIT_ENABLED: false
+AI_WORKFLOW_MODEL: googleai/gemini-2.5-flash
+AI_WORKFLOW_TIMEOUT_MS: 12000
+AI_WORKFLOW_API_KEY: ""

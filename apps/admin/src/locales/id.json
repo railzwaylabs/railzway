@@ -1173,6 +1173,7 @@
     },
     "sections": {
       "product": "Informasi Produk",
+      "plan_features": "Fitur Plan",
       "pricing": "Konfigurasi Harga"
     },
     "pricing": {
@@ -1180,6 +1181,8 @@
       "usage": "Harga Berdasarkan Pemakaian"
     },
     "fields": {
+      "product_label": "Product",
+      "product_placeholder": "Cari product berdasarkan nama atau kode",
       "plan_name": "Nama Plan *",
       "plan_name_placeholder": "contoh Pro Tier",
       "plan_code": "Kode Plan *",
@@ -1200,6 +1203,13 @@
       },
       "interval_count_label": "Jumlah Interval *"
     },
+    "plan_features": {
+      "description": "Hubungkan plan ke product terlebih dahulu, lalu override hanya entitlement feature yang memang berbeda dari default product."
+    },
+    "empty": {
+      "features": "Product ini belum memiliki product feature.",
+      "product_required_for_features": "Pilih product sebelum mengatur entitlement feature pada level plan."
+    },
     "actions": {
       "save": "Simpan plan"
     },
@@ -1218,7 +1228,8 @@
       "currency_invalid": "Mata uang harus ISO 4217.",
       "interval_count": "Jumlah interval harus >= 1.",
       "amount_min": "Jumlah harus >= 0.",
-      "meter_required": "Meter wajib untuk harga berbasis pemakaian."
+      "meter_required": "Meter wajib untuk harga berbasis pemakaian.",
+      "plan_feature_limit": "Limit feature plan harus berupa angka dan >= 0."
     }
   },
   "plans_edit": {
@@ -1230,6 +1241,7 @@
       "current_pricing": "Harga Saat Ini",
       "amounts": "Amount",
       "tiers": "Tier",
+      "plan_features": "Fitur Plan",
       "update_details": "Perbarui Detail",
       "attach_price": "Tambahkan Price"
     },
@@ -1237,7 +1249,8 @@
       "add_amount": "Tambah Amount",
       "add_tier": "Tambah Tier",
       "update": "Perbarui Plan",
-      "create_price": "Buat Price"
+      "create_price": "Buat Price",
+      "save_features": "Simpan Fitur Plan"
     },
     "status": {
       "active": "Aktif",
@@ -1246,7 +1259,27 @@
     "empty": {
       "prices": "Belum ada harga. Tambahkan price di bawah.",
       "amounts": "Tidak ada amount",
-      "tiers": "Tidak ada tier"
+      "tiers": "Tidak ada tier",
+      "features": "Belum ada fitur produk yang tersedia untuk plan ini.",
+      "product_required": "Plan ini belum terhubung ke product, sehingga entitlement feature belum bisa diatur."
+    },
+    "plan_features": {
+      "description": "Gunakan fitur product sebagai capability dasar, lalu tentukan apa yang diaktifkan plan ini beserta limitnya.",
+      "enabled": "Aktif",
+      "inherited": "Turunan",
+      "metered": "Metered",
+      "limit": "Limit",
+      "limit_placeholder": "Limit numerik opsional",
+      "limit_unit": "Unit Limit",
+      "limit_unit_placeholder": "days, users, alert_rules",
+      "reset_period": "Periode Reset",
+      "saved_state": "Tidak ada perubahan entitlement yang belum disimpan.",
+      "reset_options": {
+        "none": "Tanpa reset",
+        "day": "Harian",
+        "month": "Bulanan",
+        "billing_period": "Periode billing"
+      }
     },
     "amount_form": {
       "title": "Buat Amount",
@@ -1318,7 +1351,8 @@
       "tier_mode_required": "Mode tier wajib.",
       "tier_start_min": "Jumlah awal harus >= 0.",
       "tier_end_min": "Jumlah akhir harus >= jumlah awal.",
-      "tier_amount_required": "Unit amount atau flat amount wajib."
+      "tier_amount_required": "Unit amount atau flat amount wajib.",
+      "feature_limit_invalid": "Limit {{name}} harus angka yang lebih besar atau sama dengan 0."
     },
     "toast": {
       "load_failed": "Gagal memuat plan",
@@ -1329,7 +1363,9 @@
       "amount_created": "Amount dibuat",
       "amount_create_failed": "Gagal membuat amount",
       "tier_created": "Tier dibuat",
-      "tier_create_failed": "Gagal membuat tier"
+      "tier_create_failed": "Gagal membuat tier",
+      "features_updated": "Fitur plan diperbarui",
+      "features_update_failed": "Gagal memperbarui fitur plan"
     }
   },
   "products": {
@@ -1393,6 +1429,8 @@
       "idempotency": "Key pembuatan root untuk keamanan transaksional.",
       "product_identity": "Produk adalah penawaran tingkat atas. Gunakan untuk menamai apa yang Anda jual.",
       "product_plan_boundary": "Paket adalah kemasan langganan di bawah sebuah produk. Satu produk bisa punya satu atau banyak paket.",
+      "plan_features": "Product feature yang dipilih menentukan semesta feature. Gunakan bagian ini untuk mengaktifkan atau menonaktifkan entitlement tertentu dan menetapkan limit khusus per plan.",
+      "plan_features_empty": "Pilih minimal satu product feature sebelum mengatur entitlement plan.",
       "plan_identity": "Nama paket tidak harus sama dengan nama produk. Kalau hanya ada satu paket, memakai nama produk yang sama juga tidak masalah.",
       "mirror_primary_plan": "Gunakan nama dan kode produk untuk paket pertama",
       "no_plans": "Belum ada paket. Pelanggan tidak bisa berlangganan produk ini tanpa minimal satu paket.",

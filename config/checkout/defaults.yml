@@ -1,0 +1,6 @@
+# ===================== Railzway Checkout Defaults =====================
+#
+# Binary-specific defaults for the checkout surface.
+
+APP_NAME: railzway
+PORT: 8080

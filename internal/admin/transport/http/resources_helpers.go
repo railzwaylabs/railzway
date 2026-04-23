@@ -24,6 +24,7 @@ import (
 	organizationdomain "github.com/railzwaylabs/railzway/internal/organization/domain"
 	paymentdomain "github.com/railzwaylabs/railzway/internal/payment/domain"
 	plandomain "github.com/railzwaylabs/railzway/internal/plan/domain"
+	planfeaturedomain "github.com/railzwaylabs/railzway/internal/planfeature/domain"
 	productdomain "github.com/railzwaylabs/railzway/internal/product/domain"
 	productfeaturedomain "github.com/railzwaylabs/railzway/internal/productfeature/domain"
 	ratingdomain "github.com/railzwaylabs/railzway/internal/rating/domain"
@@ -353,6 +354,26 @@ func writeProductFeatureError(c *gin.Context, err error) {
 	case errors.Is(err, productfeaturedomain.ErrProductNotFound),
 		errors.Is(err, productfeaturedomain.ErrFeatureNotFound),
 		errors.Is(err, productfeaturedomain.ErrMeterNotFound):
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal_error"})
+	}
+}
+
+func writePlanFeatureError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, planfeaturedomain.ErrInvalidOrganization),
+		errors.Is(err, planfeaturedomain.ErrInvalidPlanID),
+		errors.Is(err, planfeaturedomain.ErrInvalidFeatureID),
+		errors.Is(err, planfeaturedomain.ErrInvalidMeterID),
+		errors.Is(err, planfeaturedomain.ErrInvalidLimit),
+		errors.Is(err, planfeaturedomain.ErrInvalidResetPeriod),
+		errors.Is(err, planfeaturedomain.ErrFeatureInactive),
+		errors.Is(err, planfeaturedomain.ErrFeatureNotAllowed):
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	case errors.Is(err, planfeaturedomain.ErrPlanNotFound),
+		errors.Is(err, planfeaturedomain.ErrFeatureNotFound),
+		errors.Is(err, planfeaturedomain.ErrMeterNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal_error"})
