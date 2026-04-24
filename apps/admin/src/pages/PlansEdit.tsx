@@ -593,6 +593,7 @@ export default function PlansEdit() {
                 {planFeatureRows.map((row) => (
                   <div
                     key={row.featureId}
+                    data-testid={`plan-feature-row-${row.code}`}
                     style={{
                       border: "1px solid var(--border)",
                       borderRadius: 10,
@@ -616,6 +617,7 @@ export default function PlansEdit() {
                         <input
                           type="checkbox"
                           checked={row.enabled}
+                          data-testid={`plan-feature-enabled-${row.code}`}
                           disabled={!row.active}
                           onChange={(e) => {
                             const enabled = e.target.checked
@@ -633,6 +635,7 @@ export default function PlansEdit() {
                         <Label className="action-label">{t("plans_edit.plan_features.limit")}</Label>
                         <Input
                           className="action-input"
+                          data-testid={`plan-feature-limit-${row.code}`}
                           inputMode="decimal"
                           type="text"
                           placeholder={t("plans_edit.plan_features.limit_placeholder")}
@@ -645,6 +648,7 @@ export default function PlansEdit() {
                         <Label className="action-label">{t("plans_edit.plan_features.limit_unit")}</Label>
                         <Input
                           className="action-input"
+                          data-testid={`plan-feature-limit-unit-${row.code}`}
                           placeholder={t("plans_edit.plan_features.limit_unit_placeholder")}
                           value={row.limitUnit}
                           disabled={!row.enabled || !row.active}
@@ -658,7 +662,7 @@ export default function PlansEdit() {
                           onValueChange={(value) => updatePlanFeatureRow(row.featureId, { resetPeriod: value })}
                           disabled={!row.enabled || !row.active}
                         >
-                          <SelectTrigger className="action-select">
+                          <SelectTrigger className="action-select" data-testid={`plan-feature-reset-period-${row.code}`}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>

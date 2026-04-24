@@ -3,24 +3,25 @@ describe("Plans", () => {
     cy.login();
   });
 
-  it("create, filter, edit (positive scenario)", () => {
+  it("creates, filters, and edits a flat plan", () => {
     const uid = Date.now();
     const planName = `Plan ${uid}`;
     const planCode = `plan_${uid}`;
+    const updatedName = `${planName} Updated`;
 
     cy.intercept("POST", "/admin/v1/plans").as("createPlan");
+
     cy.orgVisit("/plans/new");
     cy.get("[data-testid=\"page-header-title\"]").should("contain", "Create Plan");
+    cy.get("[data-testid=\"plans-create-submit\"]").should("be.disabled");
+
     cy.get("[data-testid=\"plans-create-name\"]").type(planName);
     cy.get("[data-testid=\"plans-create-code\"]").type(planCode);
     cy.get("[data-testid=\"plans-create-description\"]").type("Cypress plan");
     cy.get("[data-testid=\"plans-create-amount\"]").clear().type("1200");
-    
-    // For Radix UI Select, we need to click to open and click the option
     cy.get("[data-testid=\"plans-create-interval\"]").click();
     cy.get("[role=\"option\"]").contains("Monthly").click();
-    
-    cy.get("[data-testid=\"plans-create-submit\"]").click();
+    cy.get("[data-testid=\"plans-create-submit\"]").should("not.be.disabled").click();
 
     cy.wait("@createPlan").then((interception) => {
       const planId = interception.response?.body?.id as string;
@@ -35,7 +36,6 @@ describe("Plans", () => {
     cy.get("[data-testid=\"plans-filters-apply\"]").click();
     cy.contains(".data-table", planName).should("be.visible");
 
-    const updatedName = `${planName} Updated`;
     cy.get("@planId").then((planId) => {
       cy.get(`[data-testid="plans-edit-${String(planId)}"]`).click();
     });
@@ -45,21 +45,44 @@ describe("Plans", () => {
     cy.contains(".page-content", updatedName).should("be.visible");
   });
 
-  it("validates required fields (negative scenario)", () => {
+  it("keeps submit disabled for invalid create input", () => {
     cy.orgVisit("/plans/new");
     cy.get("[data-testid=\"plans-create-submit\"]").should("be.disabled");
-    
+
     cy.get("[data-testid=\"plans-create-name\"]").type("Validation Plan");
-    cy.get("[data-testid=\"plans-create-submit\"]").should("be.disabled");
-    
     cy.get("[data-testid=\"plans-create-code\"]").type("plan_validate");
     cy.get("[data-testid=\"plans-create-submit\"]").should("not.be.disabled");
-    
-    // Test for invalid amount
+
     cy.get("[data-testid=\"plans-create-amount\"]").clear().type("-1");
     cy.get("[data-testid=\"plans-create-submit\"]").should("be.disabled");
-    // The validation message is inline but let's check for the general error text if possible
-    // In PlansCreate.tsx: if (form.unitAmountCents < 0) errors.push(t("plans_create.validation.amount_min"))
     cy.contains("Amount must be >= 0.").should("exist");
+
+    cy.get("[data-testid=\"plans-create-amount\"]").clear().type("1000");
+    cy.get("[data-testid=\"plans-create-interval-count\"]").clear().type("0");
+    cy.get("[data-testid=\"plans-create-submit\"]").should("be.disabled");
+  });
+
+  it("requires a meter when creating a usage plan", () => {
+    const uid = Date.now();
+    const meterCode = `plan_meter_${uid}`;
+
+    cy.createOrg(`Plan Usage Org ${uid}`).then(() => {
+      return cy.csrfRequest("POST", "/admin/v1/meters", {
+        code: meterCode,
+        name: `Plan Meter ${uid}`,
+        aggregation: "sum",
+        unit: "requests",
+        active: true,
+      });
+    });
+
+    cy.orgVisit("/plans/new");
+    cy.get("[data-testid=\"plans-create-name\"]").type(`Usage Plan ${uid}`);
+    cy.get("[data-testid=\"plans-create-code\"]").type(`usage_plan_${uid}`);
+    cy.get("[data-testid=\"plans-create-type-usage\"]").click();
+    cy.get("[data-testid=\"plans-create-submit\"]").should("be.disabled");
+
+    cy.selectAutocomplete("plan-create-meter", meterCode, meterCode);
+    cy.get("[data-testid=\"plans-create-submit\"]").should("not.be.disabled");
   });
 });

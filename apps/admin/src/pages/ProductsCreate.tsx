@@ -217,10 +217,6 @@ export default function ProductsCreate() {
     }
   }
 
-  if (loading) {
-    return <div className="p-8 text-center muted">{t("common.loading")}...</div>
-  }
-
   const selectedFeatures = watch("selected_features")
   const selectedFeatureCatalog = useMemo(
     () => bootstrap.features.filter((feature) => selectedFeatures.includes(feature.id)),
@@ -231,6 +227,10 @@ export default function ProductsCreate() {
       ? selectedFeatures.filter((f: string) => f !== id)
       : [...selectedFeatures, id]
     setValue("selected_features", next)
+  }
+
+  if (loading) {
+    return <div className="p-8 text-center muted">{t("common.loading")}...</div>
   }
 
   return (

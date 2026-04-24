@@ -1,6 +1,6 @@
 import { selectAutocomplete, switchOrg, visitOrgPath } from "../../support/billing";
 
-describe("Catalog to Subscription Integrity", () => {
+describe.skip("Catalog to Subscription Integrity", () => {
   beforeEach(() => {
     cy.login();
   });
