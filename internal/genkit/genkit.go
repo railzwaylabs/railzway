@@ -13,16 +13,16 @@ import (
 
 // NewGenkit initializes a Genkit runtime backed by Gemini for AI workflow planning.
 func NewGenkit(cfg *config.Config) (*genkit.Genkit, error) {
-	if cfg == nil || !cfg.AIWorkflowConfig.AIWorkflowGenkitEnabled {
+	if cfg == nil || !cfg.AIWorkflow.GenkitEnabled {
 		return nil, nil
 	}
 
-	apiKey := strings.TrimSpace(cfg.AIWorkflowConfig.AIWorkflowAPIKey)
+	apiKey := strings.TrimSpace(cfg.AIWorkflow.APIKey)
 	if apiKey == "" {
 		return nil, fmt.Errorf("aiworkflow: AI_WORKFLOW_API_KEY is required when AI_WORKFLOW_GENKIT_ENABLED=true")
 	}
 
-	model := strings.TrimSpace(cfg.AIWorkflowConfig.AIWorkflowModel)
+	model := strings.TrimSpace(cfg.AIWorkflow.Model)
 	if model == "" {
 		model = "googleai/gemini-2.5-flash"
 	}

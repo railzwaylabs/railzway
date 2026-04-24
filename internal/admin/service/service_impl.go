@@ -39,11 +39,11 @@ func NewService(db *gorm.DB, cfg *config.Config) *Service {
 	limit := defaultSummaryConcurrency
 	timeout := defaultSummaryTimeout
 	if cfg != nil {
-		if cfg.SummaryConcurrency > 0 {
-			limit = cfg.SummaryConcurrency
+		if cfg.Billing.SummaryConcurrency > 0 {
+			limit = cfg.Billing.SummaryConcurrency
 		}
-		if cfg.SummaryTimeoutMs > 0 {
-			timeout = time.Duration(cfg.SummaryTimeoutMs) * time.Millisecond
+		if cfg.Billing.SummaryTimeoutMs > 0 {
+			timeout = time.Duration(cfg.Billing.SummaryTimeoutMs) * time.Millisecond
 		}
 	}
 	return &Service{
@@ -670,7 +670,7 @@ func (s *Service) sessionWarnings(orgID uuid.UUID) []ConfigWarning {
 			Link:   orgPath(orgID, "settings"),
 		}}
 	}
-	secret := strings.TrimSpace(s.cfg.SessionSecret)
+	secret := strings.TrimSpace(s.cfg.Session.Secret)
 	if secret == "" {
 		return []ConfigWarning{{
 			Module: "auth",
@@ -699,7 +699,7 @@ func (s *Service) transportWarnings(orgID uuid.UUID) []ConfigWarning {
 	if s.cfg == nil {
 		return nil
 	}
-	if s.cfg.AppEnv.IsProduction() && s.cfg.AppTLSMode.IsDisabled() {
+	if s.cfg.App.Env.IsProduction() && s.cfg.App.TLSMode.IsDisabled() {
 		return []ConfigWarning{{
 			Module: "transport",
 			Code:   "tls_disabled",
@@ -717,7 +717,7 @@ func (s *Service) appsWarnings(orgID uuid.UUID) []ConfigWarning {
 			Link:   orgPath(orgID, "apps"),
 		}}
 	}
-	key := strings.TrimSpace(s.cfg.AppsCredentialsKey)
+	key := strings.TrimSpace(s.cfg.Integrations.AppsCredentialsKey)
 	if key == "" {
 		return []ConfigWarning{{
 			Module: "apps",
@@ -830,8 +830,8 @@ func (s *Service) countReconciliationAction(ctx context.Context, orgID uuid.UUID
 
 func (s *Service) reconciliationWindowDays() int {
 	windowDays := 7
-	if s.cfg != nil && s.cfg.ReconciliationWindowDays > 0 {
-		windowDays = s.cfg.ReconciliationWindowDays
+	if s.cfg != nil && s.cfg.Billing.ReconciliationWindowDays > 0 {
+		windowDays = s.cfg.Billing.ReconciliationWindowDays
 	}
 	return windowDays
 }

@@ -16,10 +16,10 @@ const defaultRefreshInterval = 60 * time.Second
 
 func StartSummaryRefresher(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB, svc *service.Service, logger *zap.Logger) {
 	interval := defaultRefreshInterval
-	if cfg != nil && cfg.SummaryRefreshIntervalSec > 0 {
-		interval = time.Duration(cfg.SummaryRefreshIntervalSec) * time.Second
+	if cfg != nil && cfg.Billing.SummaryRefreshIntervalSec > 0 {
+		interval = time.Duration(cfg.Billing.SummaryRefreshIntervalSec) * time.Second
 	}
-	useAdvisoryLock := cfg != nil && cfg.DBType == "postgres"
+	useAdvisoryLock := cfg != nil && cfg.DB.Type == "postgres"
 	lockKey := advisoryLockKey("admin.refresh_summaries")
 	var cancel context.CancelFunc
 

@@ -99,7 +99,7 @@ func main() {
 }
 
 func newLogger(cfg *config.Config) (*zap.Logger, error) {
-	if cfg.AppEnv.IsProduction() {
+	if cfg.App.Env.IsProduction() {
 		return zap.NewProduction()
 	}
 	return zap.NewDevelopment()
@@ -116,8 +116,8 @@ func registerLoggerLifecycle(lc fx.Lifecycle, logger *zap.Logger) {
 
 func registerTelemetryLifecycle(lc fx.Lifecycle, cfg *config.Config, logger *zap.Logger) {
 	serviceName := "railzway-admin"
-	if cfg != nil && strings.TrimSpace(cfg.AppName) != "" {
-		serviceName = strings.TrimSpace(cfg.AppName) + "-admin"
+	if cfg != nil && strings.TrimSpace(cfg.App.Name) != "" {
+		serviceName = strings.TrimSpace(cfg.App.Name) + "-admin"
 	}
 
 	var shutdown func(context.Context) error = func(context.Context) error { return nil }
@@ -150,13 +150,13 @@ func newRouter(
 	cacheClient *redisv9.Client,
 	storeClient *redisv9.Client,
 ) *gin.Engine {
-	if cfg.AppEnv.IsProduction() {
+	if cfg.App.Env.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	router := gin.New()
 	router.Use(gin.Recovery())
-	router.Use(httpmiddleware.SecurityHeadersWithCSP(cfg, cfg.CSPExtraDirectives, httpmiddleware.CSPProfileAdmin))
+	router.Use(httpmiddleware.SecurityHeadersWithCSP(cfg, cfg.App.CSPExtraDirectives, httpmiddleware.CSPProfileAdmin))
 	router.Use(httpmiddleware.Correlation())
 	router.Use(httpmiddleware.PrometheusMetrics("admin"))
 	router.Use(httpmiddleware.ZapRequestLogger(logger))
@@ -200,7 +200,7 @@ func newRouter(
 }
 
 func startHTTPServer(lc fx.Lifecycle, cfg *config.Config, router *gin.Engine, logger *zap.Logger) {
-	port := cfg.AppPort
+	port := cfg.App.Port
 	if port == 0 {
 		port = 8080
 	}
@@ -210,23 +210,23 @@ func startHTTPServer(lc fx.Lifecycle, cfg *config.Config, router *gin.Engine, lo
 		Handler: router,
 	}
 
-	if cfg.AppEnv.IsProduction() && cfg.AppTLSMode.IsDisabled() {
-		logger.Fatal("production requires TLS", zap.String("mode", string(cfg.AppTLSMode)))
+	if cfg.App.Env.IsProduction() && cfg.App.TLSMode.IsDisabled() {
+		logger.Fatal("production requires TLS", zap.String("mode", string(cfg.App.TLSMode)))
 	}
-	if cfg.AppTLSMode.IsDirect() && (strings.TrimSpace(cfg.AppTLSCertFile) == "" || strings.TrimSpace(cfg.AppTLSKeyFile) == "") {
+	if cfg.App.TLSMode.IsDirect() && (strings.TrimSpace(cfg.App.TLSCertFile) == "" || strings.TrimSpace(cfg.App.TLSKeyFile) == "") {
 		logger.Fatal("tls cert/key required for direct TLS mode")
 	}
-	if strings.TrimSpace(cfg.SessionConfig.SessionSecret) == "" {
+	if strings.TrimSpace(cfg.Session.Secret) == "" {
 		logger.Fatal("SESSION_SECRET is required")
 	}
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
-				logger.Info("admin server started", zap.String("addr", addr), zap.String("tls_mode", string(cfg.AppTLSMode)))
+				logger.Info("admin server started", zap.String("addr", addr), zap.String("tls_mode", string(cfg.App.TLSMode)))
 				var err error
-				if cfg.AppTLSMode.IsDirect() {
-					err = server.ListenAndServeTLS(cfg.AppTLSCertFile, cfg.AppTLSKeyFile)
+				if cfg.App.TLSMode.IsDirect() {
+					err = server.ListenAndServeTLS(cfg.App.TLSCertFile, cfg.App.TLSKeyFile)
 				} else {
 					err = server.ListenAndServe()
 				}

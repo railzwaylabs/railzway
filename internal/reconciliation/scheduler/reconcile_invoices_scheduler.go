@@ -37,14 +37,14 @@ func StartReconciliationScheduler(
 	windowDays := defaultReconcileWindow
 	limit := defaultReconcileLimit
 	if cfg != nil {
-		if cfg.ReconciliationJobIntervalSec > 0 {
-			interval = time.Duration(cfg.ReconciliationJobIntervalSec) * time.Second
+		if cfg.Billing.ReconciliationJobIntervalSec > 0 {
+			interval = time.Duration(cfg.Billing.ReconciliationJobIntervalSec) * time.Second
 		}
-		if cfg.ReconciliationWindowDays > 0 {
-			windowDays = cfg.ReconciliationWindowDays
+		if cfg.Billing.ReconciliationWindowDays > 0 {
+			windowDays = cfg.Billing.ReconciliationWindowDays
 		}
-		if cfg.ReconciliationInvoiceLimit > 0 {
-			limit = cfg.ReconciliationInvoiceLimit
+		if cfg.Billing.ReconciliationInvoiceLimit > 0 {
+			limit = cfg.Billing.ReconciliationInvoiceLimit
 		}
 	}
 

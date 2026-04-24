@@ -33,14 +33,14 @@ func StartRatingScheduler(
 	logger *zap.Logger,
 ) {
 	interval := defaultRatingInterval
-	if cfg != nil && cfg.RatingJobIntervalSec > 0 {
-		interval = time.Duration(cfg.RatingJobIntervalSec) * time.Second
+	if cfg != nil && cfg.Billing.RatingJobIntervalSec > 0 {
+		interval = time.Duration(cfg.Billing.RatingJobIntervalSec) * time.Second
 	}
 	batchSize := defaultRatingBatch
-	if cfg != nil && cfg.RatingJobBatchSize > 0 {
-		batchSize = cfg.RatingJobBatchSize
+	if cfg != nil && cfg.Billing.RatingJobBatchSize > 0 {
+		batchSize = cfg.Billing.RatingJobBatchSize
 	}
-	useAdvisoryLock := cfg != nil && cfg.DBType == "postgres"
+	useAdvisoryLock := cfg != nil && cfg.DB.Type == "postgres"
 	lockKey := advisoryLockKey("rating.process_usage")
 	var cancel context.CancelFunc
 

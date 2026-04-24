@@ -97,7 +97,7 @@ type AssistantWorkflow struct {
 
 func NewAssistantWorkflow(p Params) *AssistantWorkflow {
 	if p.Genkit == nil {
-		panic("genkit instance is required")
+		return nil
 	}
 
 	w := &AssistantWorkflow{

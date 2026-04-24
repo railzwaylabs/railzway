@@ -36,7 +36,7 @@ func EnsureSeed(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB, logger *zap.Lo
 				logger.Warn("bootstrap admin authorization policies skipped", zap.Error(err))
 			}
 
-			if !cfg.BootstrapConfig.EnsureDefaultOrgAndUser {
+			if !cfg.Bootstrap.EnsureDefaultOrgAndUser {
 				return nil
 			}
 
@@ -75,7 +75,7 @@ func ensureDefaultOrg(ctx context.Context, db *gorm.DB, cfg *config.Config, logg
 		return parsed, nil
 	}
 
-	name := strings.TrimSpace(cfg.BootstrapConfig.OrgName)
+	name := strings.TrimSpace(cfg.Bootstrap.OrgName)
 	if name == "" {
 		name = "Acme"
 	}
@@ -95,7 +95,7 @@ func ensureDefaultOrg(ctx context.Context, db *gorm.DB, cfg *config.Config, logg
 	if count > 0 {
 		slug = fmt.Sprintf("%s-%s", slug, strings.ReplaceAll(orgID.String()[:8], "-", ""))
 	}
-	supportEmail := strings.TrimSpace(cfg.BootstrapConfig.UserEmail)
+	supportEmail := strings.TrimSpace(cfg.Bootstrap.UserEmail)
 
 	if err := db.WithContext(ctx).Exec(
 		`INSERT INTO organizations (id, name, slug, is_default, support_email, created_at, updated_at)
@@ -140,8 +140,8 @@ func ensureDefaultOrg(ctx context.Context, db *gorm.DB, cfg *config.Config, logg
 }
 
 func ensureDefaultUser(ctx context.Context, db *gorm.DB, cfg *config.Config, orgID uuid.UUID, logger *zap.Logger) error {
-	email := strings.TrimSpace(cfg.BootstrapConfig.UserEmail)
-	password := strings.TrimSpace(cfg.BootstrapConfig.UserPassword)
+	email := strings.TrimSpace(cfg.Bootstrap.UserEmail)
+	password := strings.TrimSpace(cfg.Bootstrap.UserPassword)
 	if email == "" || password == "" {
 		return nil
 	}

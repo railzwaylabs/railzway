@@ -1,6 +1,8 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -13,21 +15,17 @@ import (
 )
 
 type Config struct {
-	AppConfig
-	DBConfig
-	RedisConfig
-	CacheConfig
-	SummaryConfig
-	SubscriptionConfig
-	RatingConfig
-	ReconciliationConfig
-	RateLimitConfig
-	AppsConfig
-	StripeConfig
-	PublicLinkConfig
-	BootstrapConfig
-	SessionConfig
-	AIWorkflowConfig
+	App          AppConfig          `mapstructure:"app"`
+	DB           DBConfig           `mapstructure:"db"`
+	Redis        RedisConfig        `mapstructure:"redis"`
+	Cache        CacheConfig        `mapstructure:"cache"`
+	Billing      BillingConfig      `mapstructure:"billing"`
+	RateLimit    RateLimitConfig    `mapstructure:"rate_limit"`
+	Integrations IntegrationsConfig `mapstructure:"integrations"`
+	PublicLink   PublicLinkConfig   `mapstructure:"public_link"`
+	Bootstrap    BootstrapConfig    `mapstructure:"bootstrap"`
+	Session      SessionConfig      `mapstructure:"session"`
+	AIWorkflow   AIWorkflowConfig   `mapstructure:"ai_workflow"`
 }
 
 type AppEnv string
@@ -66,111 +64,98 @@ func (m TLSMode) IsProxy() bool {
 }
 
 type AppConfig struct {
-	AppName            string  `mapstructure:"APP_NAME"`
-	AppEnv             AppEnv  `mapstructure:"APP_ENV"`
-	AppPort            int     `mapstructure:"PORT"`
-	AppTLSMode         TLSMode `mapstructure:"APP_TLS_MODE"`
-	AppTLSCertFile     string  `mapstructure:"APP_TLS_CERT_FILE"`
-	AppTLSKeyFile      string  `mapstructure:"APP_TLS_KEY_FILE"`
-	CSPExtraDirectives string  `mapstructure:"CSP_EXTRA_DIRECTIVES"`
+	Name               string  `mapstructure:"name"`
+	Env                AppEnv  `mapstructure:"env"`
+	Port               int     `mapstructure:"port"`
+	TLSMode            TLSMode `mapstructure:"tls_mode"`
+	TLSCertFile        string  `mapstructure:"tls_cert_file"`
+	TLSKeyFile         string  `mapstructure:"tls_key_file"`
+	CSPExtraDirectives string  `mapstructure:"csp_extra_directives"`
 }
 
 type DBConfig struct {
-	DBType     string `mapstructure:"DB_TYPE"`
-	DBHost     string `mapstructure:"DB_HOST"`
-	DBPort     string `mapstructure:"DB_PORT"`
-	DBUser     string `mapstructure:"DB_USER"`
-	DBPass     string `mapstructure:"DB_PASSWORD"`
-	DBName     string `mapstructure:"DB_NAME"`
-	DBSSLMode  string `mapstructure:"DB_SSL_MODE"`
-	DBTimezone string `mapstructure:"DB_TIMEZONE"`
-
-	DBMaxIdleConn     int `mapstructure:"DB_MAX_IDLE_CONN"`
-	DBMaxOpenConn     int `mapstructure:"DB_MAX_OPEN_CONN"`
-	DBConnMaxLifetime int `mapstructure:"DB_CONN_MAX_LIFETIME"`
-	DBConnMaxIdleTime int `mapstructure:"DB_CONN_MAX_IDLE_TIME"`
+	Type            string `mapstructure:"type"`
+	Host            string `mapstructure:"host"`
+	Port            string `mapstructure:"port"`
+	User            string `mapstructure:"user"`
+	Pass            string `mapstructure:"password"`
+	Name            string `mapstructure:"name"`
+	SSLMode         string `mapstructure:"ssl_mode"`
+	Timezone        string `mapstructure:"timezone"`
+	MaxIdleConn     int    `mapstructure:"max_idle_conn"`
+	MaxOpenConn     int    `mapstructure:"max_open_conn"`
+	ConnMaxLifetime int    `mapstructure:"conn_max_lifetime"`
+	ConnMaxIdleTime int    `mapstructure:"conn_max_idle_time"`
 }
 
 type RedisConfig struct {
-	RedisURL      string `mapstructure:"REDIS_URL"`
-	RedisUsername string `mapstructure:"REDIS_USERNAME"`
-	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
-	RedisDB       int    `mapstructure:"REDIS_DB"`
+	URL      string `mapstructure:"url"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
 }
 
 type CacheConfig struct {
-	CacheURL      string `mapstructure:"CACHE_URL"`
-	CacheUsername string `mapstructure:"CACHE_USERNAME"`
-	CachePassword string `mapstructure:"CACHE_PASSWORD"`
-	CacheDB       int    `mapstructure:"CACHE_DB"`
+	URL      string `mapstructure:"url"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
 }
 
-type SummaryConfig struct {
-	SummaryConcurrency        int `mapstructure:"SUMMARY_CONCURRENCY"`
-	SummaryTimeoutMs          int `mapstructure:"SUMMARY_TIMEOUT_MS"`
-	SummaryRefreshIntervalSec int `mapstructure:"SUMMARY_REFRESH_INTERVAL_SEC"`
-}
-
-type SubscriptionConfig struct {
-	SubscriptionClosePeriodIntervalSec int `mapstructure:"SUBSCRIPTION_CLOSE_PERIOD_INTERVAL_SEC"`
-	SubscriptionClosePeriodBatchSize   int `mapstructure:"SUBSCRIPTION_CLOSE_PERIOD_BATCH_SIZE"`
-}
-
-type RatingConfig struct {
-	RatingJobIntervalSec int `mapstructure:"RATING_JOB_INTERVAL_SEC"`
-	RatingJobBatchSize   int `mapstructure:"RATING_JOB_BATCH_SIZE"`
-	LateUsageGraceHours  int `mapstructure:"LATE_USAGE_GRACE_HOURS"`
-}
-
-type ReconciliationConfig struct {
-	ReconciliationJobIntervalSec int `mapstructure:"RECONCILIATION_JOB_INTERVAL_SEC"`
-	ReconciliationWindowDays     int `mapstructure:"RECONCILIATION_WINDOW_DAYS"`
-	ReconciliationInvoiceLimit   int `mapstructure:"RECONCILIATION_INVOICE_LIMIT"`
+type BillingConfig struct {
+	SummaryConcurrency                 int `mapstructure:"summary_concurrency"`
+	SummaryTimeoutMs                   int `mapstructure:"summary_timeout_ms"`
+	SummaryRefreshIntervalSec          int `mapstructure:"summary_refresh_interval_sec"`
+	SubscriptionClosePeriodIntervalSec int `mapstructure:"subscription_close_period_interval_sec"`
+	SubscriptionClosePeriodBatchSize   int `mapstructure:"subscription_close_period_batch_size"`
+	RatingJobIntervalSec               int `mapstructure:"rating_job_interval_sec"`
+	RatingJobBatchSize                 int `mapstructure:"rating_job_batch_size"`
+	LateUsageGraceHours                int `mapstructure:"late_usage_grace_hours"`
+	ReconciliationJobIntervalSec       int `mapstructure:"reconciliation_job_interval_sec"`
+	ReconciliationWindowDays           int `mapstructure:"reconciliation_window_days"`
+	ReconciliationInvoiceLimit         int `mapstructure:"reconciliation_invoice_limit"`
 }
 
 type RateLimitConfig struct {
-	UsageEventsWindowSec                   int `mapstructure:"RATE_LIMIT_USAGE_EVENTS_WINDOW_SEC"`
-	UsageEventsSubscriptionPerMin          int `mapstructure:"RATE_LIMIT_USAGE_EVENTS_SUBSCRIPTION_PER_MIN"`
-	UsageEventsCustomerPerMin              int `mapstructure:"RATE_LIMIT_USAGE_EVENTS_CUSTOMER_PER_MIN"`
-	UsageEventsOrgPerMin                   int `mapstructure:"RATE_LIMIT_USAGE_EVENTS_ORG_PER_MIN"`
-	UsageEventsConcurrencyPerCustomerMeter int `mapstructure:"RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_PER_CUSTOMER_METER"`
-	UsageEventsConcurrencyTTLSeconds       int `mapstructure:"RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_TTL_SEC"`
+	UsageEventsWindowSec                   int `mapstructure:"usage_events_window_sec"`
+	UsageEventsSubscriptionPerMin          int `mapstructure:"usage_events_subscription_per_min"`
+	UsageEventsCustomerPerMin              int `mapstructure:"usage_events_customer_per_min"`
+	UsageEventsOrgPerMin                   int `mapstructure:"usage_events_org_per_min"`
+	UsageEventsConcurrencyPerCustomerMeter int `mapstructure:"usage_events_concurrency_per_customer_meter"`
+	UsageEventsConcurrencyTTLSeconds       int `mapstructure:"usage_events_concurrency_ttl_sec"`
 }
 
-type AppsConfig struct {
-	AppsCredentialsKey string `mapstructure:"APPS_CREDENTIALS_KEY"`
-}
-
-type StripeConfig struct {
-	StripeConnectClientID    string `mapstructure:"STRIPE_CONNECT_CLIENT_ID"`
-	StripeConnectSecret      string `mapstructure:"STRIPE_CONNECT_SECRET"`
-	StripeConnectRedirectURL string `mapstructure:"STRIPE_CONNECT_REDIRECT_URL"`
+type IntegrationsConfig struct {
+	AppsCredentialsKey       string `mapstructure:"apps_credentials_key"`
+	StripeConnectClientID    string `mapstructure:"stripe_connect_client_id"`
+	StripeConnectSecret      string `mapstructure:"stripe_connect_secret"`
+	StripeConnectRedirectURL string `mapstructure:"stripe_connect_redirect_url"`
 }
 
 type PublicLinkConfig struct {
-	PublicLinkSecret   string `mapstructure:"PUBLIC_LINK_SECRET"`
-	PublicLinkTTLHours int    `mapstructure:"PUBLIC_LINK_TTL_HOURS"`
-	PublicLinkBaseURL  string `mapstructure:"PUBLIC_LINK_BASE_URL"`
+	Secret   string `mapstructure:"secret"`
+	TTLHours int    `mapstructure:"ttl_hours"`
+	BaseURL  string `mapstructure:"base_url"`
 }
 
 type BootstrapConfig struct {
-	EnsureDefaultOrgAndUser bool   `mapstructure:"ENSURE_DEFAULT_ORG_AND_USER"`
-	OrgName                 string `mapstructure:"RAILZWAY_ORG_NAME"`
-	UserEmail               string `mapstructure:"RAILZWAY_USER_EMAIL"`
-	UserPassword            string `mapstructure:"RAILZWAY_USER_PASSWORD"`
+	EnsureDefaultOrgAndUser bool   `mapstructure:"ensure_default_org_and_user"`
+	OrgName                 string `mapstructure:"railzway_org_name"`
+	UserEmail               string `mapstructure:"railzway_user_email"`
+	UserPassword            string `mapstructure:"railzway_user_password"`
 }
 
 type SessionConfig struct {
-	SessionTTLHours int    `mapstructure:"SESSION_TTL_HOURS"`
-	SessionSecret   string `mapstructure:"SESSION_SECRET"`
-	SessionCookie   string `mapstructure:"SESSION_COOKIE_NAME"`
+	TTLHours   int    `mapstructure:"ttl_hours"`
+	Secret     string `mapstructure:"secret"`
+	CookieName string `mapstructure:"cookie_name"`
 }
 
 type AIWorkflowConfig struct {
-	AIWorkflowGenkitEnabled bool   `mapstructure:"AI_WORKFLOW_GENKIT_ENABLED"`
-	AIWorkflowModel         string `mapstructure:"AI_WORKFLOW_MODEL"`
-	AIWorkflowTimeoutMs     int    `mapstructure:"AI_WORKFLOW_TIMEOUT_MS"`
-	AIWorkflowAPIKey        string `mapstructure:"AI_WORKFLOW_API_KEY"`
+	GenkitEnabled bool   `mapstructure:"genkit_enabled"`
+	Model         string `mapstructure:"model"`
+	TimeoutMs     int    `mapstructure:"timeout_ms"`
+	APIKey        string `mapstructure:"api_key"`
 }
 
 func Register() (*Config, error) {
@@ -187,63 +172,38 @@ func RegisterFor(target string) func() (*Config, error) {
 
 func register(target string) (*Config, error) {
 	v := viper.New()
-	v.SetDefault("SESSION_TTL_HOURS", 24)
-	v.SetDefault("SESSION_COOKIE_NAME", "rz_admin_session")
-	v.SetDefault("PUBLIC_LINK_TTL_HOURS", 168)
-	v.SetDefault("LATE_USAGE_GRACE_HOURS", 0)
-	v.SetDefault("RECONCILIATION_JOB_INTERVAL_SEC", 21600)
-	v.SetDefault("RECONCILIATION_WINDOW_DAYS", 7)
-	v.SetDefault("RECONCILIATION_INVOICE_LIMIT", 200)
-	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_WINDOW_SEC", 60)
-	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_SUBSCRIPTION_PER_MIN", 120)
-	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_CUSTOMER_PER_MIN", 600)
-	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_ORG_PER_MIN", 3000)
-	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_PER_CUSTOMER_METER", 1)
-	v.SetDefault("RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_TTL_SEC", 5)
-	v.SetDefault("AI_WORKFLOW_GENKIT_ENABLED", false)
-	v.SetDefault("AI_WORKFLOW_MODEL", "googleai/gemini-2.5-flash")
-	v.SetDefault("AI_WORKFLOW_TIMEOUT_MS", 12000)
 
-	v.SetEnvKeyReplacer(
-		strings.NewReplacer(".", "_"),
-	)
-
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.AutomaticEnv()
+
 	bindEnvKeys(v)
 
-	if err := mergeDefaultFiles(v, []string{
-		"/var/lib/railzway/config/base.defaults.yml",
-		"/var/lib/railzway/config/base.defaults.yaml",
-		"config/base.defaults.yml",
-		"config/base.defaults.yaml",
-		"base.defaults.yml",
-		"base.defaults.yaml",
-		// Legacy fallback during config layout transition.
-		"config/docker/base.defaults.yml",
-		"config/docker/base.defaults.yaml",
-	}); err != nil {
-		zap.L().Fatal("failed to read base defaults config", zap.Error(err))
+	v.SetConfigName("base.defaults")
+	v.SetConfigType("yaml")
+	v.AddConfigPath("./config")
+
+	if err := v.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("failed to read base config: %w", err)
 	}
 
 	if name := strings.TrimSpace(target); name != "" {
-		if err := mergeDefaultFiles(v, []string{
-			filepath.Join("/var/lib/railzway/config", name, "defaults.yml"),
-			filepath.Join("/var/lib/railzway/config", name, "defaults.yaml"),
-			filepath.Join("config", name, "defaults.yml"),
-			filepath.Join("config", name, "defaults.yaml"),
-			filepath.Join(name, "defaults.yml"),
-			filepath.Join(name, "defaults.yaml"),
-			// Legacy fallback during config layout transition.
-			filepath.Join("config", "docker", name+".defaults.yml"),
-			filepath.Join("config", "docker", name+".defaults.yaml"),
-		}); err != nil {
-			zap.L().Fatal("failed to read binary defaults config", zap.Error(err), zap.String("target", name))
+		v.SetConfigName("defaults")
+		v.AddConfigPath(
+			filepath.Join(".", "config", name),
+		)
+
+		if err := v.MergeInConfig(); err != nil {
+			// optional: ignore kalau file target tidak ada
+			var notFound viper.ConfigFileNotFoundError
+			if !errors.As(err, &notFound) {
+				return nil, fmt.Errorf("failed to merge target config: %w", err)
+			}
 		}
 	}
 
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 	applyEnvOverrides(&cfg)
 	// 🔥 HOT RELOAD
@@ -255,115 +215,95 @@ func register(target string) (*Config, error) {
 	return &cfg, nil
 }
 
-func mergeDefaultFiles(v *viper.Viper, candidates []string) error {
-	for _, candidate := range candidates {
-		if _, err := os.Stat(candidate); err != nil {
-			if os.IsNotExist(err) {
-				continue
-			}
-			return err
-		}
-		f, err := os.Open(candidate)
-		if err != nil {
-			return err
-		}
-		if err := v.MergeConfig(f); err != nil {
-			_ = f.Close()
-			return err
-		}
-		_ = f.Close()
-	}
-	return nil
-}
-
 func applyEnvOverrides(cfg *Config) {
 
 	// App
-	applyEnvString("APP_NAME", func(v string) { cfg.AppName = v })
-	applyEnvString("APP_ENV", func(v string) { cfg.AppEnv = AppEnv(v) })
-	applyEnvInt("PORT", func(v int) { cfg.AppPort = v })
-	applyEnvString("APP_TLS_MODE", func(v string) { cfg.AppTLSMode = TLSMode(v) })
-	applyEnvString("APP_TLS_CERT_FILE", func(v string) { cfg.AppTLSCertFile = v })
-	applyEnvString("APP_TLS_KEY_FILE", func(v string) { cfg.AppTLSKeyFile = v })
-	applyEnvString("CSP_EXTRA_DIRECTIVES", func(v string) { cfg.CSPExtraDirectives = v })
+	applyEnvString("APP_NAME", func(v string) { cfg.App.Name = v })
+	applyEnvString("APP_ENV", func(v string) { cfg.App.Env = AppEnv(v) })
+	applyEnvInt("PORT", func(v int) { cfg.App.Port = v })
+	applyEnvString("APP_TLS_MODE", func(v string) { cfg.App.TLSMode = TLSMode(v) })
+	applyEnvString("APP_TLS_CERT_FILE", func(v string) { cfg.App.TLSCertFile = v })
+	applyEnvString("APP_TLS_KEY_FILE", func(v string) { cfg.App.TLSKeyFile = v })
+	applyEnvString("CSP_EXTRA_DIRECTIVES", func(v string) { cfg.App.CSPExtraDirectives = v })
 
 	// Database
-	applyEnvString("DB_TYPE", func(v string) { cfg.DBType = v })
-	applyEnvString("DB_HOST", func(v string) { cfg.DBHost = v })
-	applyEnvString("DB_PORT", func(v string) { cfg.DBPort = v })
-	applyEnvString("DB_USER", func(v string) { cfg.DBUser = v })
-	applyEnvString("DB_PASSWORD", func(v string) { cfg.DBPass = v })
-	applyEnvString("DB_NAME", func(v string) { cfg.DBName = v })
-	applyEnvString("DB_SSL_MODE", func(v string) { cfg.DBSSLMode = v })
-	applyEnvString("DB_TIMEZONE", func(v string) { cfg.DBTimezone = v })
-	applyEnvInt("DB_MAX_IDLE_CONN", func(v int) { cfg.DBMaxIdleConn = v })
-	applyEnvInt("DB_MAX_OPEN_CONN", func(v int) { cfg.DBMaxOpenConn = v })
-	applyEnvInt("DB_CONN_MAX_LIFETIME", func(v int) { cfg.DBConnMaxLifetime = v })
-	applyEnvInt("DB_CONN_MAX_IDLE_TIME", func(v int) { cfg.DBConnMaxIdleTime = v })
+	applyEnvString("DB_TYPE", func(v string) { cfg.DB.Type = v })
+	applyEnvString("DB_HOST", func(v string) { cfg.DB.Host = v })
+	applyEnvString("DB_PORT", func(v string) { cfg.DB.Port = v })
+	applyEnvString("DB_USER", func(v string) { cfg.DB.User = v })
+	applyEnvString("DB_PASSWORD", func(v string) { cfg.DB.Pass = v })
+	applyEnvString("DB_NAME", func(v string) { cfg.DB.Name = v })
+	applyEnvString("DB_SSL_MODE", func(v string) { cfg.DB.SSLMode = v })
+	applyEnvString("DB_TIMEZONE", func(v string) { cfg.DB.Timezone = v })
+	applyEnvInt("DB_MAX_IDLE_CONN", func(v int) { cfg.DB.MaxIdleConn = v })
+	applyEnvInt("DB_MAX_OPEN_CONN", func(v int) { cfg.DB.MaxOpenConn = v })
+	applyEnvInt("DB_CONN_MAX_LIFETIME", func(v int) { cfg.DB.ConnMaxLifetime = v })
+	applyEnvInt("DB_CONN_MAX_IDLE_TIME", func(v int) { cfg.DB.ConnMaxIdleTime = v })
 
 	// Redis (sessions/idempotency)
-	applyEnvString("REDIS_URL", func(v string) { cfg.RedisURL = v })
-	applyEnvString("REDIS_USERNAME", func(v string) { cfg.RedisUsername = v })
-	applyEnvString("REDIS_PASSWORD", func(v string) { cfg.RedisPassword = v })
-	applyEnvInt("REDIS_DB", func(v int) { cfg.RedisDB = v })
+	applyEnvString("REDIS_URL", func(v string) { cfg.Redis.URL = v })
+	applyEnvString("REDIS_USERNAME", func(v string) { cfg.Redis.Username = v })
+	applyEnvString("REDIS_PASSWORD", func(v string) { cfg.Redis.Password = v })
+	applyEnvInt("REDIS_DB", func(v int) { cfg.Redis.DB = v })
 
 	// Cache
-	applyEnvString("CACHE_URL", func(v string) { cfg.CacheURL = v })
-	applyEnvString("CACHE_USERNAME", func(v string) { cfg.CacheUsername = v })
-	applyEnvString("CACHE_PASSWORD", func(v string) { cfg.CachePassword = v })
-	applyEnvInt("CACHE_DB", func(v int) { cfg.CacheDB = v })
+	applyEnvString("CACHE_URL", func(v string) { cfg.Cache.URL = v })
+	applyEnvString("CACHE_USERNAME", func(v string) { cfg.Cache.Username = v })
+	applyEnvString("CACHE_PASSWORD", func(v string) { cfg.Cache.Password = v })
+	applyEnvInt("CACHE_DB", func(v int) { cfg.Cache.DB = v })
 
 	// Summaries
-	applyEnvInt("SUMMARY_CONCURRENCY", func(v int) { cfg.SummaryConcurrency = v })
-	applyEnvInt("SUMMARY_TIMEOUT_MS", func(v int) { cfg.SummaryTimeoutMs = v })
-	applyEnvInt("SUMMARY_REFRESH_INTERVAL_SEC", func(v int) { cfg.SummaryRefreshIntervalSec = v })
+	applyEnvInt("SUMMARY_CONCURRENCY", func(v int) { cfg.Billing.SummaryConcurrency = v })
+	applyEnvInt("SUMMARY_TIMEOUT_MS", func(v int) { cfg.Billing.SummaryTimeoutMs = v })
+	applyEnvInt("SUMMARY_REFRESH_INTERVAL_SEC", func(v int) { cfg.Billing.SummaryRefreshIntervalSec = v })
 	// Subscription scheduling
-	applyEnvInt("SUBSCRIPTION_CLOSE_PERIOD_INTERVAL_SEC", func(v int) { cfg.SubscriptionClosePeriodIntervalSec = v })
-	applyEnvInt("SUBSCRIPTION_CLOSE_PERIOD_BATCH_SIZE", func(v int) { cfg.SubscriptionClosePeriodBatchSize = v })
+	applyEnvInt("SUBSCRIPTION_CLOSE_PERIOD_INTERVAL_SEC", func(v int) { cfg.Billing.SubscriptionClosePeriodIntervalSec = v })
+	applyEnvInt("SUBSCRIPTION_CLOSE_PERIOD_BATCH_SIZE", func(v int) { cfg.Billing.SubscriptionClosePeriodBatchSize = v })
 
 	// Rating scheduling
-	applyEnvInt("RATING_JOB_INTERVAL_SEC", func(v int) { cfg.RatingJobIntervalSec = v })
-	applyEnvInt("RATING_JOB_BATCH_SIZE", func(v int) { cfg.RatingJobBatchSize = v })
+	applyEnvInt("RATING_JOB_INTERVAL_SEC", func(v int) { cfg.Billing.RatingJobIntervalSec = v })
+	applyEnvInt("RATING_JOB_BATCH_SIZE", func(v int) { cfg.Billing.RatingJobBatchSize = v })
+	applyEnvInt("LATE_USAGE_GRACE_HOURS", func(v int) { cfg.Billing.LateUsageGraceHours = v })
 
 	// Public API rate limits
-	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_WINDOW_SEC", func(v int) { cfg.RateLimitConfig.UsageEventsWindowSec = v })
-	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_SUBSCRIPTION_PER_MIN", func(v int) { cfg.RateLimitConfig.UsageEventsSubscriptionPerMin = v })
-	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_CUSTOMER_PER_MIN", func(v int) { cfg.RateLimitConfig.UsageEventsCustomerPerMin = v })
-	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_ORG_PER_MIN", func(v int) { cfg.RateLimitConfig.UsageEventsOrgPerMin = v })
+	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_WINDOW_SEC", func(v int) { cfg.RateLimit.UsageEventsWindowSec = v })
+	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_SUBSCRIPTION_PER_MIN", func(v int) { cfg.RateLimit.UsageEventsSubscriptionPerMin = v })
+	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_CUSTOMER_PER_MIN", func(v int) { cfg.RateLimit.UsageEventsCustomerPerMin = v })
+	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_ORG_PER_MIN", func(v int) { cfg.RateLimit.UsageEventsOrgPerMin = v })
 	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_PER_CUSTOMER_METER", func(v int) {
-		cfg.RateLimitConfig.UsageEventsConcurrencyPerCustomerMeter = v
+		cfg.RateLimit.UsageEventsConcurrencyPerCustomerMeter = v
 	})
 	applyEnvInt("RATE_LIMIT_USAGE_EVENTS_CONCURRENCY_TTL_SEC", func(v int) {
-		cfg.RateLimitConfig.UsageEventsConcurrencyTTLSeconds = v
+		cfg.RateLimit.UsageEventsConcurrencyTTLSeconds = v
 	})
 
 	// Apps & providers
-	applyEnvString("APPS_CREDENTIALS_KEY", func(v string) { cfg.AppsCredentialsKey = v })
-	applyEnvString("STRIPE_CONNECT_CLIENT_ID", func(v string) { cfg.StripeConnectClientID = v })
-	applyEnvString("STRIPE_CONNECT_SECRET", func(v string) { cfg.StripeConnectSecret = v })
-	applyEnvString("STRIPE_CONNECT_REDIRECT_URL", func(v string) { cfg.StripeConnectRedirectURL = v })
+	applyEnvString("APPS_CREDENTIALS_KEY", func(v string) { cfg.Integrations.AppsCredentialsKey = v })
+	applyEnvString("STRIPE_CONNECT_CLIENT_ID", func(v string) { cfg.Integrations.StripeConnectClientID = v })
+	applyEnvString("STRIPE_CONNECT_SECRET", func(v string) { cfg.Integrations.StripeConnectSecret = v })
+	applyEnvString("STRIPE_CONNECT_REDIRECT_URL", func(v string) { cfg.Integrations.StripeConnectRedirectURL = v })
 
 	// Public links
-	applyEnvString("PUBLIC_LINK_SECRET", func(v string) { cfg.PublicLinkSecret = v })
-	applyEnvInt("PUBLIC_LINK_TTL_HOURS", func(v int) { cfg.PublicLinkTTLHours = v })
-	applyEnvString("PUBLIC_LINK_BASE_URL", func(v string) { cfg.PublicLinkBaseURL = v })
+	applyEnvString("PUBLIC_LINK_SECRET", func(v string) { cfg.PublicLink.Secret = v })
+	applyEnvInt("PUBLIC_LINK_TTL_HOURS", func(v int) { cfg.PublicLink.TTLHours = v })
+	applyEnvString("PUBLIC_LINK_BASE_URL", func(v string) { cfg.PublicLink.BaseURL = v })
 
 	// Bootstrap
-	applyEnvBool("ENSURE_DEFAULT_ORG_AND_USER", func(v bool) { cfg.BootstrapConfig.EnsureDefaultOrgAndUser = v })
-	applyEnvString("RAILZWAY_ORG_NAME", func(v string) { cfg.BootstrapConfig.OrgName = v })
-	applyEnvString("RAILZWAY_USER_EMAIL", func(v string) { cfg.BootstrapConfig.UserEmail = v })
-	applyEnvString("RAILZWAY_USER_PASSWORD", func(v string) { cfg.BootstrapConfig.UserPassword = v })
+	applyEnvBool("ENSURE_DEFAULT_ORG_AND_USER", func(v bool) { cfg.Bootstrap.EnsureDefaultOrgAndUser = v })
+	applyEnvString("RAILZWAY_ORG_NAME", func(v string) { cfg.Bootstrap.OrgName = v })
+	applyEnvString("RAILZWAY_USER_EMAIL", func(v string) { cfg.Bootstrap.UserEmail = v })
+	applyEnvString("RAILZWAY_USER_PASSWORD", func(v string) { cfg.Bootstrap.UserPassword = v })
 
 	// Sessions
-	applyEnvInt("SESSION_TTL_HOURS", func(v int) { cfg.SessionConfig.SessionTTLHours = v })
-	applyEnvString("SESSION_SECRET", func(v string) { cfg.SessionConfig.SessionSecret = v })
-	applyEnvString("SESSION_COOKIE_NAME", func(v string) { cfg.SessionConfig.SessionCookie = v })
+	applyEnvInt("SESSION_TTL_HOURS", func(v int) { cfg.Session.TTLHours = v })
+	applyEnvString("SESSION_SECRET", func(v string) { cfg.Session.Secret = v })
+	applyEnvString("SESSION_COOKIE_NAME", func(v string) { cfg.Session.CookieName = v })
 
 	// AI workflow planner
-	applyEnvBool("AI_WORKFLOW_GENKIT_ENABLED", func(v bool) { cfg.AIWorkflowConfig.AIWorkflowGenkitEnabled = v })
-	applyEnvString("AI_WORKFLOW_MODEL", func(v string) { cfg.AIWorkflowConfig.AIWorkflowModel = v })
-	applyEnvInt("AI_WORKFLOW_TIMEOUT_MS", func(v int) { cfg.AIWorkflowConfig.AIWorkflowTimeoutMs = v })
-	applyEnvString("AI_WORKFLOW_API_KEY", func(v string) { cfg.AIWorkflowConfig.AIWorkflowAPIKey = v })
+	applyEnvBool("AI_WORKFLOW_GENKIT_ENABLED", func(v bool) { cfg.AIWorkflow.GenkitEnabled = v })
+	applyEnvString("AI_WORKFLOW_MODEL", func(v string) { cfg.AIWorkflow.Model = v })
+	applyEnvInt("AI_WORKFLOW_TIMEOUT_MS", func(v int) { cfg.AIWorkflow.TimeoutMs = v })
+	applyEnvString("AI_WORKFLOW_API_KEY", func(v string) { cfg.AIWorkflow.APIKey = v })
 }
 
 func applyEnvString(key string, apply func(string)) {

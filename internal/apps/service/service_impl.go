@@ -334,7 +334,7 @@ func decodeKey(cfg *config.Config) ([]byte, error) {
 	if cfg == nil {
 		return nil, domain.ErrCredentialsKey
 	}
-	key := strings.TrimSpace(cfg.AppsCredentialsKey)
+	key := strings.TrimSpace(cfg.Integrations.AppsCredentialsKey)
 	if key == "" {
 		return nil, domain.ErrCredentialsKey
 	}
@@ -356,7 +356,7 @@ func (s *Service) warnings() []domain.Warning {
 			Message: "APPS_CREDENTIALS_KEY is not set; app credentials cannot be encrypted.",
 		}}
 	}
-	key := strings.TrimSpace(s.cfg.AppsCredentialsKey)
+	key := strings.TrimSpace(s.cfg.Integrations.AppsCredentialsKey)
 	if key == "" {
 		return []domain.Warning{{
 			Module:  "apps",

@@ -34,7 +34,7 @@ func New(cfg *config.Config, dialector gorm.Dialector, opts ...gorm.Option) (*go
 	var err error
 
 	logLevel := gormlogger.Warn
-	if !cfg.AppConfig.AppEnv.IsProduction() {
+	if !cfg.App.Env.IsProduction() {
 		logLevel = gormlogger.Info
 	}
 	opts = append(opts, &gorm.Config{
@@ -59,7 +59,7 @@ func New(cfg *config.Config, dialector gorm.Dialector, opts ...gorm.Option) (*go
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	if !cfg.AppConfig.AppEnv.IsProduction() {
+	if !cfg.App.Env.IsProduction() {
 		db = db.Debug()
 		zap.L().Info("[DB] Database is running in DEBUG mode")
 	}
@@ -85,10 +85,10 @@ func RegisterConnectionPool(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB) er
 		return err
 	}
 
-	sqlDB.SetMaxIdleConns(cfg.DBConfig.DBMaxIdleConn)
-	sqlDB.SetMaxOpenConns(cfg.DBConfig.DBMaxOpenConn)
-	sqlDB.SetConnMaxLifetime(time.Duration(cfg.DBConfig.DBConnMaxLifetime) * time.Second)
-	sqlDB.SetConnMaxIdleTime(time.Duration(cfg.DBConfig.DBConnMaxIdleTime) * time.Second)
+	sqlDB.SetMaxIdleConns(cfg.DB.MaxIdleConn)
+	sqlDB.SetMaxOpenConns(cfg.DB.MaxOpenConn)
+	sqlDB.SetConnMaxLifetime(time.Duration(cfg.DB.ConnMaxLifetime) * time.Second)
+	sqlDB.SetConnMaxIdleTime(time.Duration(cfg.DB.ConnMaxIdleTime) * time.Second)
 
 	zap.L().Info("[DB] ✅ Database connection successfully configured with connection pooling.")
 	lc.Append(fx.Hook{

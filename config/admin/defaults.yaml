@@ -1,0 +1,27 @@
+# ===================== Railzway Admin Defaults =====================
+#
+# Binary-specific defaults file for the admin service.
+# Loaded after base defaults, then overridden by environment variables.
+#
+# This follows the current Railzway config model, not Grafana's full
+# defaults.ini surface area. Only keys that exist in internal/config
+# are defined here.
+app:
+  name: railzway
+  port: 8080
+
+public_link:
+  secret: ""
+  ttl_hours: 168
+  base_url: ""
+
+bootstrap:
+  ensure_default_org_and_user: true
+  railzway_org_name: Acme
+  railzway_user_email: admin@railzway.com
+  railzway_user_password: password
+
+session:
+  ttl_hours: 24
+  secret: dev-secret-change-me
+  cookie_name: rz_admin_session

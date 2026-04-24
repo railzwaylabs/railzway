@@ -468,7 +468,7 @@ func (h *Handler) SwitchOrganization(c *gin.Context) {
 	}
 	cookieName := ""
 	if h.cfg != nil {
-		cookieName = strings.TrimSpace(h.cfg.SessionConfig.SessionCookie)
+		cookieName = strings.TrimSpace(h.cfg.Session.CookieName)
 	}
 	token := extractBearerToken(c.Request, cookieName)
 	if token == "" {
@@ -530,7 +530,7 @@ func (h *Handler) SkipPasswordChange(c *gin.Context) {
 		c.JSON(http.StatusNotImplemented, gin.H{"error": "auth_not_configured"})
 		return
 	}
-	if h.cfg == nil || !h.cfg.AppEnv.IsDevelopment() {
+	if h.cfg == nil || !h.cfg.App.Env.IsDevelopment() {
 		c.JSON(http.StatusForbidden, gin.H{"error": "skip_not_allowed"})
 		return
 	}
@@ -553,7 +553,7 @@ func (h *Handler) Logout(c *gin.Context) {
 	}
 	cookieName := ""
 	if h.cfg != nil {
-		cookieName = strings.TrimSpace(h.cfg.SessionConfig.SessionCookie)
+		cookieName = strings.TrimSpace(h.cfg.Session.CookieName)
 	}
 	token := extractBearerToken(c.Request, cookieName)
 	if token != "" {
@@ -597,7 +597,7 @@ func (h *Handler) AuthRequired() gin.HandlerFunc {
 		}
 		cookieName := ""
 		if h.cfg != nil {
-			cookieName = strings.TrimSpace(h.cfg.SessionConfig.SessionCookie)
+			cookieName = strings.TrimSpace(h.cfg.Session.CookieName)
 		}
 		token := extractBearerToken(c.Request, cookieName)
 		if token == "" {
@@ -780,10 +780,10 @@ func extractBearerToken(r *http.Request, cookieName string) string {
 }
 
 func setSessionCookie(c *gin.Context, token string, expiresAt time.Time, cfg *config.Config) {
-	secure := cfg != nil && cfg.AppEnv.IsProduction()
+	secure := cfg != nil && cfg.App.Env.IsProduction()
 	cookieName := "rz_admin_session"
-	if cfg != nil && strings.TrimSpace(cfg.SessionConfig.SessionCookie) != "" {
-		cookieName = strings.TrimSpace(cfg.SessionConfig.SessionCookie)
+	if cfg != nil && strings.TrimSpace(cfg.Session.CookieName) != "" {
+		cookieName = strings.TrimSpace(cfg.Session.CookieName)
 	}
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     cookieName,
@@ -798,10 +798,10 @@ func setSessionCookie(c *gin.Context, token string, expiresAt time.Time, cfg *co
 }
 
 func clearSessionCookie(c *gin.Context, cfg *config.Config) {
-	secure := cfg != nil && cfg.AppEnv.IsProduction()
+	secure := cfg != nil && cfg.App.Env.IsProduction()
 	cookieName := "rz_admin_session"
-	if cfg != nil && strings.TrimSpace(cfg.SessionConfig.SessionCookie) != "" {
-		cookieName = strings.TrimSpace(cfg.SessionConfig.SessionCookie)
+	if cfg != nil && strings.TrimSpace(cfg.Session.CookieName) != "" {
+		cookieName = strings.TrimSpace(cfg.Session.CookieName)
 	}
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     cookieName,
@@ -817,10 +817,10 @@ func clearSessionCookie(c *gin.Context, cfg *config.Config) {
 const defaultCSRFCookieName = "rz_admin_csrf"
 
 func csrfCookieName(cfg *config.Config) string {
-	if cfg == nil || strings.TrimSpace(cfg.SessionConfig.SessionCookie) == "" {
+	if cfg == nil || strings.TrimSpace(cfg.Session.CookieName) == "" {
 		return defaultCSRFCookieName
 	}
-	return strings.TrimSpace(cfg.SessionConfig.SessionCookie) + "_csrf"
+	return strings.TrimSpace(cfg.Session.CookieName) + "_csrf"
 }
 
 func newCSRFToken() string {
@@ -846,8 +846,8 @@ func ensureCSRFCookie(c *gin.Context, cfg *config.Config) {
 		return
 	}
 	ttlHours := 24
-	if cfg != nil && cfg.SessionConfig.SessionTTLHours > 0 {
-		ttlHours = cfg.SessionConfig.SessionTTLHours
+	if cfg != nil && cfg.Session.TTLHours > 0 {
+		ttlHours = cfg.Session.TTLHours
 	}
 	setCSRFCookie(c, newCSRFToken(), time.Now().UTC().Add(time.Duration(ttlHours)*time.Hour), cfg)
 }
@@ -856,7 +856,7 @@ func setCSRFCookie(c *gin.Context, token string, expiresAt time.Time, cfg *confi
 	if token == "" {
 		return
 	}
-	secure := cfg != nil && cfg.AppEnv.IsProduction()
+	secure := cfg != nil && cfg.App.Env.IsProduction()
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     csrfCookieName(cfg),
 		Value:    token,
@@ -870,7 +870,7 @@ func setCSRFCookie(c *gin.Context, token string, expiresAt time.Time, cfg *confi
 }
 
 func clearCSRFCookie(c *gin.Context, cfg *config.Config) {
-	secure := cfg != nil && cfg.AppEnv.IsProduction()
+	secure := cfg != nil && cfg.App.Env.IsProduction()
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     csrfCookieName(cfg),
 		Value:    "",

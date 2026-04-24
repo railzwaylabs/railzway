@@ -145,13 +145,13 @@ func (h *Handler) StartStripeOAuth(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
-	if h.cfg == nil || strings.TrimSpace(h.cfg.StripeConnectClientID) == "" || strings.TrimSpace(h.cfg.StripeConnectRedirectURL) == "" {
+	if h.cfg == nil || strings.TrimSpace(h.cfg.Integrations.StripeConnectClientID) == "" || strings.TrimSpace(h.cfg.Integrations.StripeConnectRedirectURL) == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "stripe_not_configured"})
 		return
 	}
 	secret := ""
 	if h.cfg != nil {
-		secret = strings.TrimSpace(h.cfg.SessionConfig.SessionSecret)
+		secret = strings.TrimSpace(h.cfg.Session.Secret)
 	}
 	if secret == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "session_secret_required"})
@@ -171,10 +171,10 @@ func (h *Handler) StartStripeOAuth(c *gin.Context) {
 
 	query := url.Values{}
 	query.Set("response_type", "code")
-	query.Set("client_id", strings.TrimSpace(h.cfg.StripeConnectClientID))
+	query.Set("client_id", strings.TrimSpace(h.cfg.Integrations.StripeConnectClientID))
 	query.Set("scope", "read_write")
 	query.Set("state", state)
-	query.Set("redirect_uri", strings.TrimSpace(h.cfg.StripeConnectRedirectURL))
+	query.Set("redirect_uri", strings.TrimSpace(h.cfg.Integrations.StripeConnectRedirectURL))
 	urlStr := "https://connect.stripe.com/oauth/authorize?" + query.Encode()
 
 	c.JSON(http.StatusOK, gin.H{"url": urlStr})
@@ -187,13 +187,13 @@ func (h *Handler) StripeOAuthCallback(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_oauth_response"})
 		return
 	}
-	if h.cfg == nil || strings.TrimSpace(h.cfg.StripeConnectSecret) == "" {
+	if h.cfg == nil || strings.TrimSpace(h.cfg.Integrations.StripeConnectSecret) == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "stripe_not_configured"})
 		return
 	}
 	secret := ""
 	if h.cfg != nil {
-		secret = strings.TrimSpace(h.cfg.SessionConfig.SessionSecret)
+		secret = strings.TrimSpace(h.cfg.Session.Secret)
 	}
 	if secret == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "session_secret_required"})
@@ -204,7 +204,7 @@ func (h *Handler) StripeOAuthCallback(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_state"})
 		return
 	}
-	token, err := exchangeStripeCode(code, strings.TrimSpace(h.cfg.StripeConnectSecret))
+	token, err := exchangeStripeCode(code, strings.TrimSpace(h.cfg.Integrations.StripeConnectSecret))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "oauth_exchange_failed"})
 		return

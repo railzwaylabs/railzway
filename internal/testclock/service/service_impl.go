@@ -45,11 +45,11 @@ func NewService(p Params) domain.Service {
 	batchSize := defaultSimulationBatchSize
 	gracePeriod := time.Duration(0)
 	if p.Config != nil {
-		if p.Config.SubscriptionClosePeriodBatchSize > 0 {
-			batchSize = p.Config.SubscriptionClosePeriodBatchSize
+		if p.Config.Billing.SubscriptionClosePeriodBatchSize > 0 {
+			batchSize = p.Config.Billing.SubscriptionClosePeriodBatchSize
 		}
-		if p.Config.LateUsageGraceHours > 0 {
-			gracePeriod = time.Duration(p.Config.LateUsageGraceHours) * time.Hour
+		if p.Config.Billing.LateUsageGraceHours > 0 {
+			gracePeriod = time.Duration(p.Config.Billing.LateUsageGraceHours) * time.Hour
 		}
 	}
 	var closePeriodJob *subscriptionscheduler.ClosePeriodJob

@@ -4,5 +4,6 @@
 # Current codebase does not have a `cmd/invoice` binary yet, so this file is
 # not loaded by runtime configuration today.
 
-APP_NAME: railzway
-PORT: 8080
+app:
+  name: railzway
+  port: 8080

@@ -32,7 +32,7 @@ type Params struct {
 
 func NewAssistantToolset(p Params) *AssistantToolset {
 	if p.Genkit == nil {
-		panic("genkit instance is required")
+		return nil
 	}
 
 	refs := make([]genkitai.ToolRef, 0, 20)

@@ -209,17 +209,17 @@ func (h *Handler) buildInvoicePublicLink(ctx context.Context, orgID uuid.UUID, i
 		return nil, err
 	}
 	now := time.Now().UTC()
-	ttlHours := h.cfg.PublicLinkTTLHours
+	ttlHours := h.cfg.PublicLink.TTLHours
 	if ttlHours <= 0 {
 		ttlHours = 168
 	}
 	ttl := time.Duration(ttlHours) * time.Hour
-	token, err := publiclink.BuildInvoiceToken(inv.Invoice.ID, orgID, h.cfg.PublicLinkSecret, ttl)
+	token, err := publiclink.BuildInvoiceToken(inv.Invoice.ID, orgID, h.cfg.PublicLink.Secret, ttl)
 	if err != nil {
 		return nil, err
 	}
 	expiresAt := now.Add(ttl)
-	base := strings.TrimRight(strings.TrimSpace(h.cfg.PublicLinkBaseURL), "/")
+	base := strings.TrimRight(strings.TrimSpace(h.cfg.PublicLink.BaseURL), "/")
 	url := ""
 	if base != "" {
 		url = fmt.Sprintf("%s/checkout/%s", base, token)

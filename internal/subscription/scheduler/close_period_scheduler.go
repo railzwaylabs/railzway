@@ -35,21 +35,21 @@ func StartClosePeriodScheduler(
 	}
 
 	interval := defaultClosePeriodInterval
-	if cfg != nil && cfg.SubscriptionClosePeriodIntervalSec > 0 {
-		interval = time.Duration(cfg.SubscriptionClosePeriodIntervalSec) * time.Second
+	if cfg != nil && cfg.Billing.SubscriptionClosePeriodIntervalSec > 0 {
+		interval = time.Duration(cfg.Billing.SubscriptionClosePeriodIntervalSec) * time.Second
 	}
 	batchSize := defaultClosePeriodBatch
-	if cfg != nil && cfg.SubscriptionClosePeriodBatchSize > 0 {
-		batchSize = cfg.SubscriptionClosePeriodBatchSize
+	if cfg != nil && cfg.Billing.SubscriptionClosePeriodBatchSize > 0 {
+		batchSize = cfg.Billing.SubscriptionClosePeriodBatchSize
 	}
 
 	gracePeriod := time.Duration(0)
-	if cfg != nil && cfg.LateUsageGraceHours > 0 {
-		gracePeriod = time.Duration(cfg.LateUsageGraceHours) * time.Hour
+	if cfg != nil && cfg.Billing.LateUsageGraceHours > 0 {
+		gracePeriod = time.Duration(cfg.Billing.LateUsageGraceHours) * time.Hour
 	}
 
 	job := NewClosePeriodJob(db, repo, invoiceSvc, gracePeriod)
-	useAdvisoryLock := cfg != nil && cfg.DBType == "postgres"
+	useAdvisoryLock := cfg != nil && cfg.DB.Type == "postgres"
 	lockKey := advisoryLockKey("subscription.close_period")
 	var cancel context.CancelFunc
 

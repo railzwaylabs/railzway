@@ -1,0 +1,12 @@
+# ===================== Railzway Customer Portal Defaults =====================
+#
+# Binary-specific defaults for the customer portal surface.
+
+app:
+  name: railzway
+  port: 8080
+
+public_link:
+  secret: ""
+  ttl_hours: 168
+  base_url: ""

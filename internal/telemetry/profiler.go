@@ -22,7 +22,7 @@ import (
 // In Local/Development, it exposes standard pprof on the given port.
 func StartProfiler(port int) interface{} {
 	return func(lc fx.Lifecycle, cfg *config.Config, logger *zap.Logger) {
-		if cfg.AppEnv.IsProduction() {
+		if cfg.App.Env.IsProduction() {
 			startPyroscope(lc, cfg, logger)
 		} else {
 			startLocalPprof(lc, logger, port)
@@ -32,8 +32,8 @@ func StartProfiler(port int) interface{} {
 
 func startPyroscope(lc fx.Lifecycle, cfg *config.Config, logger *zap.Logger) {
 	serviceName := "railzway"
-	if cfg != nil && strings.TrimSpace(cfg.AppName) != "" {
-		serviceName = strings.TrimSpace(cfg.AppName)
+	if cfg != nil && strings.TrimSpace(cfg.App.Name) != "" {
+		serviceName = strings.TrimSpace(cfg.App.Name)
 	}
 
 	pyroscopeAddress := os.Getenv("PYROSCOPE_SERVER_ADDRESS")

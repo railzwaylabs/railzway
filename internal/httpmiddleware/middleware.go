@@ -23,7 +23,7 @@ const (
 )
 
 func RequireTLS(cfg *config.Config) gin.HandlerFunc {
-	if !cfg.AppEnv.IsProduction() || !cfg.AppTLSMode.IsProxy() {
+	if !cfg.App.Env.IsProduction() || !cfg.App.TLSMode.IsProxy() {
 		return func(c *gin.Context) { c.Next() }
 	}
 	return func(c *gin.Context) {
@@ -125,8 +125,8 @@ func SecurityHeadersWithCSP(cfg *config.Config, extraDirectives string, profile 
 		csp = mergeCSP(csp, mergedExtra)
 	}
 
-	enableHSTS := cfg != nil && cfg.AppEnv.IsProduction() &&
-		(cfg.AppTLSMode.IsDirect() || cfg.AppTLSMode.IsProxy())
+	enableHSTS := cfg != nil && cfg.App.Env.IsProduction() &&
+		(cfg.App.TLSMode.IsDirect() || cfg.App.TLSMode.IsProxy())
 
 	return func(c *gin.Context) {
 		c.Header("Content-Security-Policy", csp)

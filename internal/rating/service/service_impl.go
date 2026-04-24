@@ -56,8 +56,8 @@ type Params struct {
 
 func NewService(p Params) ratingdomain.Service {
 	lateGrace := time.Duration(0)
-	if p.Config != nil && p.Config.LateUsageGraceHours > 0 {
-		lateGrace = time.Duration(p.Config.LateUsageGraceHours) * time.Hour
+	if p.Config != nil && p.Config.Billing.LateUsageGraceHours > 0 {
+		lateGrace = time.Duration(p.Config.Billing.LateUsageGraceHours) * time.Hour
 	}
 	return &service{
 		db:               p.DB,

@@ -74,7 +74,7 @@ func main() {
 }
 
 func newLogger(cfg *config.Config) (*zap.Logger, error) {
-	if cfg.AppEnv.IsProduction() {
+	if cfg.App.Env.IsProduction() {
 		return zap.NewProduction()
 	}
 	return zap.NewDevelopment()

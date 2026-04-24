@@ -1,0 +1,62 @@
+# ===================== Railzway Base Defaults =====================
+#
+# Shared defaults loaded for every binary before any binary-specific
+# defaults file and environment overrides.
+
+app:
+  env: development
+  tls_mode: disabled
+  tls_cert_file: ""
+  tls_key_file: ""
+  csp_extra_directives: ""
+
+db:
+  type: postgres
+  host: localhost
+  port: "5433"
+  user: postgres
+  password: "35411231"
+  name: postgres
+  ssl_mode: disable
+  timezone: UTC
+  max_idle_conn: 2
+  max_open_conn: 20
+  conn_max_lifetime: 14400
+  conn_max_idle_time: 300
+
+redis:
+  url: localhost:6379
+  username: ""
+  password: ""
+  db: 1
+
+cache:
+  url: localhost:6379
+  username: ""
+  password: ""
+  db: 3
+
+billing:
+  summary_concurrency: 4
+  summary_timeout_ms: 5000
+  summary_refresh_interval_sec: 300
+  subscription_close_period_interval_sec: 60
+  subscription_close_period_batch_size: 100
+  rating_job_interval_sec: 60
+  rating_job_batch_size: 200
+  late_usage_grace_hours: 0
+  reconciliation_job_interval_sec: 21600
+  reconciliation_window_days: 7
+  reconciliation_invoice_limit: 200
+
+integrations:
+  apps_credentials_key: ""
+  stripe_connect_client_id: ""
+  stripe_connect_secret: ""
+  stripe_connect_redirect_url: ""
+
+ai_workflow:
+  genkit_enabled: false
+  model: googleai/gemini-2.5-flash
+  timeout_ms: 12000
+  api_key: ""

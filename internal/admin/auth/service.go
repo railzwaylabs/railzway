@@ -101,7 +101,7 @@ func (s *Service) Login(ctx context.Context, email, password, userAgent, ip stri
 
 	secret := ""
 	if s.cfg != nil {
-		secret = strings.TrimSpace(s.cfg.SessionConfig.SessionSecret)
+		secret = strings.TrimSpace(s.cfg.Session.Secret)
 	}
 	token, tokenHash, err := generateSessionToken(secret)
 	if err != nil {
@@ -138,7 +138,7 @@ func (s *Service) Authenticate(ctx context.Context, token string) (AuthSession, 
 
 	secret := ""
 	if s.cfg != nil {
-		secret = strings.TrimSpace(s.cfg.SessionConfig.SessionSecret)
+		secret = strings.TrimSpace(s.cfg.Session.Secret)
 	}
 	hash := hashToken(secret, token)
 
@@ -206,7 +206,7 @@ func (s *Service) RevokeSession(ctx context.Context, token string) error {
 	}
 	secret := ""
 	if s.cfg != nil {
-		secret = strings.TrimSpace(s.cfg.SessionConfig.SessionSecret)
+		secret = strings.TrimSpace(s.cfg.Session.Secret)
 	}
 	hash := hashToken(secret, token)
 
@@ -230,7 +230,7 @@ func (s *Service) CurrentSessionID(ctx context.Context, token string) (uuid.UUID
 	}
 	secret := ""
 	if s.cfg != nil {
-		secret = strings.TrimSpace(s.cfg.SessionConfig.SessionSecret)
+		secret = strings.TrimSpace(s.cfg.Session.Secret)
 	}
 	hash := hashToken(secret, token)
 
@@ -454,7 +454,7 @@ func (s *Service) SwitchOrganization(ctx context.Context, token string, orgID uu
 	}
 	secret := ""
 	if s.cfg != nil {
-		secret = strings.TrimSpace(s.cfg.SessionConfig.SessionSecret)
+		secret = strings.TrimSpace(s.cfg.Session.Secret)
 	}
 	hash := hashToken(secret, token)
 
@@ -609,8 +609,8 @@ func (s *Service) listUserOrgIDs(ctx context.Context, userID uuid.UUID) ([]strin
 }
 
 func (s *Service) sessionTTL() time.Duration {
-	if s.cfg != nil && s.cfg.SessionConfig.SessionTTLHours > 0 {
-		return time.Duration(s.cfg.SessionConfig.SessionTTLHours) * time.Hour
+	if s.cfg != nil && s.cfg.Session.TTLHours > 0 {
+		return time.Duration(s.cfg.Session.TTLHours) * time.Hour
 	}
 	return 24 * time.Hour
 }
@@ -639,7 +639,7 @@ func (s *Service) sessionHash(token string) string {
 	}
 	secret := ""
 	if s.cfg != nil {
-		secret = strings.TrimSpace(s.cfg.SessionConfig.SessionSecret)
+		secret = strings.TrimSpace(s.cfg.Session.Secret)
 	}
 	return hashToken(secret, token)
 }

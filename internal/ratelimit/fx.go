@@ -15,12 +15,12 @@ var Module = fx.Module("ratelimit",
 		fx.Annotate(
 			func(cfg *config.Config, client *redisv9.Client) *Limiter {
 				rlCfg := Config{
-					WindowSec:                              cfg.RateLimitConfig.UsageEventsWindowSec,
-					UsageEventsSubscriptionPerMin:          cfg.RateLimitConfig.UsageEventsSubscriptionPerMin,
-					UsageEventsCustomerPerMin:              cfg.RateLimitConfig.UsageEventsCustomerPerMin,
-					UsageEventsOrgPerMin:                   cfg.RateLimitConfig.UsageEventsOrgPerMin,
-					UsageEventsConcurrencyPerCustomerMeter: cfg.RateLimitConfig.UsageEventsConcurrencyPerCustomerMeter,
-					UsageEventsConcurrencyTTLSeconds:       cfg.RateLimitConfig.UsageEventsConcurrencyTTLSeconds,
+					WindowSec:                              cfg.RateLimit.UsageEventsWindowSec,
+					UsageEventsSubscriptionPerMin:          cfg.RateLimit.UsageEventsSubscriptionPerMin,
+					UsageEventsCustomerPerMin:              cfg.RateLimit.UsageEventsCustomerPerMin,
+					UsageEventsOrgPerMin:                   cfg.RateLimit.UsageEventsOrgPerMin,
+					UsageEventsConcurrencyPerCustomerMeter: cfg.RateLimit.UsageEventsConcurrencyPerCustomerMeter,
+					UsageEventsConcurrencyTTLSeconds:       cfg.RateLimit.UsageEventsConcurrencyTTLSeconds,
 				}
 				return NewLimiter(client, rlCfg)
 			},

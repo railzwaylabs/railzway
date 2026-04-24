@@ -81,7 +81,7 @@ func main() {
 }
 
 func newLogger(cfg *config.Config) (*zap.Logger, error) {
-	if cfg.AppEnv.IsProduction() {
+	if cfg.App.Env.IsProduction() {
 		return zap.NewProduction()
 	}
 	return zap.NewDevelopment()
@@ -104,13 +104,13 @@ func newRouter(
 	logger *zap.Logger,
 	dbConn *gorm.DB,
 ) *gin.Engine {
-	if cfg.AppEnv.IsProduction() {
+	if cfg.App.Env.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	router := gin.New()
 	router.Use(gin.Recovery())
-	router.Use(httpmiddleware.SecurityHeadersWithCSP(cfg, cfg.CSPExtraDirectives, httpmiddleware.CSPProfileCustomer))
+	router.Use(httpmiddleware.SecurityHeadersWithCSP(cfg, cfg.App.CSPExtraDirectives, httpmiddleware.CSPProfileCustomer))
 	router.Use(httpmiddleware.ZapRequestLogger(logger))
 	router.Use(httpmiddleware.RequireTLS(cfg))
 
@@ -149,7 +149,7 @@ func newRouter(
 }
 
 func startHTTPServer(lc fx.Lifecycle, cfg *config.Config, router *gin.Engine, logger *zap.Logger) {
-	port := cfg.AppPort
+	port := cfg.App.Port
 	if port == 0 {
 		port = 8080
 	}
@@ -159,20 +159,20 @@ func startHTTPServer(lc fx.Lifecycle, cfg *config.Config, router *gin.Engine, lo
 		Handler: router,
 	}
 
-	if cfg.AppEnv.IsProduction() && cfg.AppTLSMode.IsDisabled() {
-		logger.Fatal("production requires TLS", zap.String("mode", string(cfg.AppTLSMode)))
+	if cfg.App.Env.IsProduction() && cfg.App.TLSMode.IsDisabled() {
+		logger.Fatal("production requires TLS", zap.String("mode", string(cfg.App.TLSMode)))
 	}
-	if cfg.AppTLSMode.IsDirect() && (strings.TrimSpace(cfg.AppTLSCertFile) == "" || strings.TrimSpace(cfg.AppTLSKeyFile) == "") {
+	if cfg.App.TLSMode.IsDirect() && (strings.TrimSpace(cfg.App.TLSCertFile) == "" || strings.TrimSpace(cfg.App.TLSKeyFile) == "") {
 		logger.Fatal("tls cert/key required for direct TLS mode")
 	}
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
-				logger.Info("customer server started", zap.String("addr", addr), zap.String("tls_mode", string(cfg.AppTLSMode)))
+				logger.Info("customer server started", zap.String("addr", addr), zap.String("tls_mode", string(cfg.App.TLSMode)))
 				var err error
-				if cfg.AppTLSMode.IsDirect() {
-					err = server.ListenAndServeTLS(cfg.AppTLSCertFile, cfg.AppTLSKeyFile)
+				if cfg.App.TLSMode.IsDirect() {
+					err = server.ListenAndServeTLS(cfg.App.TLSCertFile, cfg.App.TLSKeyFile)
 				} else {
 					err = server.ListenAndServe()
 				}

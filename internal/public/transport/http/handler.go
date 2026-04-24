@@ -250,7 +250,7 @@ func defaultJSON(meta map[string]interface{}) []byte {
 }
 
 func (h *Handler) parseToken(token string) (uuid.UUID, uuid.UUID, time.Time, error) {
-	secret := strings.TrimSpace(h.cfg.PublicLinkSecret)
+	secret := strings.TrimSpace(h.cfg.PublicLink.Secret)
 	now := time.Now().UTC()
 	invoiceID, orgID, exp, err := publiclink.ParseInvoiceToken(token, secret, now)
 	return invoiceID, orgID, exp, err

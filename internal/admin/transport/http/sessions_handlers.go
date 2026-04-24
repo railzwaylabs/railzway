@@ -191,7 +191,7 @@ func (h *Handler) sessionTokenFromRequest(c *gin.Context) string {
 	}
 	cookieName := ""
 	if h.cfg != nil {
-		cookieName = strings.TrimSpace(h.cfg.SessionConfig.SessionCookie)
+		cookieName = strings.TrimSpace(h.cfg.Session.CookieName)
 	}
 	return extractBearerToken(c.Request, cookieName)
 }

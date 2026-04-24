@@ -18,10 +18,10 @@ func Register() fx.Option {
 			fx.Annotate(
 				func(cfg *config.Config) (*redis.Client, error) {
 					return redis.NewClient(&redis.Options{
-						Addr:     cfg.CacheConfig.CacheURL,
-						Username: cfg.CacheConfig.CacheUsername,
-						Password: cfg.CacheConfig.CachePassword,
-						DB:       cfg.CacheConfig.CacheDB,
+						Addr:     cfg.Cache.URL,
+						Username: cfg.Cache.Username,
+						Password: cfg.Cache.Password,
+						DB:       cfg.Cache.DB,
 					}), nil
 				},
 				fx.ResultTags(fmt.Sprintf(`name:"%s"`, ClientName)),

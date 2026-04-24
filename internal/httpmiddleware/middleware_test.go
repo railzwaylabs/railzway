@@ -17,8 +17,8 @@ func TestSecurityHeadersAddsCSPAndHSTS(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	cfg := &config.Config{}
-	cfg.AppEnv = config.AppEnvProduction
-	cfg.AppTLSMode = config.TLSModeDirect
+	cfg.App.Env = config.AppEnvProduction
+	cfg.App.TLSMode = config.TLSModeDirect
 
 	r.Use(SecurityHeaders(cfg, CSPProfileAdmin))
 	r.GET("/", func(c *gin.Context) { c.Status(http.StatusNoContent) })
@@ -39,8 +39,8 @@ func TestSecurityHeadersWithExtraDirectives(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	cfg := &config.Config{}
-	cfg.AppEnv = config.AppEnvDevelopment
-	cfg.AppTLSMode = config.TLSModeDisabled
+	cfg.App.Env = config.AppEnvDevelopment
+	cfg.App.TLSMode = config.TLSModeDisabled
 
 	extra := "connect-src 'self' https://api.example.com"
 	r.Use(SecurityHeadersWithCSP(cfg, extra, CSPProfileAdmin))
@@ -63,8 +63,8 @@ func TestRequireTLSBlocksWhenNotForwarded(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	cfg := &config.Config{}
-	cfg.AppEnv = config.AppEnvProduction
-	cfg.AppTLSMode = config.TLSModeProxy
+	cfg.App.Env = config.AppEnvProduction
+	cfg.App.TLSMode = config.TLSModeProxy
 
 	r.Use(RequireTLS(cfg))
 	r.GET("/", func(c *gin.Context) { c.Status(http.StatusNoContent) })
@@ -82,8 +82,8 @@ func TestRequireTLSPassesWhenForwardedHTTPS(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	cfg := &config.Config{}
-	cfg.AppEnv = config.AppEnvProduction
-	cfg.AppTLSMode = config.TLSModeProxy
+	cfg.App.Env = config.AppEnvProduction
+	cfg.App.TLSMode = config.TLSModeProxy
 
 	r.Use(RequireTLS(cfg))
 	r.GET("/", func(c *gin.Context) { c.Status(http.StatusNoContent) })

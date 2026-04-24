@@ -1,0 +1,15 @@
+# ===================== Railzway API Defaults =====================
+#
+# Binary-specific defaults for the public API surface.
+
+app:
+  name: railzway
+  port: 8080
+
+rate_limit:
+  usage_events_window_sec: 60
+  usage_events_subscription_per_min: 120
+  usage_events_customer_per_min: 600
+  usage_events_org_per_min: 3000
+  usage_events_concurrency_per_customer_meter: 1
+  usage_events_concurrency_ttl_sec: 5
