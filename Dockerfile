@@ -14,6 +14,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 # Build admin UI
 COPY apps/admin apps/admin
 COPY packages/invoice-ui packages/invoice-ui
+COPY packages/design-system packages/design-system
 RUN --mount=type=cache,target=/root/.cache \
   pnpm --dir apps/admin build
 
