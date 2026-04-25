@@ -23,17 +23,15 @@ services:
       - "6379:6379"
 
   migrate:
-    image: migrate/migrate:v4
+    image: ghcr.io/railzwaylabs/railzway-migrate:latest
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - ../../db/migrations:/migrations:ro
-    command: ["-path", "/migrations", "-database", "postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable", "up"]
+    command: ["up", "--database-url", "postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable"]
     restart: "no"
 
   admin:
-    image: ghcr.io/railzwaylabs/railzway-admin:latest
+    image: ghcr.io/railzwaylabs/railzway-admin-all-in-one:latest
     env_file:
       - ../../config/docker/admin.env
     depends_on:

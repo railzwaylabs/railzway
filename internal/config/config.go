@@ -16,6 +16,7 @@ import (
 
 type Config struct {
 	App          AppConfig          `mapstructure:"app"`
+	Browser      BrowserConfig      `mapstructure:"browser"`
 	DB           DBConfig           `mapstructure:"db"`
 	Redis        RedisConfig        `mapstructure:"redis"`
 	Cache        CacheConfig        `mapstructure:"cache"`
@@ -71,6 +72,10 @@ type AppConfig struct {
 	TLSCertFile        string  `mapstructure:"tls_cert_file"`
 	TLSKeyFile         string  `mapstructure:"tls_key_file"`
 	CSPExtraDirectives string  `mapstructure:"csp_extra_directives"`
+}
+
+type BrowserConfig struct {
+	AllowedOrigins []string `mapstructure:"allowed_origins"`
 }
 
 type DBConfig struct {
@@ -146,9 +151,11 @@ type BootstrapConfig struct {
 }
 
 type SessionConfig struct {
-	TTLHours   int    `mapstructure:"ttl_hours"`
-	Secret     string `mapstructure:"secret"`
-	CookieName string `mapstructure:"cookie_name"`
+	TTLHours       int    `mapstructure:"ttl_hours"`
+	Secret         string `mapstructure:"secret"`
+	CookieName     string `mapstructure:"cookie_name"`
+	CookieDomain   string `mapstructure:"cookie_domain"`
+	CookieSameSite string `mapstructure:"cookie_same_site"`
 }
 
 type AIWorkflowConfig struct {
@@ -225,6 +232,7 @@ func applyEnvOverrides(cfg *Config) {
 	applyEnvString("APP_TLS_CERT_FILE", func(v string) { cfg.App.TLSCertFile = v })
 	applyEnvString("APP_TLS_KEY_FILE", func(v string) { cfg.App.TLSKeyFile = v })
 	applyEnvString("CSP_EXTRA_DIRECTIVES", func(v string) { cfg.App.CSPExtraDirectives = v })
+	applyEnvCSV("BROWSER_ALLOWED_ORIGINS", func(v []string) { cfg.Browser.AllowedOrigins = v })
 
 	// Database
 	applyEnvString("DB_TYPE", func(v string) { cfg.DB.Type = v })
@@ -298,6 +306,8 @@ func applyEnvOverrides(cfg *Config) {
 	applyEnvInt("SESSION_TTL_HOURS", func(v int) { cfg.Session.TTLHours = v })
 	applyEnvString("SESSION_SECRET", func(v string) { cfg.Session.Secret = v })
 	applyEnvString("SESSION_COOKIE_NAME", func(v string) { cfg.Session.CookieName = v })
+	applyEnvString("SESSION_COOKIE_DOMAIN", func(v string) { cfg.Session.CookieDomain = v })
+	applyEnvString("SESSION_COOKIE_SAME_SITE", func(v string) { cfg.Session.CookieSameSite = v })
 
 	// AI workflow planner
 	applyEnvBool("AI_WORKFLOW_GENKIT_ENABLED", func(v bool) { cfg.AIWorkflow.GenkitEnabled = v })
@@ -320,6 +330,12 @@ func applyEnvInt(key string, apply func(int)) {
 
 func applyEnvBool(key string, apply func(bool)) {
 	if v, ok := envBool(key); ok {
+		apply(v)
+	}
+}
+
+func applyEnvCSV(key string, apply func([]string)) {
+	if v, ok := envCSV(key); ok {
 		apply(v)
 	}
 }
@@ -371,6 +387,26 @@ func envBool(key string) (bool, bool) {
 	}
 }
 
+func envCSV(key string) ([]string, bool) {
+	val, ok := os.LookupEnv(key)
+	if !ok {
+		return nil, false
+	}
+	parts := strings.Split(val, ",")
+	values := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
+			continue
+		}
+		values = append(values, trimmed)
+	}
+	if len(values) == 0 {
+		return nil, false
+	}
+	return values, true
+}
+
 func bindEnvKeys(v *viper.Viper) {
 	keys := []string{
 		"APP_NAME",
@@ -380,6 +416,7 @@ func bindEnvKeys(v *viper.Viper) {
 		"APP_TLS_CERT_FILE",
 		"APP_TLS_KEY_FILE",
 		"CSP_EXTRA_DIRECTIVES",
+		"BROWSER_ALLOWED_ORIGINS",
 		"DB_TYPE",
 		"DB_HOST",
 		"DB_PORT",
@@ -427,6 +464,8 @@ func bindEnvKeys(v *viper.Viper) {
 		"SESSION_TTL_HOURS",
 		"SESSION_SECRET",
 		"SESSION_COOKIE_NAME",
+		"SESSION_COOKIE_DOMAIN",
+		"SESSION_COOKIE_SAME_SITE",
 		"AI_WORKFLOW_GENKIT_ENABLED",
 		"AI_WORKFLOW_MODEL",
 		"AI_WORKFLOW_TIMEOUT_MS",

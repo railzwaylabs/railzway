@@ -98,6 +98,56 @@ func TestRequireTLSPassesWhenForwardedHTTPS(t *testing.T) {
 	}
 }
 
+func TestBrowserCORSAllowsConfiguredOrigin(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	cfg := &config.Config{}
+	cfg.Browser.AllowedOrigins = []string{"https://manage.yourdomain.com"}
+
+	r.Use(BrowserCORS(cfg))
+	r.OPTIONS("/", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+
+	req := httptest.NewRequest(http.MethodOptions, "/", nil)
+	req.Header.Set("Origin", "https://manage.yourdomain.com")
+	req.Header.Set("Access-Control-Request-Method", http.MethodPost)
+	req.Header.Set("Access-Control-Request-Headers", "X-CSRF-Token, X-Org-ID")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d", http.StatusNoContent, w.Code)
+	}
+	if got := w.Header().Get("Access-Control-Allow-Origin"); got != "https://manage.yourdomain.com" {
+		t.Fatalf("expected allow origin header, got %q", got)
+	}
+	if got := w.Header().Get("Access-Control-Allow-Credentials"); got != "true" {
+		t.Fatalf("expected allow credentials header, got %q", got)
+	}
+}
+
+func TestBrowserCORSRejectsDisallowedPreflight(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	cfg := &config.Config{}
+	cfg.Browser.AllowedOrigins = []string{"https://manage.yourdomain.com"}
+
+	r.Use(BrowserCORS(cfg))
+	r.OPTIONS("/", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+
+	req := httptest.NewRequest(http.MethodOptions, "/", nil)
+	req.Header.Set("Origin", "https://evil.example.com")
+	req.Header.Set("Access-Control-Request-Method", http.MethodPost)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected status %d, got %d", http.StatusForbidden, w.Code)
+	}
+	if got := w.Header().Get("Access-Control-Allow-Origin"); got != "" {
+		t.Fatalf("expected no allow origin header, got %q", got)
+	}
+}
+
 func TestZapRequestLoggerEmitsLog(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

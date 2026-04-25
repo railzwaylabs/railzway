@@ -1,6 +1,6 @@
 # Railzway
 
-Railzway is an open-source **Billing Computation Engine** developed as a solo project with AI assistance. It focuses on solving the core logic of SaaS billing through clear architectural patterns.
+Railzway is an open-source **Billing Computation Engine** developed as a solo project with AI assistance. It focuses on solving the core logic of SaaS billing through clear system boundaries, pragmatic architecture, and financial correctness.
 
 > [!NOTE]
 > **Why Railzway?** This project is an investigation into building a billing system that prioritizes **Financial Integrity** over convenience. By separating billing computation from payment collection, I've implemented a **Double-Entry Ledger** logic and **Reconciliation** prototype to explore how to build a 100% auditable billing core as a solo developer.
@@ -39,7 +39,17 @@ Railzway owns the billing computation path from usage to invoice and ledger. Pay
 
 Railzway is under active development. Some flows and APIs are still evolving, so treat this as a working preview rather than a finished product.
 
+## Architecture Stance
+
+Railzway is a pragmatic monorepo. It is not a strict Clean Architecture or DDD-only codebase.
+
+The repository favors clear boundaries, navigable code, delivery speed, and operational clarity over architectural purity. Some parts are organized by domain, while others are organized by product surface and runtime topology. That tradeoff is intentional.
+
+If you want the longer explanation, see [`docs/architecture/repository-structure-philosophy.md`](./docs/architecture/repository-structure-philosophy.md).
+
 ## Quick Start (Local, from source)
+
+Unless noted otherwise, commands below are run from the repository root.
 
 ### Prerequisites
 
@@ -77,14 +87,13 @@ Runtime precedence is:
 ### 2) Start dependencies
 
 ```bash
-cd deployment/docker
-docker compose up -d postgres redis
+docker compose -f deployment/docker/docker-compose.yml up -d postgres redis
 ```
 
-### 3) Run migrations (manual)
+### 3) Run migrations
 
 ```bash
-migrate -path db/migrations -database "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" up
+go run ./cmd/migrate up --database-url "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 ```
 
 ### 4) Build admin UI
@@ -100,7 +109,7 @@ pnpm --dir apps/admin build
 ### 5) Run admin backend
 
 ```bash
-go run cmd/admin/main.go
+go run ./cmd/admin
 ```
 
 Admin backend default: `http://localhost:8080`
@@ -141,11 +150,22 @@ Where to start:
 - `apps/customer` – Customer portal
 
 **Go binaries (cmd/):**
-- `cmd/admin` – Admin backend (serves admin API + static UI)
+- `cmd/admin` – Admin host binary used for both backend-only and all-in-one admin packaging
 - `cmd/scheduler` – Background jobs
 - `cmd/api` – Public API (API-key auth)
 - `cmd/checkout` – Checkout service host
 - `cmd/customer` – Customer portal host
+- `cmd/migrate` – Database migration runner (`railzway-migrate`)
+
+Browser-facing surfaces can also be deployed with the UI hosted separately from compute. See the deployment guidance in the architecture docs for recommended same-origin and shared-API topologies.
+
+Database migrations are executed through the repo-native `railzway-migrate` binary in `cmd/migrate`. This keeps migration commands consistent across local development, CI, and containerized execution.
+
+Container image naming is explicit by topology:
+- `railzway-admin-all-in-one` = admin BEFE bundle (backend + bundled admin UI)
+- `railzway-admin-api` = backend-only admin host
+
+On pushes to `main`, CI publishes the Docker targets that exist today to GitHub Container Registry (`ghcr.io`): `railzway-admin-all-in-one`, `railzway-admin-api`, `railzway-scheduler`, `railzway-api`, and `railzway-migrate`.
 
 ## Documentation
 
@@ -160,6 +180,8 @@ Long-form documentation lives in `docs/`. Start from `docs/` if you want deeper 
 - [`docs/architecture/reconciliation.md`](./docs/architecture/reconciliation.md) – Automated data integrity and cross-module verification.
 - [`docs/architecture/security.md`](./docs/architecture/security.md) – Enterprise RBAC model and security governance.
 - [`docs/architecture/coupons-and-promotions.md`](./docs/architecture/coupons-and-promotions.md) – Coupon, promotion code, segment, and discount-application domain model.
+- [`docs/architecture/browser-surfaces-and-deployment.md`](./docs/architecture/browser-surfaces-and-deployment.md) – Browser surface topology, same-origin proxy recommendation, and shared API domain alternative.
+- [`docs/architecture/repository-structure-philosophy.md`](./docs/architecture/repository-structure-philosophy.md) – Why the repo favors pragmatic modularity over strict architectural doctrine.
 
 ## Notes
 
@@ -168,9 +190,12 @@ Long-form documentation lives in `docs/`. Start from `docs/` if you want deeper 
 - The public API (API-key auth) is evolving; documentation will be published when stable.
 - Coupon and promotion architecture: see [`docs/architecture/coupons-and-promotions.md`](./docs/architecture/coupons-and-promotions.md).
 - Public API rate limits: see [`docs/api/rate-limits.md`](./docs/api/rate-limits.md).
-- If you do not have the `migrate` CLI:
-  - `brew install golang-migrate`, or
-  - `go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest`
+- Migration helper examples:
+  - `go run ./cmd/migrate up`
+  - `go run ./cmd/migrate down 1`
+  - `go run ./cmd/migrate steps -1`
+  - `go run ./cmd/migrate force 20260317074922`
+  - `go run ./cmd/migrate version`
 
 ## Contributing
 

@@ -6,6 +6,9 @@ app:
   name: railzway
   port: 8080
 
+browser:
+  allowed_origins: []
+
 public_link:
   secret: ""
   ttl_hours: 168

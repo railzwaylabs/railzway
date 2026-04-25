@@ -788,12 +788,13 @@ func setSessionCookie(c *gin.Context, token string, expiresAt time.Time, cfg *co
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     cookieName,
 		Value:    token,
+		Domain:   sessionCookieDomain(cfg),
 		Path:     "/",
 		Expires:  expiresAt,
 		MaxAge:   int(time.Until(expiresAt).Seconds()),
 		HttpOnly: true,
 		Secure:   secure,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: sessionCookieSameSite(cfg),
 	})
 }
 
@@ -806,11 +807,12 @@ func clearSessionCookie(c *gin.Context, cfg *config.Config) {
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     cookieName,
 		Value:    "",
+		Domain:   sessionCookieDomain(cfg),
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
 		Secure:   secure,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: sessionCookieSameSite(cfg),
 	})
 }
 
@@ -860,12 +862,13 @@ func setCSRFCookie(c *gin.Context, token string, expiresAt time.Time, cfg *confi
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     csrfCookieName(cfg),
 		Value:    token,
+		Domain:   sessionCookieDomain(cfg),
 		Path:     "/",
 		Expires:  expiresAt,
 		MaxAge:   int(time.Until(expiresAt).Seconds()),
 		HttpOnly: false,
 		Secure:   secure,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: sessionCookieSameSite(cfg),
 	})
 }
 
@@ -874,10 +877,34 @@ func clearCSRFCookie(c *gin.Context, cfg *config.Config) {
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     csrfCookieName(cfg),
 		Value:    "",
+		Domain:   sessionCookieDomain(cfg),
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: false,
 		Secure:   secure,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: sessionCookieSameSite(cfg),
 	})
+}
+
+func sessionCookieDomain(cfg *config.Config) string {
+	if cfg == nil {
+		return ""
+	}
+	return strings.TrimSpace(cfg.Session.CookieDomain)
+}
+
+func sessionCookieSameSite(cfg *config.Config) http.SameSite {
+	if cfg == nil {
+		return http.SameSiteLaxMode
+	}
+	switch strings.ToLower(strings.TrimSpace(cfg.Session.CookieSameSite)) {
+	case "", "lax":
+		return http.SameSiteLaxMode
+	case "strict":
+		return http.SameSiteStrictMode
+	case "none":
+		return http.SameSiteNoneMode
+	default:
+		return http.SameSiteLaxMode
+	}
 }

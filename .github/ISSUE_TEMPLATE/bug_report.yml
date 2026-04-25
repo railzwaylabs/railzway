@@ -21,6 +21,7 @@ body:
       options:
         - admin-ui
         - admin-api
+        - admin-all-in-one
         - public-api
         - customer-portal
         - checkout

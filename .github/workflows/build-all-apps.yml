@@ -12,6 +12,7 @@ concurrency:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   build-frontend-apps:
@@ -45,16 +46,56 @@ jobs:
 
   build-docker-targets:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: admin-api
+            target: admin-api
+            image: railzway-admin-api
+          - name: admin-all-in-one
+            target: admin-all-in-one
+            image: railzway-admin-all-in-one
+          - name: scheduler
+            target: scheduler
+            image: railzway-scheduler
+          - name: api
+            target: api
+            image: railzway-api
+          - name: migrate
+            target: migrate
+            image: railzway-migrate
     steps:
       - uses: actions/checkout@v4
 
       - uses: docker/setup-buildx-action@v3
 
-      - name: Build admin image target
-        run: docker buildx build --load --target admin -t railzway-admin:ci .
+      - name: Normalize registry owner
+        id: vars
+        run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
 
-      - name: Build scheduler image target
-        run: docker buildx build --load --target scheduler -t railzway-scheduler:ci .
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build api image target
-        run: docker buildx build --load --target api -t railzway-api:ci .
+      - name: Prepare Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ steps.vars.outputs.owner }}/${{ matrix.image }}
+          tags: |
+            type=sha,format=short,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push ${{ matrix.name }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: ${{ matrix.target }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

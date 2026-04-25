@@ -10,6 +10,9 @@ app:
   name: railzway
   port: 8080
 
+browser:
+  allowed_origins: []
+
 public_link:
   secret: ""
   ttl_hours: 168
@@ -25,3 +28,5 @@ session:
   ttl_hours: 24
   secret: dev-secret-change-me
   cookie_name: rz_admin_session
+  cookie_domain: ""
+  cookie_same_site: lax

@@ -27,6 +27,7 @@ jobs:
           - scheduler
           - checkout
           - customer
+          - migrate
 
     steps:
       - uses: actions/checkout@v4

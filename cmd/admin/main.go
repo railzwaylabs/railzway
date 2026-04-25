@@ -161,6 +161,7 @@ func newRouter(
 	router.Use(httpmiddleware.PrometheusMetrics("admin"))
 	router.Use(httpmiddleware.ZapRequestLogger(logger))
 	router.Use(httpmiddleware.RequireTLS(cfg))
+	router.Use(httpmiddleware.BrowserCORS(cfg))
 
 	registerHealthRoutes(router, dbConn, cacheClient, storeClient)
 	router.GET("/metrics", gin.WrapH(telemetry.MetricsHandler()))

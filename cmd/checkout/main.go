@@ -61,6 +61,7 @@ func newRouter(cfg *config.Config, logger *zap.Logger, dbConn *gorm.DB) *gin.Eng
 	router.Use(httpmiddleware.SecurityHeadersWithCSP(cfg, cfg.App.CSPExtraDirectives, httpmiddleware.CSPProfileCheckout))
 	router.Use(httpmiddleware.ZapRequestLogger(logger))
 	router.Use(httpmiddleware.RequireTLS(cfg))
+	router.Use(httpmiddleware.BrowserCORS(cfg))
 
 	registerHealthRoutes(router, dbConn)
 

@@ -63,6 +63,7 @@
   "nav": {
     "groups": {
       "core": "Utama",
+      "catalog": "Katalog",
       "billing": "Penagihan",
       "finance": "Keuangan",
       "ai": "Asisten AI",
@@ -88,6 +89,7 @@
       "features": "Fitur",
       "sessions": "Sesi",
       "api_keys": "Kunci API",
+      "feature_flags": "Feature Flags",
       "ai_assistant": "Asisten",
       "ai_workflows": "Workflow",
       "ai_scheduled_jobs": "Pekerjaan Terjadwal",
@@ -716,6 +718,10 @@
       "label": "Pengaturan",
       "desc": "Konfigurasi dan preferensi sistem"
     },
+    "feature_flags": {
+      "label": "Feature Flags",
+      "desc": "Atur rollout, override, dan perilaku efektif per organisasi"
+    },
     "ai_assistant": {
       "label": "AI Assistant",
       "desc": "Intelijen billing dan insight admin"
@@ -723,6 +729,10 @@
     "ai_workflows": {
       "label": "AI Workflow",
       "desc": "Setujui dan jalankan aksi rekomendasi AI"
+    },
+    "ai_scheduled_jobs": {
+      "label": "Pekerjaan Terjadwal",
+      "desc": "Pantau tugas AI berkala dan status eksekusinya"
     },
     "default": {
       "label": "Billing Admin",

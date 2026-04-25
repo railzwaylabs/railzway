@@ -63,6 +63,7 @@
   "nav": {
     "groups": {
       "core": "Core",
+      "catalog": "Catalog",
       "billing": "Billing",
       "finance": "Finance",
       "ai": "AI Assistant",
@@ -88,6 +89,7 @@
       "features": "Features",
       "sessions": "Sessions",
       "api_keys": "API Keys",
+      "feature_flags": "Feature Flags",
       "ai_assistant": "Assistant",
       "ai_workflows": "Workflows",
       "ai_scheduled_jobs": "Scheduled Jobs",
@@ -724,6 +726,10 @@
       "label": "Settings",
       "desc": "System configuration and preferences"
     },
+    "feature_flags": {
+      "label": "Feature Flags",
+      "desc": "Control rollouts, overrides, and effective org behavior"
+    },
     "ai_assistant": {
       "label": "AI Assistant",
       "desc": "Billing intelligence and admin insights"
@@ -731,6 +737,10 @@
     "ai_workflows": {
       "label": "AI Workflows",
       "desc": "Approve and execute AI-recommended actions"
+    },
+    "ai_scheduled_jobs": {
+      "label": "Scheduled Jobs",
+      "desc": "Monitor recurring AI tasks and execution status"
     },
     "default": {
       "label": "Billing Admin",

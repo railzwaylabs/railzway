@@ -28,11 +28,8 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 COPY cmd cmd
 COPY internal internal
 COPY config config
-COPY db db
-COPY features.yml features.yml
 
 FROM go-base AS build-admin
-COPY --from=admin-ui /app/apps/admin/dist /app/apps/admin/dist
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
 RUN --mount=type=cache,target=/root/.cache/go-build \
@@ -53,7 +50,25 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
   CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
   go build -trimpath -ldflags="-s -w" -o /out/api ./cmd/api
 
-FROM gcr.io/distroless/static:nonroot AS admin
+FROM go-base AS build-migrate
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+RUN --mount=type=cache,target=/root/.cache/go-build \
+  CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+  go build -trimpath -ldflags="-s -w" -o /out/migrate ./cmd/migrate
+
+FROM scratch AS migrate-assets
+COPY db /db
+
+FROM gcr.io/distroless/static:nonroot AS admin-api
+WORKDIR /app
+COPY --from=build-admin /out/admin /app/admin
+COPY --from=go-base /app/config /app/config
+COPY features.yml /app/features.yml
+EXPOSE 8080
+ENTRYPOINT ["/app/admin"]
+
+FROM gcr.io/distroless/static:nonroot AS admin-all-in-one
 WORKDIR /app
 COPY --from=build-admin /out/admin /app/admin
 COPY --from=admin-ui /app/apps/admin/dist /app/apps/admin/dist
@@ -76,3 +91,10 @@ COPY --from=go-base /app/config /app/config
 COPY features.yml /app/features.yml
 EXPOSE 8080
 ENTRYPOINT ["/app/api"]
+
+FROM gcr.io/distroless/static:nonroot AS migrate
+WORKDIR /app
+COPY --from=build-migrate /out/migrate /app/railzway-migrate
+COPY --from=go-base /app/config /app/config
+COPY --from=migrate-assets /db /app/db
+ENTRYPOINT ["/app/railzway-migrate"]

@@ -2,13 +2,10 @@ package bootstrap
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
-	adminservice "github.com/railzwaylabs/railzway/internal/admin/service"
 	"github.com/railzwaylabs/railzway/internal/config"
 	"github.com/railzwaylabs/railzway/internal/ledger"
 	"github.com/railzwaylabs/railzway/internal/organization/domain"
@@ -236,150 +233,6 @@ func ensureAppAuthMethods(ctx context.Context, db *gorm.DB, logger *zap.Logger) 
 		logger.Info("bootstrap apps auth methods ensured", zap.Int("count", len(methods)))
 	}
 	return nil
-}
-
-func ensureDummySummaries(ctx context.Context, db *gorm.DB, orgID uuid.UUID, cfg *config.Config) error {
-	var existing string
-	if err := db.WithContext(ctx).
-		Raw(`SELECT org_id FROM admin_summaries WHERE org_id = ? LIMIT 1`, orgID).
-		Scan(&existing).Error; err != nil {
-		return err
-	}
-	if existing != "" {
-		return nil
-	}
-
-	snapshot := dummySummarySnapshot(orgID, cfg)
-	dashboard, _ := json.Marshal(snapshot.Dashboard)
-	customers, _ := json.Marshal(snapshot.Customers)
-	plans, _ := json.Marshal(snapshot.Plans)
-	subscriptions, _ := json.Marshal(snapshot.Subscriptions)
-	usage, _ := json.Marshal(snapshot.Usage)
-	rating, _ := json.Marshal(snapshot.Rating)
-	invoices, _ := json.Marshal(snapshot.Invoices)
-	payments, _ := json.Marshal(snapshot.Payments)
-	taxes, _ := json.Marshal(snapshot.Taxes)
-	auditLogs, _ := json.Marshal(snapshot.AuditLogs)
-	settings, _ := json.Marshal(snapshot.Settings)
-
-	record := adminservice.AdminSummary{
-		OrgID:         orgID,
-		Dashboard:     dashboard,
-		Customers:     customers,
-		Plans:         plans,
-		Subscriptions: subscriptions,
-		Usage:         usage,
-		Rating:        rating,
-		Invoices:      invoices,
-		Payments:      payments,
-		Taxes:         taxes,
-		AuditLogs:     auditLogs,
-		Settings:      settings,
-		Source:        "seed",
-		RefreshedAt:   time.Now().UTC(),
-	}
-
-	return db.WithContext(ctx).
-		Clauses(clause.OnConflict{DoNothing: true}).
-		Create(&record).Error
-}
-
-func dummySummarySnapshot(orgID uuid.UUID, cfg *config.Config) adminservice.SummarySnapshot {
-	now := time.Now().UTC()
-	highlights := []adminservice.SummaryHighlight{
-		{Name: "Starter", Note: "Most popular", Tag: "top"},
-		{Name: "Growth", Note: "Highest conversion", Tag: "hot"},
-	}
-	invoiceHighlights := []adminservice.InvoiceHighlight{
-		{Number: "INV-2026-00042", Note: "Largest invoice", Tag: "top"},
-		{Number: "INV-2026-00041", Note: "Overdue 3 days", Tag: "late"},
-	}
-	auditEntries := []adminservice.AuditLogEntry{
-		{Title: "Plan updated", Note: "Growth plan price changed", Tag: "plan"},
-		{Title: "New API key", Note: "Key created by admin", Tag: "security"},
-	}
-
-	return adminservice.SummarySnapshot{
-		OrgID: orgID,
-		Dashboard: adminservice.DashboardSummary{
-			MRRCents:     125_000,
-			UsageCents:   8_750,
-			OpenInvoices: 3,
-			LateEvents:   2,
-			Alerts: []adminservice.SummaryAlert{
-				{Title: "Usage spike", Subtitle: "Last 24h up 22%", Tag: "usage"},
-				{Title: "Overdue invoices", Subtitle: "3 invoices pending", Tag: "invoice"},
-			},
-		},
-		Customers: adminservice.CustomersSummary{
-			Active:     42,
-			AtRisk:     3,
-			NRRPct:     112.5,
-			Highlights: highlights,
-		},
-		Plans: adminservice.PlansSummary{
-			Active:     5,
-			Draft:      2,
-			Tiered:     2,
-			Highlights: highlights,
-		},
-		Subscriptions: adminservice.SubscriptionsSummary{
-			Active:     38,
-			Trialing:   4,
-			PastDue:    1,
-			Highlights: highlights,
-		},
-		Usage: adminservice.UsageSummary{
-			EventsPerHour: 1200,
-			LatePct:       0.8,
-			ActiveMeters:  6,
-			Highlights: []adminservice.SummaryHighlight{
-				{Name: "Token usage", Note: "Peak at 10:00", Tag: "trend"},
-			},
-		},
-		Rating: adminservice.RatingSummary{
-			RatedEvents:   35_000,
-			AvgLatencySec: 0.85,
-			ReplaysToday:  4,
-			Highlights: []adminservice.SummaryHighlight{
-				{Name: "Realtime", Note: "p95 900ms", Tag: "latency"},
-			},
-		},
-		Invoices: adminservice.InvoicesSummary{
-			Draft:      2,
-			Open:       3,
-			PaidCents:  230_000,
-			Highlights: invoiceHighlights,
-		},
-		Payments: adminservice.PaymentsSummary{
-			CollectedCents: 225_000,
-			Failed:         1,
-			Retries:        2,
-			Highlights: []adminservice.SummaryHighlight{
-				{Name: "Stripe", Note: "99.1% success", Tag: "gateway"},
-			},
-		},
-		Taxes: adminservice.TaxesSummary{
-			Profiles:        1,
-			ExemptCustomers: 2,
-			Highlights: []adminservice.SummaryHighlight{
-				{Name: "VAT", Note: "EU profile active", Tag: "tax"},
-			},
-		},
-		AuditLogs: adminservice.AuditLogsSummary{
-			Entries: auditEntries,
-		},
-		Settings: adminservice.SettingsSummary{
-			APIKeys:       2,
-			InvoiceFormat: "INV-{YYYY}{MM}-{SEQ}",
-			Timezone:      "UTC",
-			Highlights: []adminservice.SummaryHighlight{
-				{Name: "Keys", Note: "2 active keys", Tag: "security"},
-			},
-		},
-		Source:      "seed",
-		RefreshedAt: now,
-	}
 }
 
 func slugify(input string) string {

@@ -10,6 +10,9 @@ app:
   tls_key_file: ""
   csp_extra_directives: ""
 
+browser:
+  allowed_origins: []
+
 db:
   type: postgres
   host: localhost
@@ -60,3 +63,10 @@ ai_workflow:
   model: googleai/gemini-2.5-flash
   timeout_ms: 12000
   api_key: ""
+
+session:
+  ttl_hours: 24
+  secret: ""
+  cookie_name: rz_session
+  cookie_domain: ""
+  cookie_same_site: lax

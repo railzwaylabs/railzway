@@ -5,3 +5,6 @@
 app:
   name: railzway
   port: 8080
+
+browser:
+  allowed_origins: []

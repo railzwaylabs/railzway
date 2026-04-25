@@ -35,6 +35,74 @@ func RequireTLS(cfg *config.Config) gin.HandlerFunc {
 	}
 }
 
+func BrowserCORS(cfg *config.Config) gin.HandlerFunc {
+	allowedOrigins := normalizeOrigins(nil)
+	if cfg != nil {
+		allowedOrigins = normalizeOrigins(cfg.Browser.AllowedOrigins)
+	}
+	if len(allowedOrigins) == 0 {
+		return func(c *gin.Context) { c.Next() }
+	}
+
+	allowedHeaders := []string{
+		"Accept",
+		"Authorization",
+		"Content-Type",
+		"Idempotency-Key",
+		"X-Admin-Token",
+		"X-CSRF-Token",
+		"X-Correlation-ID",
+		"X-Org-ID",
+		"X-Request-ID",
+		"X-Trace-ID",
+	}
+	allowedMethods := "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD"
+	exposedHeaders := "X-Request-ID, X-Correlation-ID, X-Trace-ID"
+
+	return func(c *gin.Context) {
+		origin := strings.TrimSpace(c.GetHeader("Origin"))
+		if origin == "" {
+			c.Next()
+			return
+		}
+
+		if !originAllowed(allowedOrigins, origin) {
+			if c.Request.Method == http.MethodOptions {
+				c.AbortWithStatus(http.StatusForbidden)
+				return
+			}
+			c.Next()
+			return
+		}
+
+		appendVaryHeader(c.Writer.Header(), "Origin")
+		appendVaryHeader(c.Writer.Header(), "Access-Control-Request-Headers")
+		appendVaryHeader(c.Writer.Header(), "Access-Control-Request-Method")
+
+		c.Header("Access-Control-Allow-Origin", origin)
+		c.Header("Access-Control-Allow-Credentials", "true")
+		c.Header("Access-Control-Allow-Methods", allowedMethods)
+		c.Header("Access-Control-Allow-Headers", mergeHeaderValues(allowedHeaders, c.GetHeader("Access-Control-Request-Headers")))
+		c.Header("Access-Control-Expose-Headers", exposedHeaders)
+
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
+	}
+}
+
+func originAllowed(allowedOrigins []string, origin string) bool {
+	for _, candidate := range allowedOrigins {
+		if candidate == origin {
+			return true
+		}
+	}
+	return false
+}
+
 type CSPProfile string
 
 const (
@@ -103,6 +171,60 @@ func mergeCSP(base, extra string) string {
 		parts = append(parts, name+" "+strings.Join(valuesList, " "))
 	}
 	return strings.Join(parts, "; ")
+}
+
+func normalizeOrigins(values []string) []string {
+	result := make([]string, 0, len(values))
+	seen := map[string]struct{}{}
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := seen[trimmed]; ok {
+			continue
+		}
+		seen[trimmed] = struct{}{}
+		result = append(result, trimmed)
+	}
+	return result
+}
+
+func mergeHeaderValues(base []string, requested string) string {
+	seen := map[string]struct{}{}
+	values := make([]string, 0, len(base))
+	appendValue := func(value string) {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			return
+		}
+		key := strings.ToLower(trimmed)
+		if _, ok := seen[key]; ok {
+			return
+		}
+		seen[key] = struct{}{}
+		values = append(values, trimmed)
+	}
+
+	for _, value := range base {
+		appendValue(value)
+	}
+	for _, value := range strings.Split(requested, ",") {
+		appendValue(value)
+	}
+	return strings.Join(values, ", ")
+}
+
+func appendVaryHeader(headers http.Header, value string) {
+	current := headers.Values("Vary")
+	for _, item := range current {
+		for _, part := range strings.Split(item, ",") {
+			if strings.EqualFold(strings.TrimSpace(part), value) {
+				return
+			}
+		}
+	}
+	headers.Add("Vary", value)
 }
 
 func SecurityHeadersWithCSP(cfg *config.Config, extraDirectives string, profile CSPProfile) gin.HandlerFunc {

@@ -48,10 +48,24 @@ const Features = lazy(() => import("./pages/Features"))
 const FeaturesCreate = lazy(() => import("./pages/FeaturesCreate"))
 const FeaturesEdit = lazy(() => import("./pages/FeaturesEdit"))
 const ApiKeys = lazy(() => import("./pages/ApiKeys"))
+const FeatureFlags = lazy(() => import("./pages/FeatureFlags"))
 const ProfileSessions = lazy(() => import("./pages/ProfileSessions"))
 const OrganizationSessions = lazy(() => import("./pages/OrganizationSessions"))
 const AIAssistant = lazy(() => import("./pages/AIAssistant"))
+const AIWorkflows = lazy(() => import("./pages/AIWorkflows"))
 const AIScheduledJobs = lazy(() => import("./pages/AIScheduledJobs"))
+
+type NavItem = {
+  label: string
+  path: string
+  icon: JSX.Element
+  end?: boolean
+}
+
+type NavGroup = {
+  label: string
+  items: NavItem[]
+}
 
 // ── Nav Icons ─────────────────────────────────
 const icons: Record<string, JSX.Element> = {
@@ -178,6 +192,26 @@ const icons: Record<string, JSX.Element> = {
       <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
     </svg>
   ),
+  feature_flags: (
+    <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M4 7h9" strokeLinecap="round" />
+      <path d="M4 17h16" strokeLinecap="round" />
+      <circle cx="16" cy="7" r="3" />
+      <circle cx="9" cy="17" r="3" />
+    </svg>
+  ),
+  sessions: (
+    <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="4" y="5" width="16" height="14" rx="2" />
+      <path d="M8 9h8M8 13h5" strokeLinecap="round" />
+    </svg>
+  ),
+  test_clock: (
+    <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l2.5 2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
   ai_assistant: (
     <svg className="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M8 1.5l1.3 3.2 3.2 1.3-3.2 1.3L8 10.5 6.7 7.3 3.5 6l3.2-1.3L8 1.5z" strokeLinejoin="round"/>
@@ -234,8 +268,11 @@ function usePageTitle() {
     "/features": "features",
     "/features/new": "features_new",
     "/api-keys": "api_keys",
+    "/feature-flags": "feature_flags",
     "/profile/sessions": "profile_sessions",
     "/ai-assistant": "ai_assistant",
+    "/ai-workflows": "ai_workflows",
+    "/ai-scheduled-jobs": "ai_scheduled_jobs",
   }
   if (pathname === "/profile/sessions") {
     return { label: "My Sessions", desc: "Review and revoke your admin sessions" }
@@ -612,10 +649,10 @@ function AppLayout() {
 
   const orgBase = activeOrgId ? `/organizations/${activeOrgId}` : ""
   const isAssistantImmersive = location.pathname.includes("/ai-assistant")
-  const navGroups = useMemo(() => {
+  const navigation = useMemo(() => {
     const withOrg = (path: string) => (orgBase ? `${orgBase}${path}` : "/organizations")
     const canManageOrgSessions = activeOrg?.role === "OWNER" || activeOrg?.role === "ADMIN"
-    return [
+    const primary: NavGroup[] = [
       {
         label: t("nav.groups.core"),
         items: [
@@ -624,16 +661,21 @@ function AppLayout() {
         ],
       },
       {
-        label: t("nav.groups.billing"),
+        label: t("nav.groups.catalog"),
         items: [
           { label: t("nav.items.products"), path: withOrg("/products"), icon: icons.products },
           { label: t("nav.items.features"), path: withOrg("/features"), icon: icons.features },
           { label: t("nav.items.plans"), path: withOrg("/plans"), icon: icons.plans },
+          { label: t("nav.items.coupons"), path: withOrg("/coupons"), icon: icons.coupons },
+        ],
+      },
+      {
+        label: t("nav.groups.billing"),
+        items: [
           { label: t("nav.items.subscriptions"), path: withOrg("/subscriptions"), icon: icons.subscriptions },
           { label: t("nav.items.usage"), path: withOrg("/usage"), icon: icons.usage },
           { label: t("nav.items.meters"), path: withOrg("/meters"), icon: icons.meters },
           { label: t("nav.items.rating"), path: withOrg("/rating"), icon: icons.rating },
-          { label: t("nav.items.coupons"), path: withOrg("/coupons"), icon: icons.coupons },
         ],
       },
       {
@@ -650,25 +692,30 @@ function AppLayout() {
         items: [
           { label: t("nav.items.audit_logs"), path: withOrg("/audit-logs"), icon: icons.auditlogs },
           { label: t("nav.items.apps"), path: withOrg("/apps"), icon: icons.apps },
-          { label: t("nav.items.test_clock"), path: withOrg("/test-clock"), icon: icons.settings },
-          { label: t("nav.items.settings"), path: withOrg("/settings"), icon: icons.settings },
-          ...(canManageOrgSessions ? [{ label: t("nav.items.sessions"), path: withOrg("/sessions"), icon: icons.settings }] : []),
+          { label: t("nav.items.test_clock"), path: withOrg("/test-clock"), icon: icons.test_clock },
         ],
       },
       {
         label: t("nav.groups.ai"),
         items: [
           { label: t("nav.items.ai_assistant"), path: withOrg("/ai-assistant"), icon: icons.ai_assistant },
+          { label: t("nav.items.ai_workflows"), path: withOrg("/ai-workflows"), icon: icons.ai_workflows },
           { label: t("nav.items.ai_scheduled_jobs"), path: withOrg("/ai-scheduled-jobs"), icon: icons.ai_workflows },
         ],
       },
+    ]
+    const utilities: NavGroup[] = [
       {
         label: t("nav.groups.developer"),
         items: [
           { label: t("nav.items.api_keys"), path: withOrg("/api-keys"), icon: icons.apikeys },
+          { label: t("nav.items.feature_flags"), path: withOrg("/feature-flags"), icon: icons.feature_flags },
+          ...(canManageOrgSessions ? [{ label: t("nav.items.sessions"), path: withOrg("/sessions"), icon: icons.sessions }] : []),
+          { label: t("nav.items.settings"), path: withOrg("/settings"), icon: icons.settings },
         ],
       },
     ]
+    return { primary, utilities }
   }, [activeOrg?.role, orgBase, t])
 
   const RootRedirect = () => {
@@ -718,7 +765,9 @@ function AppLayout() {
       <Route path="features/new" element={<FeaturesCreate />} />
       <Route path="features/:id/edit" element={<FeaturesEdit />} />
       <Route path="api-keys" element={<ApiKeys />} />
+      <Route path="feature-flags" element={<FeatureFlags />} />
       <Route path="ai-assistant" element={<AIAssistant />} />
+      <Route path="ai-workflows" element={<AIWorkflows />} />
       <Route path="ai-scheduled-jobs" element={<AIScheduledJobs />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -782,22 +831,43 @@ function AppLayout() {
         </div>
 
         <nav className="nav-groups">
-          {navGroups.map((group) => (
-            <div key={group.label} className="nav-group">
-              <div className="nav-group-label">{group.label}</div>
-              {group.items.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.end}
-                  className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
-                >
-                  {item.icon}
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
-          ))}
+          <div className="nav-section">
+            {navigation.primary.map((group) => (
+              <div key={group.label} className="nav-group">
+                <div className="nav-group-label">{group.label}</div>
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.end}
+                    className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          <div className="nav-section nav-section-secondary">
+            {navigation.utilities.map((group) => (
+              <div key={group.label} className="nav-group nav-group-secondary">
+                <div className="nav-group-label">{group.label}</div>
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.end}
+                    className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            ))}
+          </div>
         </nav>
 
       </aside>

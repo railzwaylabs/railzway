@@ -113,6 +113,7 @@ func newRouter(
 	router.Use(httpmiddleware.SecurityHeadersWithCSP(cfg, cfg.App.CSPExtraDirectives, httpmiddleware.CSPProfileCustomer))
 	router.Use(httpmiddleware.ZapRequestLogger(logger))
 	router.Use(httpmiddleware.RequireTLS(cfg))
+	router.Use(httpmiddleware.BrowserCORS(cfg))
 
 	registerHealthRoutes(router, dbConn)
 	customerportalhandler.RegisterRoutes(router, customerHandler)
