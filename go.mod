@@ -19,7 +19,7 @@ require (
 	github.com/prometheus/client_golang v1.17.0
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/spf13/cobra v1.8.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.43.0
