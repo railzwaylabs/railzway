@@ -5,7 +5,7 @@ go 1.25.1
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20230526161137-0005af68ea54
 
 require (
-	github.com/casbin/casbin/v2 v2.100.0
+	github.com/casbin/casbin/v2 v2.135.0
 	github.com/casbin/gorm-adapter/v3 v3.33.0
 	github.com/firebase/genkit/go v1.6.1
 	github.com/fsnotify/fsnotify v1.9.0
@@ -47,7 +47,7 @@ require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
-	github.com/casbin/govaluate v1.2.0 // indirect
+	github.com/casbin/govaluate v1.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
