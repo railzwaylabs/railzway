@@ -26,7 +26,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.43.0
 	go.opentelemetry.io/otel/trace v1.43.0
 	go.uber.org/fx v1.24.0
-	go.uber.org/zap v1.26.0
+	go.uber.org/zap v1.27.1
 	golang.org/x/crypto v0.49.0
 	golang.org/x/sync v0.20.0
 	gorm.io/driver/mysql v1.6.0
